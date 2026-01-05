@@ -1,5 +1,9 @@
 <script setup>
+    import AppLayout from '@shared/Layouts/App.vue';
 
+    defineOptions({
+        layout: AppLayout
+    });
 </script>
 
 <template>
