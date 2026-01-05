@@ -1,17 +1,15 @@
-<html>
+<!DOCTYPE html>
+
+<html class="light" lang="en">
     <head>
-        <meta charset="utf-8"/>
-        <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-        <!-- Google Fonts: Public Sans -->
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
         <link href="https://fonts.googleapis.com" rel="preconnect"/>
         <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
-        <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@100..900&amp;display=swap" rel="stylesheet"/>
-        <!-- Material Symbols -->
+        <link href="https://fonts.googleapis.com/css2?family=Public+Sans:ital,wght@0,100..900;1,100..900&amp;display=swap" rel="stylesheet"/>
         <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-        <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
-        <!-- Tailwind CSS -->
         <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-        <!-- Tailwind Config -->
         <script id="tailwind-config">
             tailwind.config = {
                 darkMode: "class",
@@ -19,14 +17,9 @@
                     extend: {
                         colors: {
                             "primary": "#135bec",
+                            "primary-hover": "#0f4bc4",
                             "background-light": "#f6f6f8",
                             "background-dark": "#101622",
-                            "surface-light": "#ffffff",
-                            "surface-dark": "#1e293b",
-                            "text-main-light": "#0d121b",
-                            "text-main-dark": "#f1f5f9",
-                            "text-muted-light": "#4c669a",
-                            "text-muted-dark": "#94a3b8",
                         },
                         fontFamily: {
                             "display": ["Public Sans", "sans-serif"]
@@ -36,11 +29,13 @@
                 },
             }
         </script>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1">
         @routes
         @vite('resources/js/app.js')
         @inertiaHead
     </head>
-    <body class="font-display bg-background-light dark:bg-background-dark text-text-main-light dark:text-text-main-dark antialiased overflow-auto">
+    <body class="bg-background-light dark:bg-background-dark font-display text-[#0d121b] dark:text-white overflow-x-hidden transition-colors duration-200">
         @inertia
     </body>
 </html>
