@@ -17,6 +17,8 @@
                         colors: {
                             "primary": "#135bec",
                             "primary-hover": "#0f4bc4",
+                            "accreditor": "#059669",
+                            "accreditor-hover": "#047857",
                             "background-light": "#f6f6f8",
                             "background-dark": "#101622",
                         },
@@ -28,6 +30,14 @@
                 },
             }
         </script>
+        <style type="text/tailwindcss">
+            @layer base {
+                .material-symbols-outlined {
+                    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+                }
+            }
+        </style>
+        @routes
         @vite('resources/js/app.js')
         @inertiaHead
     </head>

@@ -2,9 +2,11 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\Accreditor\AuthController as AccreditorAuthController;
 use App\Http\Controllers\LandingController;
 
 Route::get('/auth', [AuthController::class, 'index'])->name('auth');
+Route::get('/accreditor/auth', [AccreditorAuthController::class, 'index'])->name('accreditor.auth');
 
 Route::get('/dashboard', [LandingController::class, 'index'])->name('dashboard');
 Route::get('/user-management', [LandingController::class, 'userManagement'])->name('user-management');
