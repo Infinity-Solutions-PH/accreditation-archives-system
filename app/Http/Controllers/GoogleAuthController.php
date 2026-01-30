@@ -3,9 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use App\Models\GoogleUserInfo;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\RedirectResponse;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -30,7 +33,7 @@ class GoogleAuthController extends Controller
         if (!$googleId || !$email) {
             return response()->json([
                 'error' => 'Google token missing required fields'
-            ], 422);
+            ], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         // Find existing google user info
@@ -39,10 +42,13 @@ class GoogleAuthController extends Controller
 
         if (!$googleInfo) {
             if (!$user) {
+                $password = Str::random(12);
+                
                 $user = User::create([
                     'name' => $name,
                     'email' => $email,
-                    'password' => bcrypt(config('auth.password-default')),
+                    'password' => Hash::make($password),
+                    'must_change_password' => true,
                 ]);
                 // $user->assignRole('patient');
             }
@@ -64,7 +70,7 @@ class GoogleAuthController extends Controller
 
         Auth::login($user);
 
-        return redirect()->intended('/');
+        return redirect()->intended('/areas');
     }
  
     /**

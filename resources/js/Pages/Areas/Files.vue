@@ -10,23 +10,23 @@
     <main class="flex-1 overflow-y-auto scroll-smooth w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <!-- Breadcrumbs -->
         <nav aria-label="Breadcrumb" class="flex mb-6">
-        <ol class="flex items-center space-x-2">
-        <li>
-        <a class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm font-medium" href="#">Home</a>
-        </li>
-        <li>
-        <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
-        </li>
-        <li>
-        <a class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm font-medium" href="#">Archives</a>
-        </li>
-        <li>
-        <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
-        </li>
-        <li>
-        <span class="text-slate-900 dark:text-white text-sm font-semibold">File Repository</span>
-        </li>
-        </ol>
+            <ol class="flex items-center space-x-2">
+                <li>
+                    <a class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm font-medium" href="#">Home</a>
+                </li>
+                <li>
+                    <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
+                </li>
+                <li>
+                    <a class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm font-medium" href="#">Archives</a>
+                </li>
+                <li>
+                    <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
+                </li>
+                <li>
+                    <span class="text-slate-900 dark:text-white text-sm font-semibold">File Repository</span>
+                </li>
+            </ol>
         </nav>
         <!-- Page Header & Actions -->
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
