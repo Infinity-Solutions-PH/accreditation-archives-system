@@ -1,0 +1,72 @@
+<?php
+
+namespace App\Http\Controllers;
+
+use App\Models\Document;
+use Illuminate\Http\Request;
+use App\Services\ChunkedUploadService;
+use App\Http\Requests\UploadChunkRequest;
+use App\Http\Requests\CreateTempDocumentRequest;
+
+class DocumentController extends Controller
+{
+    public function __construct(
+        protected ChunkedUploadService $service
+    ) {}
+
+    // 1️⃣ Create temporary metadata
+    public function temp(CreateTempDocumentRequest $request)
+    {
+        $document = $this->service->createTemporaryMetadata($request->validated());
+
+        return response()->json(['tmp_id' => $document->tmp_id]);
+    }
+
+    // 2️⃣ Upload chunk
+    public function uploadChunk(UploadChunkRequest $request)
+    {
+        $document = Document::where('tmp_id', $request->tmp_id)->firstOrFail();
+        $this->service->saveChunk($document, $request->file('chunk'), $request->index);
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    // 3️⃣ Complete upload
+    public function complete(Request $request)
+    {
+        $request->validate(['tmp_id' => 'required|string|exists:documents,tmp_id']);
+
+        $document = Document::where('tmp_id', $request->tmp_id)->firstOrFail();
+        $this->service->mergeChunks($document);
+
+        return response()->json(['status' => 'completed']);
+    }
+
+    // 4️⃣ Update metadata
+    public function updateMetadata(Request $request)
+    {
+        $request->validate([
+            'tmp_id' => 'required|string|exists:documents,tmp_id',
+            'metadata.title' => 'nullable|string|max:255',
+            'metadata.description' => 'nullable|string|max:1000',
+        ]);
+
+        $document = Document::where('tmp_id', $request->tmp_id)->firstOrFail();
+        $this->service->updateMetadata($document, $request->metadata);
+
+        return response()->json(['status' => 'ok']);
+    }
+
+    // 5️⃣ Abort upload
+    public function abort(Request $request)
+    {
+        $request->validate(['tmp_id' => 'required|string|exists:documents,tmp_id']);
+
+        $document = Document::where('tmp_id', $request->tmp_id)->first();
+        if ($document) {
+            $this->service->abort($document);
+        }
+
+        return response()->json(['status' => 'aborted']);
+    }
+}

@@ -6,6 +6,7 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
     resolve: {
         alias: {
+            '@': '/resources/js/',
             '@shared': '/resources/js/Shared',
             '@pages': '/resources/js/Pages'
         },

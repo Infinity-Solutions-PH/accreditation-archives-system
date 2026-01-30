@@ -3,9 +3,11 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Notifications\Notifiable;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
@@ -44,5 +46,19 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    protected $appends = ['is_password_default'];
+
+    public function googleInfo()
+    {
+        return $this->hasOne(GoogleUserInfo::class);
+    }
+    
+    protected function isPasswordDefault(): Attribute
+    {
+        return Attribute::make(
+            get: fn () => Hash::check(config('auth.password-default'), $this->password)
+        );
     }
 }

@@ -1,5 +1,19 @@
 <script setup>
+    import { ref } from 'vue'
+
     import AppLayout from '@shared/Layouts/App.vue';
+
+    import UploadModal from '@/components/UploadModal.vue';
+
+    const showUploadModal = ref(false);
+
+    const openUploadModal = () => {
+        showUploadModal.value = true;
+    }
+
+    const closeUploadModal = () => {
+        showUploadModal.value = false;
+    }
 
     defineOptions({
         layout: AppLayout
@@ -12,20 +26,22 @@
         <div class="max-w-[1200px] mx-auto flex flex-col gap-6">
             <!-- PageHeading -->
             <div class="flex flex-wrap justify-between items-end gap-3">
-            <div class="flex flex-col gap-1">
-            <h1 class="text-text-main-light dark:text-white tracking-tight text-[28px] md:text-[32px] font-bold leading-tight">Welcome back, Admin</h1>
-            <p class="text-text-muted-light dark:text-text-muted-dark text-sm font-normal leading-normal">Here is what needs your attention today regarding the accreditation archives.</p>
-            </div>
-            <div class="flex gap-3">
-            <button class="flex items-center gap-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-text-main-light dark:text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm">
-            <span class="material-symbols-outlined text-[18px]">download</span>
-                                            Generate Report
-                                        </button>
-            <button class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20">
-            <span class="material-symbols-outlined text-[18px]">upload_file</span>
-                                            Upload Document
-                                        </button>
-            </div>
+                <div class="flex flex-col gap-1">
+                    <h1 class="text-text-main-light dark:text-white tracking-tight text-[28px] md:text-[32px] font-bold leading-tight">Welcome back, Admin</h1>
+                    <p class="text-text-muted-light dark:text-text-muted-dark text-sm font-normal leading-normal">Here is what needs your attention today regarding the accreditation archives.</p>
+                </div>
+                <div class="flex gap-3">
+                    <button class="flex items-center gap-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-text-main-light dark:text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm">
+                        <span class="material-symbols-outlined text-[18px]">download</span>
+                        Generate Report
+                    </button>
+                    <button
+                        @click="openUploadModal"
+                        class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20">
+                        <span class="material-symbols-outlined text-[18px]">upload_file</span>
+                        Upload Document
+                    </button>
+                </div>
             </div>
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -290,5 +306,9 @@
             </div>
             </div>
         </div>
+        <UploadModal 
+            v-if="showUploadModal"
+            @close="closeUploadModal"
+        />
     </main>
 </template>
