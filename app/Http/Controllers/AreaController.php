@@ -44,10 +44,10 @@ class AreaController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Area $slug)
+    public function show(Area $area)
     {
         return Inertia::render('Areas/Files', [
-            'slug' => $slug
+            'area' => $area
         ]);
     }
 

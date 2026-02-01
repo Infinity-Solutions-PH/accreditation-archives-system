@@ -13,6 +13,10 @@
     const metadata = reactive({
         title: `Untitled-Document-${new Date().toISOString().split('T')[0]}`,
         description: '',
+        college: null,
+        program: null,
+        level: null,
+        area: null,
         tmp_id: null
     })
 
@@ -21,9 +25,12 @@
         'application/pdf',
         'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+
         'image/png',
         'image/jpeg',
-        'image/jpg'
+        'image/jpg',
+
+        'video/mp4'
     ];
 
     // Select file & validate
@@ -55,7 +62,7 @@
 
         // 1️⃣ Create temp metadata
         const { data } = await api.post(
-            '/api/documents/temp',
+            '/api/files/temp',
             {
                 metadata: { title: metadata.title, description: metadata.description },
                 filename: file.value.name
@@ -89,7 +96,7 @@
             formData.append('index', i);
             formData.append('total', totalChunks);
 
-            await api.post('/api/documents/upload-chunk', formData, {
+            await api.post('/api/files/upload-chunk', formData, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest', 'Content-Type': 'multipart/form-data' }
             });
 
@@ -97,7 +104,7 @@
         }
 
         // Complete
-        await api.post('/api/documents/complete', { tmp_id: metadata.tmp_id }, {
+        await api.post('/api/files/complete', { tmp_id: metadata.tmp_id }, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
 
@@ -110,7 +117,7 @@
         if (!metadata.tmp_id) return;
         savingMetadata.value = true;
 
-        await api.post('/api/documents/update-metadata', {
+        await api.post('/api/files/update-metadata', {
             tmp_id: metadata.tmp_id,
             metadata: { title: metadata.title, description: metadata.description }
         }, {
@@ -126,7 +133,7 @@
             const confirmAbort = confirm('File is uploading. Do you want to abort?');
             if (!confirmAbort) return;
 
-            await api.post('/api/documents/abort', { tmp_id: metadata.tmp_id }, {
+            await api.post('/api/files/abort', { tmp_id: metadata.tmp_id }, {
                 headers: { 'X-Requested-With': 'XMLHttpRequest' }
             })
         }
@@ -160,7 +167,7 @@
                 <label class="border-2 border-dashed rounded-xl p-8 flex flex-col items-center cursor-pointer hover:border-primary" v-show="!uploading">
                     <span class="material-symbols-outlined text-[32px] text-primary mb-2">upload</span>
                     <p class="text-sm font-medium">Click to upload or drag and drop</p>
-                    <p class="text-xs text-gray-500">Documents or images (max 2MB per file)</p>
+                    <p class="text-xs text-gray-500">Documents, images, videos</p>
                     <input type="file" class="hidden" @change="onFileSelect" />
                 </label>
 

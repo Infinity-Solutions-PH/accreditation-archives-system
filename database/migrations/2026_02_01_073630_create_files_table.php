@@ -11,20 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('documents', function (Blueprint $table) {
+        Schema::create('files', function (Blueprint $table) {
             $table->id();
-
             $table->string('title');
             $table->string('description')->nullable();
-            $table->string('college')->nullable();
-            $table->string('program')->nullable();
+            $table->foreignId('college_id')->nullable()->constrained('colleges')->nullOnDelete();
+            $table->foreignId('program_id')->nullable()->constrained('programs')->nullOnDelete();
             $table->string('level')->nullable();
+            $table->foreignId('area_id')->nullable()->constrained('areas')->nullOnDelete();
             $table->date('expiration')->nullable();
             $table->string('file_path')->nullable();
             $table->string('original_filename')->nullable();
             $table->string('tmp_id')->nullable();
             $table->enum('status', ['uploading','completed'])->default('uploading');
-        
             $table->timestamps();
         });
     }
@@ -34,6 +33,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('documents');
+        Schema::dropIfExists('files');
     }
 };

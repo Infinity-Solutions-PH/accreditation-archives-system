@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class CreateTempDocumentRequest extends FormRequest
+class CreateTempFileRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,6 +24,9 @@ class CreateTempDocumentRequest extends FormRequest
         return [
             'metadata.title' => 'nullable|string|max:255',
             'metadata.description' => 'nullable|string|max:1000',
+            'metadata.college_id' => ['nullable', 'exists:colleges,id'],
+            'metadata.program_id' => ['nullable', 'exists:programs,id'],
+            'metadata.area_id' => ['nullable', 'exists:areas,id'],
             'filename' => 'required|string|max:255',
         ];
     }

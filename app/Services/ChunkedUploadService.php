@@ -2,19 +2,19 @@
 
 namespace App\Services;
 
-use App\Models\Document;
+use App\Models\File;
 use Illuminate\Support\Str;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 class ChunkedUploadService
 {
-    public function createTemporaryMetadata(array $data): Document
+    public function createTemporaryMetadata(array $data): File
     {
         $tmpId = Str::uuid()->toString();
 
-        $document = Document::create([
-            'title' => $data['metadata']['title'] ?? "Untitled-Document",
+        $file = File::create([
+            'title' => $data['metadata']['title'] ?? "Untitled-File",
             'description' => $data['metadata']['description'] ?? null,
             'original_filename' => $data['filename'],
             'tmp_id' => $tmpId,
@@ -23,21 +23,21 @@ class ChunkedUploadService
 
         Storage::makeDirectory("tmp/$tmpId");
 
-        return $document;
+        return $file;
     }
 
-    public function saveChunk(Document $document, UploadedFile $chunk, int $index): void
+    public function saveChunk(File $file, UploadedFile $chunk, int $index): void
     {
-        Storage::putFileAs("tmp/{$document->tmp_id}", $chunk, "chunk-$index");
+        Storage::putFileAs("tmp/{$file->tmp_id}", $chunk, "chunk-$index");
     }
 
-    public function mergeChunks(Document $document): void
+    public function mergeChunks(File $file): void
     {
-        $chunks = Storage::files("tmp/{$document->tmp_id}");
+        $chunks = Storage::files("tmp/{$file->tmp_id}");
         usort($chunks, fn($a, $b) => strcmp($a, $b));
 
-        $finalFilename = Str::uuid() . '.' . pathinfo($document->original_filename, PATHINFO_EXTENSION);
-        $finalPath = "private/documents/$finalFilename";
+        $finalFilename = Str::uuid() . '.' . pathinfo($file->original_filename, PATHINFO_EXTENSION);
+        $finalPath = "private/files/$finalFilename";
 
         $outStream = fopen(storage_path("app/$finalPath"), 'wb');
 
@@ -49,25 +49,25 @@ class ChunkedUploadService
 
         fclose($outStream);
 
-        Storage::deleteDirectory("tmp/{$document->tmp_id}");
+        Storage::deleteDirectory("tmp/{$file->tmp_id}");
 
-        $document->update([
+        $file->update([
             'file_path' => $finalPath,
             'status' => 'completed',
         ]);
     }
 
-    public function updateMetadata(Document $document, array $metadata): void
+    public function updateMetadata(File $file, array $metadata): void
     {
-        $document->update([
-            'title' => $metadata['title'] ?? $document->title,
-            'description' => $metadata['description'] ?? $document->description,
+        $file->update([
+            'title' => $metadata['title'] ?? $file->title,
+            'description' => $metadata['description'] ?? $file->description,
         ]);
     }
 
-    public function abort(Document $document): void
+    public function abort(File $file): void
     {
-        Storage::deleteDirectory("tmp/{$document->tmp_id}");
-        $document->delete();
+        Storage::deleteDirectory("tmp/{$file->tmp_id}");
+        $file->delete();
     }
 }

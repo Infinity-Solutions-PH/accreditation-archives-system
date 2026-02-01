@@ -21,19 +21,19 @@
                     <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
                 </li>
                 <li>
-                    <a class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm font-medium" href="#">Archives</a>
+                    <span class="text-slate-400 dark:text-slate-600 text-sm">Areas</span>
                 </li>
-                <li>
+                <!-- <li>
                     <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
                 </li>
                 <li>
                     <span class="text-slate-900 dark:text-white text-sm font-semibold">File Repository</span>
-                </li>
+                </li> -->
             </ol>
         </nav>
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
             <div class="flex flex-col gap-2 max-w-2xl">
-                <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">File Repository</h1>
+                <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">AACCUP Areas</h1>
                 <p class="text-slate-600 dark:text-slate-400 text-base">
                     Manage and track accreditation documents. Access AACCUP areas and monitor compliance standards.
                 </p>

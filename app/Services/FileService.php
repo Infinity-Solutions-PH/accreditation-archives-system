@@ -2,17 +2,17 @@
 
 namespace App\Services;
 
-use App\Models\Document;
+use App\Models\File;
 use Illuminate\Support\Str;
 use Illuminate\Http\UploadedFile;
 
-class DocumentService
+class FileService
 {
-    public function store(array $data, UploadedFile $file): Document
+    public function store(array $data, UploadedFile $file): File
     {
         $path = $this->storeFile($file);
 
-        return Document::create([
+        return File::create([
             'title' => $data['title'],
             'college' => $data['college'],
             'program' => $data['program'],
@@ -29,7 +29,7 @@ class DocumentService
         $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
 
         return $file->storeAs(
-            'documents',
+            'files',
             $filename,
             'public'
         );

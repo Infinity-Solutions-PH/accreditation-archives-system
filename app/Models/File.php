@@ -5,7 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
-class Document extends Model
+class File extends Model
 {
     protected  $fillable = [
         'title',
@@ -32,5 +32,14 @@ class Document extends Model
                 Storage::delete($document->file_path);
             }
         });
+    }
+    public function college()
+    {
+        return $this->belongsTo(College::class);
+    }
+
+    public function program()
+    {
+        return $this->belongsTo(Program::class);
     }
 }

@@ -22,7 +22,7 @@ class UploadChunkRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'tmp_id' => 'required|string|exists:documents,tmp_id',
+            'tmp_id' => 'required|string|exists:files,tmp_id',
             'chunk' => 'required|file',
             'index' => 'required|integer|min:0',
             'total' => 'required|integer|min:1'

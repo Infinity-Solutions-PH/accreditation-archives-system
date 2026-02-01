@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreDocumentRequest extends FormRequest
+class StoreFileRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,16 +23,15 @@ class StoreDocumentRequest extends FormRequest
     {
         return [
             'title' => ['required', 'string', 'max:255'],
-            'college' => ['required', 'string', 'max:255'],
-            'program' => ['required', 'string', 'max:255'],
+            'college_id' => ['nullable', 'exists:colleges,id'],
+            'program_id' => ['nullable', 'exists:programs,id'],
             'level' => ['required', 'string', 'max:255'],
+            'area_id' => ['nullable', 'exists:areas,id'],
             'expiration' => ['required', 'date'],
-
             'file' => [
                 'required',
                 'file',
-                'mimes:pdf,docx,xlsx',
-                'max:51200', // 50MB
+                'mimes:pdf,docx,xlsx'
             ],
         ];
     }

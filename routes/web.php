@@ -3,9 +3,9 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\FileController;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\LandingController;
-use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\Accreditor\AuthController as AccreditorAuthController;
 
@@ -35,9 +35,9 @@ Route::middleware(['auth'])->group(function() {
 });
 
 Route::prefix('api')->group(function () {
-    Route::post('/documents/temp', [DocumentController::class, 'temp'])->name('documents.temp');
-    Route::post('/documents/upload-chunk', [DocumentController::class, 'uploadChunk']);
-    Route::post('/documents/complete', [DocumentController::class, 'complete']);
-    Route::post('/documents/update-metadata', [DocumentController::class, 'updateMetadata']);
-    Route::post('/documents/abort', [DocumentController::class, 'abortUpload']);
+    Route::post('/files/temp', [FileController::class, 'temp'])->name('files.temp');
+    Route::post('/files/upload-chunk', [FileController::class, 'uploadChunk']);
+    Route::post('/files/complete', [FileController::class, 'complete']);
+    Route::post('/files/update-metadata', [FileController::class, 'updateMetadata']);
+    Route::post('/files/abort', [FileController::class, 'abortUpload']);
 });
