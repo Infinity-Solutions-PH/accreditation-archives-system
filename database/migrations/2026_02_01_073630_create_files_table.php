@@ -19,9 +19,11 @@ return new class extends Migration
             $table->foreignId('program_id')->nullable()->constrained('programs')->nullOnDelete();
             $table->string('level')->nullable();
             $table->foreignId('area_id')->nullable()->constrained('areas')->nullOnDelete();
+            $table->foreignId('uploaded_by')->nullable()->constrained('users')->cascadeOnDelete();
             $table->date('expiration')->nullable();
             $table->string('file_path')->nullable();
             $table->string('original_filename')->nullable();
+            $table->string('file_extension', 10)->nullable();
             $table->string('tmp_id')->nullable();
             $table->enum('status', ['uploading','completed'])->default('uploading');
             $table->timestamps();

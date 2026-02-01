@@ -92,7 +92,7 @@
                     <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-1">{{ area.code.toUpperCase() }}</h3>
                     <p class="text-xs text-slate-500 dark:text-slate-400 leading-snug line-clamp-2 min-h-[2.5rem]">{{ area.name }}</p>
                     <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
-                        <span class="text-xs font-medium text-slate-500">0 Files</span>
+                        <span class="text-xs font-medium text-slate-500">{{ area.files_count }} Files</span>
                         <span class="material-symbols-outlined text-[18px] text-slate-300 group-hover:text-primary transition-colors">arrow_forward</span>
                     </div>
                 </Link>

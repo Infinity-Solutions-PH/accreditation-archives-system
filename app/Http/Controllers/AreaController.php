@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Area;
 use Inertia\Inertia;
+use App\Models\College;
+use App\Models\Program;
 use Illuminate\Http\Request;
 
 class AreaController extends Controller
@@ -18,7 +20,13 @@ class AreaController extends Controller
      */
     public function index()
     {
-        $areas = Area::orderBy('order_no')->get();
+        $areas = Area::withCount('files')
+            ->orderBy('order_no')
+            ->get()
+            ->map(function($area) {
+                $area->files_count = (int) $area->files_count;
+                return $area;
+            });
 
         return Inertia::render('Areas/Index', [
             'areas' => $areas
@@ -46,8 +54,17 @@ class AreaController extends Controller
      */
     public function show(Area $area)
     {
+        $files = $area->files()->with('college', 'program', 'uploadedBy.googleInfo')
+            ->orderBy('created_at', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
         return Inertia::render('Areas/Files', [
-            'area' => $area
+            'files' => $files,
+            'area' => $area,
+            'colleges' => College::orderBy('name')->get(),
+            'programs' => Program::orderBy('name')->get(),
+            'areas' => Area::orderBy('order_no')->get(),
         ]);
     }
 

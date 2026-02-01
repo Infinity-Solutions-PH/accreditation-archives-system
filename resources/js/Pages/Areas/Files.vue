@@ -4,10 +4,28 @@
     import AppLayout from '@shared/Layouts/App.vue';
 
     import UploadModal from '@/components/UploadModal.vue';
+    import VideoPlayerModal from '@/components/VideoPlayerModal.vue';
 
-    defineProps({
-        area: Object
+    const props = defineProps({
+        files: Object,
+
+        area: Object,
+        colleges: Object,
+        programs: Object,
+        areas: Object
     });
+
+    function getFileIcon(extension) {
+        const ext = extension?.toLowerCase();
+        if (!ext) return 'insert_drive_file';
+        if (ext === 'pdf') return 'picture_as_pdf';
+        if (ext === 'doc' || ext === 'docx') return 'description';
+        if (ext === 'xls' || ext === 'xlsx') return 'table_chart';
+        if (['png','jpg','jpeg','gif'].includes(ext)) return 'image';
+        if (['mp4','mov','webm'].includes(ext)) return 'videocam';
+        if (['mp3','wav','ogg'].includes(ext)) return 'audiotrack';
+        return 'insert_drive_file';
+    }
 
     defineOptions({
         layout: AppLayout
@@ -21,6 +39,22 @@
 
     const closeUploadModal = () => {
         showUploadModal.value = false;
+    }
+
+    const showVideoPlayerModal = ref(false);
+    const selectedVideo = ref(null);
+
+    const openVideoPlayerModal = (file) => {
+        if(
+            !['mp4','mov','webm'].includes(file.file_extension?.toLowerCase())
+        ) return;
+
+        selectedVideo.value = file;
+        showVideoPlayerModal.value = true;
+    }
+
+    const closeVideoPlayerModal = () => {
+        showVideoPlayerModal.value = false;
     }
 </script>
 
@@ -84,7 +118,7 @@
                         <span class="material-symbols-outlined text-slate-500 text-[18px]">expand_more</span>
                     </button>
                     <button class="group flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors border border-transparent dark:border-slate-700">
-                        <span class="text-slate-700 dark:text-slate-300 text-sm font-medium whitespace-nowrap">Department: All</span>
+                        <span class="text-slate-700 dark:text-slate-300 text-sm font-medium whitespace-nowrap">College: All</span>
                         <span class="material-symbols-outlined text-slate-500 text-[18px]">expand_more</span>
                     </button>
                     <button class="group flex items-center gap-2 px-3 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors border border-transparent dark:border-slate-700">
@@ -108,7 +142,7 @@
         <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
         </th>
         <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">File Name</th>
-        <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell" scope="col">Department</th>
+        <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell" scope="col">College / Program</th>
         <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden lg:table-cell" scope="col">Uploaded By</th>
         <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Expiry Date</th>
         <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Status</th>
@@ -117,44 +151,45 @@
         </thead>
         <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
         <!-- Row 1: Active -->
-        <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-        <td class="p-4 text-center">
-        <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
-        </td>
-        <td class="p-4">
-        <div class="flex items-center gap-3">
-        <div class="size-10 shrink-0 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center text-red-600 dark:text-red-400">
-        <span class="material-symbols-outlined">picture_as_pdf</span>
-        </div>
-        <div class="flex flex-col">
-        <span class="font-medium text-slate-900 dark:text-slate-200 text-sm">ISO_9001_Certification.pdf</span>
-        <span class="text-xs text-slate-500">2.4 MB • Updated 2 days ago</span>
-        </div>
-        </div>
-        </td>
-        <td class="p-4 hidden md:table-cell text-sm text-slate-600 dark:text-slate-400">Quality Assurance</td>
-        <td class="p-4 hidden lg:table-cell">
-        <div class="flex items-center gap-2">
-        <div class="size-6 rounded-full bg-cover bg-center" data-alt="User avatar small" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAyd5GytrCn8kduh_Iuz0ySh5VVrmNP9pRGZMCPzCw5qgasNtIJeBvV38fJsICfT0uXATEWKrP1qSMUXTaiHEQ8QlR55UnM8zPob4lCVCQMVGRZVHaAITVT4hDYMsn2SBAQG1hJU1-yzIM_hWYfqnjVd9KLcTp60WDFeiZjIEai35-EjfEXHTVciP8uvi348D8T_7Q-o3H1SQbjAtaRU8emjmcB_i11XzlzHfEy61ZQtfoVyE55JOhPta5juvgvhscAr4N_QxvipB-R");'>
-        </div>
-        <span class="text-sm text-slate-600 dark:text-slate-400">Maria Santos</span>
-        </div>
-        </td>
-        <td class="p-4 text-sm text-slate-600 dark:text-slate-400">Dec 31, 2024</td>
-        <td class="p-4">
-        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-        <span class="size-1.5 rounded-full bg-emerald-500"></span>
-                                            Active
-                                        </span>
-        </td>
-        <td class="p-4 text-right">
-        <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700">
-        <span class="material-symbols-outlined text-[20px]">more_vert</span>
-        </button>
-        </td>
+        <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors" v-for="file in files.data" :key="file.id" @click="openVideoPlayerModal(file)">
+            <td class="p-4 text-center">
+                <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+            </td>
+            <td class="p-4">
+                <div class="flex items-center gap-3">
+                    <div class="size-10 shrink-0 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center text-red-600 dark:text-red-400">
+                        <span class="material-symbols-outlined">{{ getFileIcon(file.file_extension) }}</span>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="font-medium text-slate-900 dark:text-slate-200 text-sm">{{ file.title }}</span>
+                        <span class="text-xs text-slate-500">-- MB • {{ file.created_at !== file.updated_at ? `Updated ${file.updated_at_timeago}` : `Created ${file.created_at_timeago}` }}</span>
+                    </div>
+                </div>
+            </td>
+            <td class="p-4 hidden md:table-cell text-sm text-slate-600 dark:text-slate-400">{{ `${file.college.code} - ${file.program.code}` }}</td>
+            <td class="p-4 hidden lg:table-cell">
+                <div class="flex items-center gap-2">
+                    <div class="size-6 rounded-full bg-cover bg-center" data-alt="User avatar small"
+                        :style='{backgroundImage: `url(${file.uploaded_by.google_info?.avatar || "https://lh3.googleusercontent.com/aida-public/AB6AXuAyd5GytrCn8kduh_Iuz0ySh5VVrmNP9pRGZMCPzCw5qgasNtIJeBvV38fJsICfT0uXATEWKrP1qSMUXTaiHEQ8QlR55UnM8zPob4lCVCQMVGRZVHaAITVT4hDYMsn2SBAQG1hJU1-yzIM_hWYfqnjVd9KLcTp60WDFeiZjIEai35-EjfEXHTVciP8uvi348D8T_7Q-o3H1SQbjAtaRU8emjmcB_i11XzlzHfEy61ZQtfoVyE55JOhPta5juvgvhscAr4N_QxvipB-R"})`}'>
+                    </div>
+                    <span class="text-sm text-slate-600 dark:text-slate-400">{{ file.uploaded_by.name }}</span>
+                </div>
+            </td>
+            <td class="p-4 text-sm text-slate-600 dark:text-slate-400">Dec 31, 2024</td>
+            <td class="p-4">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                <span class="size-1.5 rounded-full bg-emerald-500"></span>
+                    Active
+                </span>
+            </td>
+            <td class="p-4 text-right">
+                <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700">
+                    <span class="material-symbols-outlined text-[20px]">more_vert</span>
+                </button>
+            </td>
         </tr>
         <!-- Row 2: Expired - VISUAL EMPHASIS -->
-        <tr class="group bg-red-50/50 dark:bg-red-900/10 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-l-4 border-l-red-500">
+        <!-- <tr class="group bg-red-50/50 dark:bg-red-900/10 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-l-4 border-l-red-500">
         <td class="p-4 text-center">
         <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
         </td>
@@ -191,7 +226,6 @@
         </button>
         </td>
         </tr>
-        <!-- Row 3: Active Excel -->
         <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
         <td class="p-4 text-center">
         <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
@@ -228,7 +262,6 @@
         </button>
         </td>
         </tr>
-        <!-- Row 4: Expiring Soon -->
         <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
         <td class="p-4 text-center">
         <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
@@ -266,7 +299,6 @@
         </button>
         </td>
         </tr>
-        <!-- Row 5: Another Expired -->
         <tr class="group bg-red-50/50 dark:bg-red-900/10 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-l-4 border-l-red-500">
         <td class="p-4 text-center">
         <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
@@ -302,7 +334,7 @@
         <span class="material-symbols-outlined text-[20px]">more_vert</span>
         </button>
         </td>
-        </tr>
+        </tr> -->
         </tbody>
         </table>
         </div>
@@ -331,7 +363,17 @@
         </div>
         <UploadModal 
             v-if="showUploadModal"
+            :colleges="colleges"
+            :programs="programs"
+            :areas="areas"
+            :currentArea="area"
             @close="closeUploadModal"
+        />
+        <VideoPlayerModal 
+            v-if="showVideoPlayerModal"
+            :video="selectedVideo"
+            :currentArea="area"
+            @close="closeVideoPlayerModal"
         />
     </main>
 </template>

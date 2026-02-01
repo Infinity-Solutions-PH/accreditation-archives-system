@@ -14,19 +14,22 @@ class FileService
 
         return File::create([
             'title' => $data['title'],
-            'college' => $data['college'],
-            'program' => $data['program'],
+            'college_id' => $data['area_id'],
+            'program_id' => $data['area_id'],
             'level' => $data['level'],
+            'area_id' => $data['area_id'],
+            'uploaded_by' => $data['uploaded_by'],
             'expiration' => $data['expiration'],
-
             'file_path' => $path,
             'original_filename' => $file->getClientOriginalName(),
+            'file_extension' => $file->getClientOriginalExtension(),
         ]);
     }
 
     protected function storeFile(UploadedFile $file): string
     {
-        $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+        $fileExtenstion = $file->getClientOriginalExtension();
+        $filename = Str::uuid() . '.' . $fileExtenstion;
 
         return $file->storeAs(
             'files',

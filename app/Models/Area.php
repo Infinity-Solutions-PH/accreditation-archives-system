@@ -14,8 +14,8 @@ class Area extends Model
         'order_no'
     ];
 
-    // public function parameters()
-    // {
-    //     return $this->hasMany(Parameter::class);
-    // }
+    public function files()
+    {
+        return $this->hasMany(File::class);
+    }
 }

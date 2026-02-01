@@ -17,8 +17,10 @@ class ChunkedUploadService
             'title' => $data['metadata']['title'] ?? "Untitled-File",
             'description' => $data['metadata']['description'] ?? null,
             'original_filename' => $data['filename'],
+            'file_extension' => pathinfo($data['filename'], PATHINFO_EXTENSION),
             'tmp_id' => $tmpId,
             'status' => 'uploading',
+            'uploaded_by' => auth()->id() ?? null
         ]);
 
         Storage::makeDirectory("tmp/$tmpId");
@@ -62,6 +64,10 @@ class ChunkedUploadService
         $file->update([
             'title' => $metadata['title'] ?? $file->title,
             'description' => $metadata['description'] ?? $file->description,
+            'college_id' => $metadata['college_id'] ?? $file->college_id,
+            'program_id' => $metadata['program_id'] ?? $file->program_id,
+            'area_id' => $metadata['area_id'] ?? $file->area_id,
+            'level' => $metadata['level'] ?? $file->level
         ]);
     }
 

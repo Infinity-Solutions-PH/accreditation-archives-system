@@ -1,22 +1,34 @@
 <script setup>
-    import { ref, reactive } from 'vue';
+    import { computed, ref, reactive, watch } from 'vue';
     import api from '@/axios.js';
 
+    const { currentArea, colleges, programs, areas } =  defineProps({
+        currentArea: Object,
+        colleges: Object,
+        programs: Object,
+        areas: Object
+    });
+
     const emit = defineEmits(['close']);
+
+    const filteredPrograms = computed(() => {
+        if (!metadata.college_id) return programs;
+        return programs.filter(p => p.college_id === metadata.college_id);
+    });
 
     const file = ref(null);
     const fileError = ref('');
     const uploading = ref(false);
     const progress = ref(0);
-    const savingMetadata = ref(false);
+    const isUpdatingMetadata = ref(false);
 
     const metadata = reactive({
         title: `Untitled-Document-${new Date().toISOString().split('T')[0]}`,
         description: '',
-        college: null,
-        program: null,
+        college_id: null,
+        program_id: null,
         level: null,
-        area: null,
+        area_id: null,
         tmp_id: null
     })
 
@@ -115,16 +127,23 @@
     // Save metadata while uploading
     const saveMetadata = async () => {
         if (!metadata.tmp_id) return;
-        savingMetadata.value = true;
+        isUpdatingMetadata.value = true;
 
         await api.post('/api/files/update-metadata', {
             tmp_id: metadata.tmp_id,
-            metadata: { title: metadata.title, description: metadata.description }
+            metadata: {
+                title: metadata.title,
+                description: metadata.description,
+                college_id: metadata.college_id,
+                program_id: metadata.program_id,
+                level: metadata.level,
+                area_id: metadata.area_id
+            }
         }, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
         });
 
-        savingMetadata.value = false;
+        isUpdatingMetadata.value = false;
     }
 
     // Close / abort
@@ -140,6 +159,16 @@
 
         emit('close');
     }
+
+    watch(
+        () => currentArea,
+            (newArea) => {
+            if (newArea !== null && newArea.id) {
+                metadata.area_id = newArea.id;
+            }
+        },
+        { immediate: true }
+    );  
 </script>
 
 <template>
@@ -180,38 +209,88 @@
                         <div class="h-2 rounded-full bg-primary transition-all" :style="{ width: progress + '%' }"></div>
                     </div>
                     <p class="text-sm text-gray-700">{{ progress }}% uploaded</p>
-
-                    <!-- Editable metadata -->
-                    <div class="mt-2">
-                        <input
-                            type="text"
-                            v-model="metadata.title"
-                            class="w-full border rounded px-2 py-1 mb-1"
-                            placeholder="Untitled Document"
-                        />
-                        <input
-                            type="text"
-                            v-model="metadata.description"
-                            class="w-full border rounded px-2 py-1"
-                            placeholder="Description (optional)"
-                        />
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5 mt-4">
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-text-main-light dark:text-white mb-1.5">Document Title</label>
+                            <input
+                                class="w-full px-3.5 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white" 
+                                v-model="metadata.title"
+                                type="text"
+                                value="Untitled-Document"/>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-text-main-light dark:text-white mb-1.5">College</label>
+                            <div class="relative">
+                                <select class="w-full pl-3.5 pr-10 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white appearance-none" v-model="metadata.college_id">
+                                    <option :value="null" selected disabled>Select College</option>
+                                    <option v-for="college in colleges" :key="college.id" :value="college.id">
+                                        {{ `${college.code} - ${college.name}` }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-text-main-light dark:text-white mb-1.5">Academic Program</label>
+                            <div class="relative">
+                                <select class="w-full pl-3.5 pr-10 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white appearance-none" v-model="metadata.program_id" :disabled="metadata.college_id === null">
+                                    <option :value="null" selected disabled>Select Program</option>
+                                    <option v-for="program in filteredPrograms" :key="program.id" :value="program.id">
+                                        {{ `${program.code} - ${program.name}` }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-text-main-light dark:text-white mb-1.5">Area</label>
+                            <div class="relative">
+                                <select class="w-full pl-3.5 pr-10 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white appearance-none" v-model="metadata.area_id" :disabled="currentArea">
+                                    <option :value="null" selected disabled>Select area</option>
+                                    <option v-for="area in areas" :key="area.id" :value="area.id">
+                                        {{ area.code }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-text-main-light dark:text-white mb-1.5">Accreditation Level</label>
+                            <div class="relative">
+                                <select class="w-full pl-3.5 pr-10 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white appearance-none" v-model="metadata.level">
+                                    <option :value="null" selected disabled>Select Level</option>
+                                    <option value="1">Level 1 - Candidate Status</option>
+                                    <option value="2">Level 2 - Accredited</option>
+                                    <option value="3">Level 3 - Re-accredited</option>
+                                    <option value="4">Level 4 - Institutional</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-text-main-light dark:text-white mb-1.5">Expiration Date</label>
+                            <div class="relative">
+                            <input class="w-full px-3.5 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white" type="date" value="2027-01-27"/>
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-text-main-light dark:text-white mb-1.5">Description</label>
+                            <textarea
+                                class="w-full px-3.5 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white"
+                                type="text" rows="3"
+                                v-model="metadata.description"
+                                placeholder="Description (optional)"
+                            ></textarea>
+                        </div>
                     </div>
-                </div>
-
-                <!-- Uploading metadata save -->
-                <div v-if="uploading" class="mt-2 flex justify-end gap-2">
-                    <button class="px-4 py-2 rounded bg-green-600 text-white"
-                        @click="saveMetadata"
-                        :disabled="savingMetadata">
-                        {{ savingMetadata ? 'Saving...' : 'Save Metadata' }}
-                    </button>
                 </div>
             </div>
 
             <!-- Actions -->
             <div class="px-6 py-4 border-t flex justify-end gap-3">
-                <button @click="onCloseAttempt" class="px-5 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                <button class="px-5 py-2.5 text-sm font-semibold text-text-muted-light dark:text-text-muted-dark hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors" type="button" @click="onCloseAttempt">
                     Cancel
+                </button>
+                <button v-if="uploading" class="px-7 py-2.5 text-sm font-bold text-white bg-primary hover:bg-blue-700 rounded-lg shadow-md shadow-blue-500/20 transition-all cursor-not-allowed flex items-center gap-2" type="button" :disabled="isUpdatingMetadata" @click="saveMetadata" :class="{ 'opacity-70': isUpdatingMetadata }">
+                    <span class="material-symbols-outlined text-[18px] animate-spin" v-show="isUpdatingMetadata">refresh</span>
+                    <span class="material-symbols-outlined text-[18px]" v-show="!isUpdatingMetadata">refresh</span>
+                    Save
                 </button>
             </div>
         </div>

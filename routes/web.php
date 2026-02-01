@@ -10,15 +10,17 @@ use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\Accreditor\AuthController as AccreditorAuthController;
 
 Route::get('/', function() {
-    return redirect('/auth');
+    return redirect()->route('/auth');
 });
-Route::get('/auth', [AuthController::class, 'index'])->name('auth');
-Route::get('/accreditor/auth', [AccreditorAuthController::class, 'index'])->name('accreditor.auth');
+Route::middleware('guest')->group(function () {
+    Route::get('/auth', [AuthController::class, 'index'])->name('auth');
+    Route::get('/accreditor/auth', [AccreditorAuthController::class, 'index'])->name('accreditor.auth');
+
+    Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
+    Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
+});
 
 Route::post('/logout', LogoutController::class) ->name('logout');
-
-Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
-Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
 
 Route::get('/user-management', [LandingController::class, 'userManagement'])->name('user-management');
 Route::get('/file-archives', [LandingController::class, 'fileArchives'])->name('file-archives');
@@ -39,5 +41,5 @@ Route::prefix('api')->group(function () {
     Route::post('/files/upload-chunk', [FileController::class, 'uploadChunk']);
     Route::post('/files/complete', [FileController::class, 'complete']);
     Route::post('/files/update-metadata', [FileController::class, 'updateMetadata']);
-    Route::post('/files/abort', [FileController::class, 'abortUpload']);
+    Route::post('/files/abort', [FileController::class, 'abort']);
 });

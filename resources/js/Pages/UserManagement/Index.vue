@@ -1,9 +1,23 @@
 <script setup>
+    import { ref } from 'vue';
+
     import AppLayout from '@shared/Layouts/App.vue';
+
+    import CreateUserModal from '@/components/CreateUserModal.vue';
 
     defineOptions({
         layout: AppLayout
     });
+
+    const showCreateUserModal = ref(false);
+
+    const openCreateUserModal = () => {
+        showCreateUserModal.value = true;
+    }
+
+    const closeCreateUserModal = () => {
+        showCreateUserModal.value = false;
+    }
 </script>
 
 <template>
@@ -16,8 +30,8 @@
     <span class="material-symbols-outlined">menu</span>
     </button>
     <div class="hidden md:flex text-sm text-slate-500 dark:text-slate-400 font-medium">
-                    CvSU Accreditation Archives System
-                </div>
+        CvSU Accreditation Archives System
+    </div>
     <div class="flex items-center gap-3 ml-auto">
     <button class="relative flex items-center justify-center size-9 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
     <span class="material-symbols-outlined text-[20px]">notifications</span>
@@ -45,10 +59,10 @@
     <h1 class="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">User Management</h1>
     <p class="text-slate-500 dark:text-slate-400 text-base max-w-2xl">Manage user accounts, assign roles, and approve access requests for college accreditation officers.</p>
     </div>
-    <button class="flex items-center gap-2 bg-primary hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all active:scale-95 whitespace-nowrap">
-    <span class="material-symbols-outlined text-[20px]">add</span>
-                            Create New User
-                        </button>
+    <button type="button" @click="openCreateUserModal" class="flex items-center gap-2 bg-primary hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg font-medium shadow-sm transition-all active:scale-95 whitespace-nowrap">
+        <span class="material-symbols-outlined text-[20px]">add</span>
+        Create New User
+    </button>
     </div>
     <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -355,5 +369,9 @@
     </div>
     </div>
     </div>
+        <CreateUserModal 
+            v-if="showCreateUserModal"
+            @close="closeCreateUserModal"
+        />
     </main>
 </template>
