@@ -15,10 +15,6 @@ class LandingController extends Controller
         return Inertia::render('Landing');
     }
 
-    public function userManagement() {
-        return Inertia::render('UserManagement/Index');
-    }
-
     public function fileArchives() {
         return Inertia::render('FileRepository/Index');
     }

@@ -1,8 +1,39 @@
 <script setup>
+    import { ref, reactive } from 'vue';
+    
+    import api from '@/axios.js';
+
     const emit = defineEmits(['close']);
+    
+    const isSaving = ref(false);
+
+    const form = reactive({
+        name: null,
+        email: null
+    })
 
     // Close / abort
     const closeModal = async () => {
+        emit('close');
+    }
+
+    const saveNewUser = async () => {
+        // Logic to save new user goes here
+        if (isSaving.value) return;
+        isSaving.value = true;
+
+        form.email = form.email.trim().toLowerCase() + '@cvsu.edu.ph';
+
+        await api.post('/api/user-management/store', {
+            name: form.name,
+            email: form.email
+        }, {
+            headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        isSaving.value = false;
+
+        // Close modal after saving
         emit('close');
     }
 </script>
@@ -28,42 +59,42 @@
                 <form class="space-y-5">
                     <div>
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="full_name">Full Name</label>
-                    <input class="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white" id="full_name" placeholder="e.g. Juan D. Dela Cruz" type="text"/>
+                    <input class="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white" id="full_name" placeholder="e.g. Juan D. Dela Cruz" type="text" v-model="form.name"/>
                     </div>
                     <div>
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="email">Email Address</label>
-                    <div class="relative">
-                    <input class="w-full pl-4 pr-32 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white" id="email" placeholder="username" type="email"/>
-                    <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm font-medium border-l border-slate-200 dark:border-slate-700 pl-3">
-                                                @cvsu.edu.ph
-                                            </div>
-                    </div>
+                        <div class="relative">
+                            <input class="w-full pl-4 pr-32 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white" id="email" placeholder="username" type="text" v-model="form.email" />
+                            <div class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-slate-500 text-sm font-medium border-l border-slate-200 dark:border-slate-700 pl-3">
+                                @cvsu.edu.ph
+                            </div>
+                        </div>
                     <p class="mt-1.5 text-[11px] text-slate-500 dark:text-slate-400">Must be a valid Cavite State University email domain.</p>
                     </div>
                     <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="role">System Role</label>
-                    <select class="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white cursor-pointer" id="role">
-                    <option disabled="" selected="" value="">Select a role...</option>
-                    <option value="ido">IDO Staff</option>
-                    <option value="admin">College Admin</option>
-                    <option value="faculty">Faculty</option>
-                    <option value="taskforce">Program Taskforce</option>
-                    </select>
+                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="role">System Role</label>
+                        <select class="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white cursor-pointer" id="role" disabled>
+                            <option disabled="" selected :value="null">Select a role...</option>
+                            <option value="ido" selected>IDO Staff</option>
+                            <option value="admin">College Admin</option>
+                            <option value="faculty">Faculty</option>
+                            <option value="taskforce">Program Taskforce</option>
+                        </select>
                     </div>
                     <div>
-                    <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="college">College / Unit</label>
-                    <select class="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white cursor-pointer" id="college">
-                    <option disabled="" selected="" value="">Select college...</option>
-                    <option>College of Engineering and Information Technology (CEIT)</option>
-                    <option>College of Arts and Sciences (CAS)</option>
-                    <option>College of Education (CED)</option>
-                    <option>College of Nursing (CON)</option>
-                    <option>CCAT Campus</option>
-                    </select>
+                        <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="college">College / Unit</label>
+                        <select class="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white cursor-pointer" id="college" disabled>
+                            <option disabled="" selected="" value="">Select college...</option>
+                            <option>College of Engineering and Information Technology (CEIT)</option>
+                            <option>College of Arts and Sciences (CAS)</option>
+                            <option>College of Education (CED)</option>
+                            <option>College of Nursing (CON)</option>
+                            <option>CCAT Campus</option>
+                        </select>
                     </div>
                     <div class="pt-1">
                     <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5" for="program">Program</label>
-                    <select class="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white cursor-pointer" id="program">
+                    <select class="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white cursor-pointer" id="program" disabled>
                     <option disabled="" selected="" value="">Select program...</option>
                     <option>BS Information Technology</option>
                     <option>BS Computer Science</option>
@@ -86,7 +117,7 @@
                 <button type="button" @click="closeModal" class="px-5 py-2.5 text-sm font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
                     Cancel
                 </button>
-                <button class="px-6 py-2.5 bg-primary hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-all active:scale-95">
+                <button @click="saveNewUser" class="px-6 py-2.5 bg-primary hover:bg-blue-700 text-white text-sm font-semibold rounded-lg shadow-sm transition-all active:scale-95">
                     Create User
                 </button>
                 </div>

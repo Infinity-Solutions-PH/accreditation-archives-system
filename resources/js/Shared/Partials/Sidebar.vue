@@ -21,9 +21,9 @@
                         <template #icon>group</template>
                         <template #label>User Management</template>
                     </SidebarLink>
-                    <SidebarLink :href="route('file-archives')">
+                    <SidebarLink :href="route('areas')">
                         <template #icon>folder_open</template>
-                        <template #label>File Archives</template>
+                        <template #label>Files</template>
                     </SidebarLink>
                     <SidebarLink :href="route('activity-logs')">
                         <template #icon>history</template>

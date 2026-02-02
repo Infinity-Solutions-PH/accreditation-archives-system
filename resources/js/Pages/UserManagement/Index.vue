@@ -9,6 +9,14 @@
         layout: AppLayout
     });
 
+    defineProps({
+        users: Object,
+        userStats: {
+            type: Object,
+            required: true
+        }
+    })
+
     const showCreateUserModal = ref(false);
 
     const openCreateUserModal = () => {
@@ -23,6 +31,7 @@
 <template>
     <!-- Main Content -->
     <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+        <Head title="User Management" />
     <!-- Top Header -->
     <header class="h-16 flex items-center justify-between px-6 bg-white dark:bg-[#1a2234] border-b border-slate-200 dark:border-slate-800 shrink-0">
     <!-- Mobile Menu Trigger -->
@@ -69,7 +78,7 @@
     <div class="bg-white dark:bg-[#1a2234] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-1">
     <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Active Users</span>
     <div class="flex items-baseline gap-2">
-    <span class="text-2xl font-bold text-slate-900 dark:text-white">1,284</span>
+    <span class="text-2xl font-bold text-slate-900 dark:text-white">{{ userStats.active }}</span>
     <span class="text-green-600 text-sm font-medium bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded flex items-center">
     <span class="material-symbols-outlined text-[14px] mr-0.5">trending_up</span> 5%
                                 </span>
@@ -81,14 +90,14 @@
     </div>
     <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Pending Requests</span>
     <div class="flex items-baseline gap-2">
-    <span class="text-2xl font-bold text-slate-900 dark:text-white">12</span>
+    <span class="text-2xl font-bold text-slate-900 dark:text-white">0</span>
     <span class="text-primary text-sm font-medium">Needs Approval</span>
     </div>
     </div>
     <div class="bg-white dark:bg-[#1a2234] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-1">
     <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Faculty Admins</span>
     <div class="flex items-baseline gap-2">
-    <span class="text-2xl font-bold text-slate-900 dark:text-white">45</span>
+    <span class="text-2xl font-bold text-slate-900 dark:text-white">0</span>
     <span class="text-slate-400 text-sm font-medium">Across 12 Colleges</span>
     </div>
     </div>
@@ -130,62 +139,64 @@
     <div class="overflow-x-auto">
     <table class="w-full text-left border-collapse">
     <thead>
-    <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
-    <th class="p-4 w-12">
-    <input class="rounded border-slate-300 text-primary focus:ring-primary bg-white dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
-    </th>
-    <th class="p-4">User Details</th>
-    <th class="p-4">Role</th>
-    <th class="p-4">Department / College</th>
-    <th class="p-4">Status</th>
-    <th class="p-4">Last Active</th>
-    <th class="p-4 text-right">Actions</th>
-    </tr>
+        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
+            <th class="p-4 w-12">
+            <input class="rounded border-slate-300 text-primary focus:ring-primary bg-white dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
+            </th>
+            <th class="p-4">User Details</th>
+            <th class="p-4">Role</th>
+            <th class="p-4">Office</th>
+            <th class="p-4">Status</th>
+            <th class="p-4">Last Active</th>
+            <th class="p-4 text-right">Actions</th>
+        </tr>
     </thead>
     <tbody class="divide-y divide-slate-200 dark:divide-slate-700 text-sm text-slate-700 dark:text-slate-300">
-    <!-- Row 1 -->
-    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
-    <td class="p-4">
-    <input class="rounded border-slate-300 text-primary focus:ring-primary bg-white dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
-    </td>
-    <td class="p-4">
-    <div class="flex items-center gap-3">
-    <div class="size-9 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary flex items-center justify-center text-sm font-bold">
-                                                    JD
-                                                </div>
-    <div>
-    <div class="font-medium text-slate-900 dark:text-white">Juan Dela Cruz</div>
-    <div class="text-slate-500 dark:text-slate-400 text-xs">juan.delacruz@cvsu.edu.ph</div>
-    </div>
-    </div>
-    </td>
-    <td class="p-4">
-    <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border border-purple-100 dark:border-purple-800">
-    <span class="material-symbols-outlined text-[14px]">shield_person</span>
-                                                IDO Staff
-                                            </div>
-    </td>
-    <td class="p-4">Quality Assurance Office</td>
-    <td class="p-4">
-    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 border border-green-100 dark:border-green-800">
-    <span class="size-1.5 rounded-full bg-green-500"></span>
-                                                Active
-                                            </span>
-    </td>
-    <td class="p-4 text-slate-500 dark:text-slate-400">Just now</td>
-    <td class="p-4 text-right">
-    <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-    <button class="p-1.5 rounded text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Edit User">
-    <span class="material-symbols-outlined text-[20px]">edit</span>
-    </button>
-    <button class="p-1.5 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete User">
-    <span class="material-symbols-outlined text-[20px]">delete</span>
-    </button>
-    </div>
-    </td>
-    </tr>
-    <!-- Row 2 -->
-    <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+        <!-- Row 1 -->
+        <tr
+            v-for="user in users" :key="user.id"
+            class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
+            <td class="p-4">
+                <input class="rounded border-slate-300 text-primary focus:ring-primary bg-white dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
+            </td>
+            <td class="p-4">
+                <div class="flex items-center gap-3">
+                    <div class="size-9 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary flex items-center justify-center text-sm font-bold">
+                        <img v-if="user?.google_info?.avatar" :src="user?.google_info?.avatar" class="size-9 rounded-full object-cover" />
+                        <span v-else>{{ user.name.charAt(0).toUpperCase() }}</span>
+                    </div>
+                    <div>
+                        <div class="font-medium text-slate-900 dark:text-white">{{ user.name }}</div>
+                        <div class="text-slate-500 dark:text-slate-400 text-xs">{{ user.email }}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="p-4">
+                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border border-purple-100 dark:border-purple-800">
+                <span class="material-symbols-outlined text-[14px]">shield_person</span>
+                    IDO Staff
+                </div>
+            </td>
+            <td class="p-4">Quality Assurance Office</td>
+            <td class="p-4">
+                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 border border-green-100 dark:border-green-800">
+                <span class="size-1.5 rounded-full bg-green-500"></span>
+                Active
+            </span>
+            </td>
+            <td class="p-4 text-slate-500 dark:text-slate-400">Just now</td>
+            <td class="p-4 text-right">
+                <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button class="p-1.5 rounded text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Edit User">
+                        <span class="material-symbols-outlined text-[20px]">edit</span>
+                    </button>
+                    <button class="p-1.5 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete User">
+                        <span class="material-symbols-outlined text-[20px]">delete</span>
+                    </button>
+                </div>
+            </td>
+        </tr>
+    <!-- <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
     <td class="p-4">
     <input class="rounded border-slate-300 text-primary focus:ring-primary bg-white dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
     </td>
@@ -224,7 +235,6 @@
     </div>
     </td>
     </tr>
-    <!-- Row 3 - Pending Request -->
     <tr class="bg-amber-50/50 dark:bg-amber-900/10 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors group border-l-4 border-l-amber-400 dark:border-l-amber-600">
     <td class="p-4">
     <input class="rounded border-slate-300 text-primary focus:ring-primary bg-white dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
@@ -265,7 +275,6 @@
     </div>
     </td>
     </tr>
-    <!-- Row 4 -->
     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
     <td class="p-4">
     <input class="rounded border-slate-300 text-primary focus:ring-primary bg-white dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
@@ -305,7 +314,6 @@
     </div>
     </td>
     </tr>
-    <!-- Row 5 -->
     <tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
     <td class="p-4">
     <input class="rounded border-slate-300 text-primary focus:ring-primary bg-white dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
@@ -345,7 +353,7 @@
     </button>
     </div>
     </td>
-    </tr>
+    </tr> -->
     </tbody>
     </table>
     </div>

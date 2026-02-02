@@ -30,7 +30,7 @@
         level: null,
         area_id: null,
         tmp_id: null
-    })
+    });
 
     const MAX_SIZE = 2 * 1024 * 1024
     const ALLOWED_TYPES = [
