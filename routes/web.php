@@ -10,6 +10,7 @@ use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\GoogleAuthController;
 use App\Http\Controllers\UserManagementController;
+use App\Http\Controllers\VideoStreamController;
 use App\Http\Controllers\Accreditor\AuthController as AccreditorAuthController;
 
 Route::get('/', function() {
@@ -41,6 +42,7 @@ Route::middleware(['auth'])->group(function() {
     Route::get('/file-share', [LandingController::class, 'fileShare'])->name('file-share');
 
     Route::get('/videos/{file:id}', [VideoController::class, 'watch'])->name('videos.watch');
+    Route::get('/videos/stream/{file:id}', [VideoStreamController::class, 'stream'])->name('videos.stream');
 });
 
 Route::prefix('api')->group(function () {    

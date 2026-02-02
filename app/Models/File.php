@@ -16,9 +16,10 @@ class File extends Model
         'level',
         'area_id',
         'expiration',
-        'file_path',
+        'path',
         'original_filename',
-        'file_extension',
+        'extension',
+        'size',
         'tmp_id',
         'uploaded_by',
         'status'
@@ -29,6 +30,8 @@ class File extends Model
     ];
 
     protected $appends = [
+        'size',
+        'size_human',
         'created_at_clean',
         'created_at_timeago',
         'updated_at_timeago'
@@ -38,8 +41,8 @@ class File extends Model
     protected static function booted()
     {
         static::deleting(function ($file) {
-            if ($file->file_path && Storage::exists($file->file_path)) {
-                Storage::delete($file->file_path);
+            if ($file->path && Storage::exists($file->path)) {
+                Storage::delete($file->path);
             }
         });
     }
@@ -56,6 +59,23 @@ class File extends Model
     public function uploadedBy()
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    public function getSizeAttribute(): int
+    {
+        return (int) ($this->attributes['size'] ?? 0);
+    }
+
+    public function getSizeHumanAttribute(): string
+    {
+        $bytes = $this->size ?? 0;
+
+        return match (true) {
+            $bytes >= 1073741824 => number_format($bytes / 1073741824, 2) . ' GB',
+            $bytes >= 1048576    => number_format($bytes / 1048576, 2) . ' MB',
+            $bytes >= 1024       => number_format($bytes / 1024, 2) . ' KB',
+            default              => $bytes . ' bytes',
+        };
     }
 
     public function getCreatedAtCleanAttribute(): string

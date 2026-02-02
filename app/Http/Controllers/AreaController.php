@@ -54,7 +54,9 @@ class AreaController extends Controller
      */
     public function show(Area $area)
     {
-        $files = $area->files()->with('college', 'program', 'uploadedBy.googleInfo')
+        $files = $area
+            ->files()
+            ->with('college', 'program', 'uploadedBy.googleInfo')
             ->orderBy('created_at', 'desc')
             ->paginate(10)
             ->withQueryString();

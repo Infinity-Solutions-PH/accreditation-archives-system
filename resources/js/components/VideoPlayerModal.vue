@@ -1,4 +1,6 @@
 <script setup>
+    import VideoPlayer from './VideoPlayer.vue';
+
     defineProps({
         currentArea: Object,
         video: Object
@@ -41,43 +43,7 @@
     <!-- Main Content Area: Split View -->
     <div class="flex flex-col lg:flex-row flex-1 overflow-hidden">
     <!-- Left: Video Player Section (MediaPlayer Variation) -->
-    <div class="flex-1 bg-black flex flex-col justify-center items-center relative group">
-        <!-- <video class="w-full h-full object-contain bg-black relative" :src="video?.file_path" type="video/mp4"></video> -->
-        <div class="w-full h-full relative flex items-center justify-center bg-zinc-900" data-alt="Dark gray placeholder for a high-definition video player surface">
-            <!-- Play Button Overlay -->
-            <button class="flex shrink-0 items-center justify-center rounded-full size-20 bg-primary/80 text-white hover:scale-110 transition-transform z-10">
-            <span class="material-symbols-outlined fill-icon text-4xl">play_arrow</span>
-            </button>
-            <!-- Video Controls Overlay -->
-            <div class="absolute inset-x-0 bottom-0 px-6 py-4 bg-gradient-to-t from-black/80 to-transparent pt-12">
-            <!-- Progress Bar -->
-            <div class="flex h-6 items-center justify-center cursor-pointer mb-2">
-            <div class="relative w-full h-1.5 rounded-full bg-white/20">
-            <div class="absolute left-0 top-0 h-full w-1/3 rounded-full bg-primary"></div>
-            <div class="absolute left-1/3 -top-1.5 size-4 rounded-full bg-white border-2 border-primary shadow-lg"></div>
-            </div>
-            </div>
-            <!-- Control Icons -->
-            <div class="flex items-center justify-between">
-            <div class="flex items-center gap-4">
-            <span class="material-symbols-outlined text-white cursor-pointer hover:text-primary">play_arrow</span>
-            <span class="material-symbols-outlined text-white cursor-pointer hover:text-primary">skip_next</span>
-            <div class="flex items-center gap-2 group/vol">
-            <span class="material-symbols-outlined text-white cursor-pointer hover:text-primary">volume_up</span>
-            <div class="w-16 h-1 bg-white/20 rounded-full overflow-hidden">
-            <div class="w-3/4 h-full bg-white"></div>
-            </div>
-            </div>
-            <p class="text-white text-xs font-medium font-display ml-2">01:42 / 05:00</p>
-            </div>
-            <div class="flex items-center gap-4">
-            <span class="material-symbols-outlined text-white cursor-pointer hover:text-primary">settings</span>
-            <span class="material-symbols-outlined text-white cursor-pointer hover:text-primary">fullscreen</span>
-            </div>
-            </div>
-            </div>
-        </div>
-    </div>
+    <VideoPlayer :id="video?.id" />
     <!-- Right: Metadata Sidebar (DescriptionList Variation) -->
     <aside class="w-full lg:w-[360px] bg-[#111722] border-l border-[#232f48] flex flex-col overflow-y-auto">
     <div class="p-6">
