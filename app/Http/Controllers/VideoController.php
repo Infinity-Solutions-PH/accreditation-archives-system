@@ -11,7 +11,7 @@ class VideoController extends Controller
 
         if(!$file) return abort(403);
 
-        $path = storage_path('app/' . $file->file_path);
+        $path = storage_path('app/' . $file->path);
 
         if (!file_exists($path)) {
             abort(404);

@@ -20,9 +20,9 @@ class FileService
             'area_id' => $data['area_id'],
             'uploaded_by' => $data['uploaded_by'],
             'expiration' => $data['expiration'],
-            'file_path' => $path,
+            'path' => $path,
             'original_filename' => $file->getClientOriginalName(),
-            'file_extension' => $file->getClientOriginalExtension(),
+            'extension' => $file->getClientOriginalExtension(),
         ]);
     }
 

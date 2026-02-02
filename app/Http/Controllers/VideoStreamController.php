@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\File;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class VideoStreamController extends Controller
 {
@@ -12,7 +13,7 @@ class VideoStreamController extends Controller
         // Authorization (policy recommended)
         // $this->authorize('view', $file);
 
-        $path = storage_path('app/' . $file->file_path);
+        $path = Storage::path($file->path);
 
         abort_unless(file_exists($path), 404);
 

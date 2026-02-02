@@ -46,7 +46,7 @@
 
     const openVideoPlayerModal = (file) => {
         if(
-            !['mp4','mov','webm'].includes(file.file_extension?.toLowerCase())
+            !['mp4','mov','webm'].includes(file.extension?.toLowerCase())
         ) return;
 
         selectedVideo.value = file;
@@ -158,11 +158,11 @@
             <td class="p-4">
                 <div class="flex items-center gap-3">
                     <div class="size-10 shrink-0 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center text-red-600 dark:text-red-400">
-                        <span class="material-symbols-outlined">{{ getFileIcon(file.file_extension) }}</span>
+                        <span class="material-symbols-outlined">{{ getFileIcon(file.extension) }}</span>
                     </div>
                     <div class="flex flex-col">
                         <span class="font-medium text-slate-900 dark:text-slate-200 text-sm">{{ file.title }}</span>
-                        <span class="text-xs text-slate-500">-- MB • {{ file.created_at !== file.updated_at ? `Updated ${file.updated_at_timeago}` : `Created ${file.created_at_timeago}` }}</span>
+                        <span class="text-xs text-slate-500">{{ file.size_human }} • {{ file.created_at !== file.updated_at ? `Updated ${file.updated_at_timeago}` : `Created ${file.created_at_timeago}` }}</span>
                     </div>
                 </div>
             </td>

@@ -21,9 +21,10 @@ return new class extends Migration
             $table->foreignId('area_id')->nullable()->constrained('areas')->nullOnDelete();
             $table->foreignId('uploaded_by')->nullable()->constrained('users')->cascadeOnDelete();
             $table->date('expiration')->nullable();
-            $table->string('file_path')->nullable();
+            $table->string('path')->nullable();
             $table->string('original_filename')->nullable();
-            $table->string('file_extension', 10)->nullable();
+            $table->string('extension', 10)->nullable();
+            $table->unsignedBigInteger('size');
             $table->string('tmp_id')->nullable();
             $table->enum('status', ['uploading','completed'])->default('uploading');
             $table->timestamps();
