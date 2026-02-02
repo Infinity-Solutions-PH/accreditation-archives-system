@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\File;
 use Illuminate\Support\Str;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
 class ChunkedUploadService
@@ -36,15 +37,20 @@ class ChunkedUploadService
     public function mergeChunks(File $file): void
     {
         $chunks = Storage::files("tmp/{$file->tmp_id}");
-        usort($chunks, fn($a, $b) => strcmp($a, $b));
+
+        // Natural numeric sorting
+        natsort($chunks);
+        $chunks = array_values($chunks);
 
         $finalFilename = Str::uuid() . '.' . pathinfo($file->original_filename, PATHINFO_EXTENSION);
-        $finalPath = "private/files/$finalFilename";
+        $finalPath = "files/$finalFilename";
 
-        $outStream = fopen(storage_path("app/$finalPath"), 'wb');
+        $outStream = fopen(Storage::path($finalPath), 'wb');
+
+        Log::info(Storage::path($finalPath));
 
         foreach ($chunks as $chunkPath) {
-            $chunkStream = fopen(storage_path("app/private/$chunkPath"), 'rb');
+            $chunkStream = fopen(Storage::path($chunkPath), 'rb');
             stream_copy_to_stream($chunkStream, $outStream);
             fclose($chunkStream);
         }
@@ -54,7 +60,7 @@ class ChunkedUploadService
         Storage::deleteDirectory("tmp/{$file->tmp_id}");
 
         $file->update([
-            'file_path' => $finalPath,
+            'file_path' => 'private/' . $finalPath,
             'status' => 'completed',
         ]);
     }

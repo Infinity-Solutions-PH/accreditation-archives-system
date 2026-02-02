@@ -7,6 +7,7 @@ use App\Http\Controllers\FileController;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\GoogleAuthController;
+use App\Http\Controllers\VideoStreamController;
 use App\Http\Controllers\Accreditor\AuthController as AccreditorAuthController;
 
 Route::get('/', function() {
@@ -34,6 +35,7 @@ Route::middleware(['auth'])->group(function() {
     Route::get('/dashboard', [LandingController::class, 'index'])->name('dashboard');
     Route::get('/areas', [AreaController::class, 'index'])->name('areas');
     Route::get('/areas/{area:slug}', [AreaController::class, 'show'])->name('areas.slug');
+    Route::get('/videos/stream/{file:id}', [VideoStreamController::class, 'stream'])->name('videos.stream');
 });
 
 Route::prefix('api')->group(function () {
