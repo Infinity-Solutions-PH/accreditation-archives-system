@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\File;
+use Illuminate\Support\Facades\Storage;
 
 class VideoController extends Controller
 {
@@ -11,7 +12,7 @@ class VideoController extends Controller
 
         if(!$file) return abort(403);
 
-        $path = storage_path('app/' . $file->path);
+        $path = Storage::path($file->path);
 
         if (!file_exists($path)) {
             abort(404);
