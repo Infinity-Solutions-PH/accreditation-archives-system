@@ -14,7 +14,7 @@ use App\Http\Controllers\VideoStreamController;
 use App\Http\Controllers\Accreditor\AuthController as AccreditorAuthController;
 
 Route::get('/', function() {
-    return redirect()->route('/auth');
+    return redirect()->route('auth');
 });
 Route::middleware('guest')->group(function () {
     Route::get('/auth', [AuthController::class, 'index'])->name('auth');
