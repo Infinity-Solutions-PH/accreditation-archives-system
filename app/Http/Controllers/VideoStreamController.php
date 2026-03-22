@@ -13,7 +13,8 @@ class VideoStreamController extends Controller
         // Authorization (policy recommended)
         // $this->authorize('view', $file);
 
-        $path = Storage::path($file->path);
+        $cleanPath = str_replace('private/', '', $file->path);
+        $path = Storage::path($cleanPath);
 
         abort_unless(file_exists($path), 404);
 

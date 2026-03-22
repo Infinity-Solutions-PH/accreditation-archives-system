@@ -45,8 +45,9 @@ class File extends Model
     protected static function booted()
     {
         static::deleting(function ($file) {
-            if ($file->path && Storage::exists($file->path)) {
-                Storage::delete($file->path);
+            $cleanPath = str_replace('private/', '', $file->path);
+            if ($file->path && Storage::exists($cleanPath)) {
+                Storage::delete($cleanPath);
             }
         });
     }
