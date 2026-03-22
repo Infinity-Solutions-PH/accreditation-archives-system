@@ -16,4 +16,9 @@ class College extends Model
     {
         return $this->hasMany(File::class);
     }
+
+    public function users()
+    {
+        return $this->hasMany(User::class);
+    }
 }

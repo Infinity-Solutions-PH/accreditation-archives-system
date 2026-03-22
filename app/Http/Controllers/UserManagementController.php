@@ -17,10 +17,25 @@ class UserManagementController extends Controller
     }
 
     public function index() {
-        $activeUsers = User::where('is_active', true)->count();
-        $inactiveUsers = User::where('is_active', false)->count();
+        /** @var \App\Models\User $currentUser */
+        $currentUser = auth()->user();
 
-        $users = User::with(['googleInfo', 'roles', 'college', 'program'])->get();
+        if (!$currentUser->hasRole(['admin', 'ido_staff', 'college_officer'])) {
+            abort(403, 'Unauthorized access to User Management.');
+        }
+
+        $query = User::with(['googleInfo', 'roles', 'college', 'program']);
+
+        if ($currentUser->hasRole('college_officer') && !$currentUser->hasRole(['admin', 'ido_staff'])) {
+            $query->where('college_id', $currentUser->college_id);
+        }
+
+        $activeUsers = (clone $query)->where('is_active', true)->count();
+        $inactiveUsers = (clone $query)->where('is_active', false)->count();
+        $pendingUsers = (clone $query)->where('role_status', 'pending')->count();
+        $officerUsers = (clone $query)->whereHas('roles', fn($q) => $q->where('name', 'college_officer'))->count();
+
+        $users = $query->get();
         
         $roles =Role::all();
         $colleges = College::all();
@@ -29,7 +44,9 @@ class UserManagementController extends Controller
         return Inertia::render('UserManagement/Index', [
             'userStats' => [
                 'active' => $activeUsers,
-                'inactive' => $inactiveUsers
+                'inactive' => $inactiveUsers,
+                'pending' => $pendingUsers,
+                'officers' => $officerUsers,
             ],
             'users' => $users,
             'roles' => $roles,
@@ -57,6 +74,17 @@ class UserManagementController extends Controller
             }
         } else if (!$currentUser->hasRole('admin') && !$currentUser->hasRole('ido_staff')) {
             return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        if ($request->role === 'college_officer' && $request->role_status === 'approved') {
+            $collegeId = $request->has('college_id') ? $request->college_id : $user->college_id;
+            $existingOfficer = User::where('college_id', $collegeId)
+                    ->where('id', '!=', $user->id)
+                    ->whereHas('roles', fn($q) => $q->where('name', 'college_officer'))
+                    ->first();
+            if ($existingOfficer) {
+                return response()->json(['message' => 'This college already has a College Accreditation Officer.'], 422);
+            }
         }
 
         $user->update([

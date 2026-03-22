@@ -24,6 +24,10 @@
                         <template #icon>group</template>
                         <template #label>User Management</template>
                     </SidebarLink>
+                    <SidebarLink :href="route('taskforce')" v-if="page.props.auth?.roles?.some(r => ['admin', 'ido_staff'].includes(r))">
+                        <template #icon>safety_divider</template>
+                        <template #label>Taskforce</template>
+                    </SidebarLink>
                     <SidebarLink :href="route('areas')">
                         <template #icon>folder_open</template>
                         <template #label>AACCUP Areas</template>

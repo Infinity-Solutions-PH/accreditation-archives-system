@@ -37,6 +37,13 @@ class AuthController extends Controller
 
         if (auth()->attempt($credentials)) {
             $request->session()->regenerate();
+            $user = auth()->user();
+
+            if ($user->role_status === 'pending') {
+                return redirect()->route('onboarding.pending');
+            } elseif ($user->role_status === 'rejected') {
+                return redirect()->route('onboarding.rejected');
+            }
             
             return redirect()->intended('/dashboard');
         }

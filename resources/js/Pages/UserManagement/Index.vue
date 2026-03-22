@@ -1,5 +1,5 @@
 <script setup>
-    import { ref } from 'vue';
+    import { ref, computed } from 'vue';
     import { router, Head } from '@inertiajs/vue3';
 
     import AppLayout from '@shared/Layouts/App.vue';
@@ -11,7 +11,7 @@
         layout: AppLayout
     });
 
-    defineProps({
+    const props = defineProps({
         users: [Object, Array],
         userStats: {
             type: Object,
@@ -45,6 +45,34 @@
         closeEditModal();
         router.reload({ only: ['users', 'userStats'] });
     }
+
+    const searchQuery = ref('');
+    const roleFilter = ref('All Roles');
+    const statusFilter = ref('All Status');
+
+    const filteredUsers = computed(() => {
+        return props.users.filter(user => {
+            if (roleFilter.value !== 'All Roles') {
+                if (!user.roles || user.roles.length === 0) return false;
+                if (roleFilter.value === 'IDO Staff' && user.roles[0].name !== 'ido_staff') return false;
+                if (roleFilter.value === 'College Officer' && user.roles[0].name !== 'college_officer') return false;
+                if (roleFilter.value === 'Taskforce' && user.roles[0].name !== 'taskforce') return false;
+            }
+            if (statusFilter.value !== 'All Status') {
+                if (statusFilter.value === 'Active' && (!user.is_active || user.role_status !== 'approved')) return false;
+                if (statusFilter.value === 'Pending' && user.role_status !== 'pending') return false;
+                if (statusFilter.value === 'Inactive' && (user.is_active && user.role_status !== 'pending' && user.role_status !== 'rejected')) return false;
+                if (statusFilter.value === 'Rejected' && user.role_status !== 'rejected') return false;
+            }
+            if (searchQuery.value) {
+                const sq = searchQuery.value.toLowerCase();
+                return (user.name && user.name.toLowerCase().includes(sq)) || 
+                       (user.email && user.email.toLowerCase().includes(sq)) || 
+                       (user.college && user.college.name.toLowerCase().includes(sq));
+            }
+            return true;
+        });
+    });
 </script>
 
 <template>
@@ -103,21 +131,21 @@
                                 </span>
     </div>
     </div>
-    <div class="bg-white dark:bg-[#1a2234] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-1 relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-colors">
+    <div @click="statusFilter = 'Pending'" class="bg-white dark:bg-[#1a2234] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-1 relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-colors">
     <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
     <span class="material-symbols-outlined text-6xl text-primary">person_add</span>
     </div>
     <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Pending Requests</span>
     <div class="flex items-baseline gap-2">
-    <span class="text-2xl font-bold text-slate-900 dark:text-white">0</span>
+    <span class="text-2xl font-bold text-slate-900 dark:text-white">{{ userStats.pending || 0 }}</span>
     <span class="text-primary text-sm font-medium">Needs Approval</span>
     </div>
     </div>
     <div class="bg-white dark:bg-[#1a2234] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-1">
     <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Faculty Admins</span>
     <div class="flex items-baseline gap-2">
-    <span class="text-2xl font-bold text-slate-900 dark:text-white">0</span>
-    <span class="text-slate-400 text-sm font-medium">Across 12 Colleges</span>
+    <span class="text-2xl font-bold text-slate-900 dark:text-white">{{ userStats.officers || 0 }}</span>
+    <span class="text-slate-400 text-sm font-medium">College Officers</span>
     </div>
     </div>
     </div>
@@ -128,22 +156,23 @@
     <!-- Search -->
     <div class="relative w-full lg:w-96">
     <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-    <input class="w-full pl-10 pr-4 py-2 bg-white dark:bg-[#151b2b] border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" placeholder="Search by name, email, or college..." type="text"/>
+    <input v-model="searchQuery" class="w-full pl-10 pr-4 py-2 bg-white dark:bg-[#151b2b] border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" placeholder="Search by name, email, or college..." type="text"/>
     </div>
     <!-- Filter Actions -->
     <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
     <div class="flex items-center gap-2">
     <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Filter:</span>
-    <select class="bg-white dark:bg-[#151b2b] border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2 cursor-pointer">
+    <select v-model="roleFilter" class="bg-white dark:bg-[#151b2b] border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2 cursor-pointer">
     <option>All Roles</option>
     <option>IDO Staff</option>
-    <option>College Admin</option>
-    <option>Faculty</option>
+    <option>College Officer</option>
+    <option>Taskforce</option>
     </select>
-    <select class="bg-white dark:bg-[#151b2b] border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2 cursor-pointer">
+    <select v-model="statusFilter" class="bg-white dark:bg-[#151b2b] border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2 cursor-pointer">
     <option>All Status</option>
     <option>Active</option>
     <option>Pending</option>
+    <option>Rejected</option>
     <option>Inactive</option>
     </select>
     </div>
@@ -173,7 +202,7 @@
     <tbody class="divide-y divide-slate-200 dark:divide-slate-700 text-sm text-slate-700 dark:text-slate-300">
         <!-- Row 1 -->
         <tr
-            v-for="user in users" :key="user.id"
+            v-for="user in filteredUsers" :key="user.id"
             class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
             <td class="p-4">
                 <input class="rounded border-slate-300 text-primary focus:ring-primary bg-white dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
@@ -198,17 +227,16 @@
                 <div v-else class="text-xs text-slate-500 px-2 py-1">No Role</div>
             </td>
             <td class="p-4">
-                <div v-if="user.college">{{ user.college.name }}</div>
+                <div v-if="user.college">{{ user.college.name }} ({{ user.college.code }})</div>
                 <div v-else class="text-slate-400 text-xs italic">Unassigned</div>
             </td>
             <td class="p-4 flex flex-col items-start gap-1">
-                <span v-if="user.is_active" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 border border-green-100 dark:border-green-800">
+                <span v-if="user.role_status === 'approved' && user.is_active" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 border border-green-100 dark:border-green-800">
                     <span class="size-1.5 rounded-full bg-green-500"></span> Active
                 </span>
-                <span v-else class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                <span v-else-if="user.role_status === 'approved' && !user.is_active" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                     <span class="size-1.5 rounded-full bg-slate-400"></span> Inactive
                 </span>
-                
                 <span v-if="user.role_status === 'pending'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-100 dark:border-amber-800">
                     <span class="material-symbols-outlined text-[14px]">hourglass_top</span> Pending
                 </span>
@@ -218,7 +246,15 @@
             </td>
             <td class="p-4 text-slate-500 dark:text-slate-400">{{ new Date(user.updated_at).toLocaleDateString() }}</td>
             <td class="p-4 text-right">
-                <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div v-if="statusFilter === 'Pending'" class="flex items-center justify-end gap-1">
+                    <button class="size-8 flex items-center justify-center rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" title="Approve">
+                        <span class="material-symbols-outlined text-[18px]">check</span>
+                    </button>
+                    <button class="size-8 flex items-center justify-center rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors" title="Deny">
+                        <span class="material-symbols-outlined text-[18px]">close</span>
+                    </button>
+                </div>
+                <div v-else class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button @click="editUser(user)" class="p-1.5 rounded text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Edit User">
                         <span class="material-symbols-outlined text-[20px]">edit</span>
                     </button>

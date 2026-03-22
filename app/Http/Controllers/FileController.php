@@ -12,11 +12,21 @@ class FileController extends Controller
 {
     public function __construct(
         protected ChunkedUploadService $service
-    ) {}
+    ) {
+    }
+
+    private function checkActive() {
+        /** @var \App\Models\User|null $user */
+        $user = auth('web')->user();
+        if ($user && $user->is_active === false) {
+            abort(403, 'Inactive users cannot upload or modify files.');
+        }
+    }
 
     // 1️⃣ Create temporary metadata
     public function temp(CreateTempFileRequest $request)
     {
+        $this->checkActive();
         $file = $this->service->createTemporaryMetadata($request->validated());
 
         return response()->json(['tmp_id' => $file->tmp_id]);
@@ -25,6 +35,7 @@ class FileController extends Controller
     // 2️⃣ Upload chunk
     public function uploadChunk(UploadChunkRequest $request)
     {
+        $this->checkActive();
         $file = File::where('tmp_id', $request->tmp_id)->firstOrFail();
         $this->service->saveChunk($file, $request->file('chunk'), $request->index);
 
@@ -34,6 +45,7 @@ class FileController extends Controller
     // 3️⃣ Complete upload
     public function complete(Request $request)
     {
+        $this->checkActive();
         $request->validate(['tmp_id' => 'required|string|exists:files,tmp_id']);
 
         $file = File::where('tmp_id', $request->tmp_id)->firstOrFail();
@@ -45,6 +57,7 @@ class FileController extends Controller
     // 4️⃣ Update metadata
     public function updateMetadata(Request $request)
     {
+        $this->checkActive();
         $request->validate([
             'tmp_id' => 'required|string|exists:files,tmp_id',
             'metadata.title' => 'nullable|string|max:255',
@@ -65,6 +78,7 @@ class FileController extends Controller
     // 5️⃣ Abort upload
     public function abort(Request $request)
     {
+        $this->checkActive();
         $request->validate(['tmp_id' => 'required|string|exists:files,tmp_id']);
 
         $file = File::where('tmp_id', $request->tmp_id)->first();

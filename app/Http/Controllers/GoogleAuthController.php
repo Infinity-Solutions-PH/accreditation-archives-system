@@ -40,6 +40,23 @@ class GoogleAuthController extends Controller
         $googleInfo = GoogleUserInfo::where('google_id', $googleId)->first();
         $user = User::where('email', $email)->first();
 
+        // Enforce domain check for cvsu.edu.ph
+        if (!Str::endsWith($email, '@cvsu.edu.ph')) {
+            return redirect('/auth')->withErrors(['email' => 'Only @cvsu.edu.ph emails are allowed.']);
+        }
+
+        if (!$user) {
+            session()->put('pending_google_user', [
+                'name' => $name,
+                'email' => $email,
+                'google_id' => $googleId,
+                'avatar' => $picture,
+                'hd' => $hd,
+                'locale' => $locale,
+            ]);
+            return redirect()->route('onboarding.college');
+        }
+
         if (!$googleInfo) {
             if (!$user) {
                 $password = Str::random(12);
@@ -69,6 +86,12 @@ class GoogleAuthController extends Controller
         $user->load('googleInfo');
 
         Auth::login($user);
+
+        if ($user->role_status === 'pending') {
+            return redirect()->route('onboarding.pending');
+        } elseif ($user->role_status === 'rejected') {
+            return redirect()->route('onboarding.rejected');
+        }
 
         return redirect()->intended('/areas');
     }
