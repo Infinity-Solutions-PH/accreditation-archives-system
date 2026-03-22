@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accreditor;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Auth;
 
 class AuthController extends Controller
 {
@@ -13,36 +14,37 @@ class AuthController extends Controller
         Inertia::setRootView('layouts/auth');
     }
 
-    /**
-     * Display a listing of the resource.
-     */
     public function index()
     {
         return Inertia::render('Accreditor/Auth');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
-    }
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required'],
+        ]);
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
+        if (Auth::guard('accreditor')->attempt($credentials)) {
+            $user = Auth::guard('accreditor')->user();
+            
+            if ($user->expires_at && $user->expires_at->isPast()) {
+                Auth::guard('accreditor')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+                return back()->withErrors([
+                    'email' => 'Your account has expired.',
+                ]);
+            }
+
+            $request->session()->regenerate();
+            return redirect()->intended('/areas');
+        }
+
+        return back()->withErrors([
+            'email' => 'The provided credentials do not match our records.',
+        ]);
     }
 
     /**

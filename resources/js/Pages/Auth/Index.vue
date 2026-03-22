@@ -1,9 +1,21 @@
 <script setup>
     import AuthLayout from '@shared/Layouts/Auth.vue';
+    import { useForm, Head, Link } from '@inertiajs/vue3';
 
     defineOptions({
         layout: AuthLayout
     });
+
+    const form = useForm({
+        email: '',
+        password: '',
+    });
+
+    const submit = () => {
+        form.post(route('auth.store'), {
+            onFinish: () => form.reset('password'),
+        });
+    };
 </script>
 
 <template>
@@ -59,12 +71,15 @@
                         <p class="text-slate-500 dark:text-slate-400">Please enter your details to access the archives.</p>
                     </div>
                     <!-- Main Form -->
-                    <form class="space-y-5" onsubmit="event.preventDefault();">
+                    <form class="space-y-5" @submit.prevent="submit">
+                        <div v-if="form.errors.email" class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+                            {{ form.errors.email }}
+                        </div>
                         <!-- Email Field -->
                         <div class="space-y-2">
                             <label class="text-[#0d121b] dark:text-gray-200 text-sm font-medium leading-normal" for="email">University Email</label>
                             <div class="relative">
-                                <input class="form-input flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-primary h-12 placeholder:text-[#4c669a] dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal transition-all" id="email" placeholder="username@cvsu.edu.ph" required="" type="email"/>
+                                <input v-model="form.email" class="form-input flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-primary h-12 placeholder:text-[#4c669a] dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal transition-all" id="email" placeholder="username@cvsu.edu.ph" required="" type="email"/>
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
                                     <span class="material-symbols-outlined text-[20px]">alternate_email</span>
                                 </div>
@@ -78,7 +93,7 @@
                         <div class="space-y-2">
                             <label class="text-[#0d121b] dark:text-gray-200 text-sm font-medium leading-normal" for="password">Password</label>
                             <div class="relative">
-                                <input class="form-input flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-primary h-12 placeholder:text-[#4c669a] dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal transition-all" id="password" placeholder="Enter your password" required="" type="password"/>
+                                <input v-model="form.password" class="form-input flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-primary h-12 placeholder:text-[#4c669a] dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal transition-all" id="password" placeholder="Enter your password" required="" type="password"/>
                                 <button class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-primary transition-colors focus:outline-none" type="button">
                                     <span class="material-symbols-outlined text-[20px]">visibility</span>
                                 </button>
@@ -89,7 +104,7 @@
                             <a class="text-sm font-medium text-primary hover:text-primary-hover hover:underline decoration-2 underline-offset-2 transition-all" href="#">Forgot password?</a>
                         </div>
                         <!-- Submit Button -->
-                        <button class="w-full h-12 bg-primary hover:bg-primary-hover text-white font-semibold rounded-lg shadow-sm shadow-primary/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2" type="submit">
+                        <button :disabled="form.processing" class="w-full h-12 bg-primary hover:bg-primary-hover text-white font-semibold rounded-lg shadow-sm shadow-primary/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" type="submit">
                             <span>Sign In</span>
                             <span class="material-symbols-outlined text-sm">login</span>
                         </button>

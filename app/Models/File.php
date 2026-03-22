@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Carbon\Carbon;
+use App\Models\User;
+use App\Models\Accreditor;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
@@ -22,11 +24,13 @@ class File extends Model
         'size',
         'tmp_id',
         'uploaded_by',
-        'status'
+        'status',
+        'is_general'
     ];
 
     protected $casts = [
         'expiration' => 'date',
+        'is_general' => 'boolean',
     ];
 
     protected $appends = [
@@ -46,6 +50,7 @@ class File extends Model
             }
         });
     }
+
     public function college()
     {
         return $this->belongsTo(College::class);
@@ -59,6 +64,49 @@ class File extends Model
     public function uploadedBy()
     {
         return $this->belongsTo(User::class, 'uploaded_by');
+    }
+
+    public function scopeAccessibleBy($query, $user)
+    {
+        if (!$user) {
+            return $query->where('is_general', true);
+        }
+
+        if ($user instanceof User) {
+            if ($user->hasRole('admin') || $user->hasRole('ido_staff')) {
+                return $query; // Admin and IDO staff see all
+            }
+
+            return $query->where(function ($q) use ($user) {
+                $q->where('is_general', true);
+
+                if ($user->hasRole('college_officer')) {
+                    $q->orWhere('college_id', $user->college_id);
+                }
+
+                if ($user->hasRole('taskforce')) {
+                    $q->orWhere(function ($subQ) use ($user) {
+                        $subQ->where('college_id', $user->college_id)
+                             ->where('program_id', $user->program_id);
+                    });
+                }
+            });
+        }
+
+        if ($user instanceof Accreditor) {
+            return $query->where(function ($q) use ($user) {
+                $q->where('is_general', true)
+                  ->orWhere(function ($subQ) use ($user) {
+                      $subQ->where('college_id', $user->college_id)
+                           ->where('program_id', $user->program_id);
+                      if ($user->level) {
+                          $subQ->where('level', $user->level);
+                      }
+                  });
+            });
+        }
+
+        return $query->where('is_general', true);
     }
 
     public function getSizeAttribute(): int

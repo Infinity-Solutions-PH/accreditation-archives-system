@@ -1,5 +1,8 @@
 <script setup>
     import SidebarLink from '@shared/Partials/SidebarLink.vue';
+    import { usePage } from '@inertiajs/vue3';
+
+    const page = usePage();
 </script>
 
 <template>
@@ -23,9 +26,13 @@
                     </SidebarLink>
                     <SidebarLink :href="route('areas')">
                         <template #icon>folder_open</template>
-                        <template #label>Files</template>
+                        <template #label>AACCUP Areas</template>
                     </SidebarLink>
-                    <SidebarLink :href="route('activity-logs')">
+                    <SidebarLink :href="route('file-archives')">
+                        <template #icon>description</template>
+                        <template #label>General Files</template>
+                    </SidebarLink>
+                    <SidebarLink :href="route('activity-logs')" v-if="page.props.auth?.roles?.includes('admin')">
                         <template #icon>history</template>
                         <template #label>Activity Logs</template>
                     </SidebarLink>
@@ -37,7 +44,7 @@
             </div>
             <!-- Bottom Action -->
             <div class="flex flex-col gap-2">
-                <Link :href="route('logout')" method="post" as="button" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors" href="#">
+                <Link :href="route('logout')" method="post" as="button" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
                     <span class="material-symbols-outlined text-[24px]">logout</span>
                     <p class="text-sm font-medium leading-normal">Sign Out</p>
                 </Link>

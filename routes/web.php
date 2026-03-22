@@ -18,39 +18,42 @@ Route::get('/', function() {
 });
 Route::middleware('guest')->group(function () {
     Route::get('/auth', [AuthController::class, 'index'])->name('auth');
+    Route::post('/auth', [AuthController::class, 'store'])->name('auth.store');
     Route::get('/accreditor/auth', [AccreditorAuthController::class, 'index'])->name('accreditor.auth');
 
     Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
     Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
 });
 
+Route::post('/accreditor/auth', [AccreditorAuthController::class, 'store'])->name('accreditor.login');
+
 Route::post('/logout', LogoutController::class) ->name('logout');
 
-Route::middleware(['auth'])->group(function() {
+Route::middleware(['auth:web,accreditor'])->group(function() {
     Route::get('/dashboard', [LandingController::class, 'index'])->name('dashboard');
 
     Route::get('/areas', [AreaController::class, 'index'])->name('areas');
     Route::get('/areas/{area:slug}', [AreaController::class, 'show'])->name('areas.slug');
 
+    Route::get('/file-archives', [LandingController::class, 'fileArchives'])->name('file-archives');
+    
+    Route::get('/videos/{file:id}', [VideoController::class, 'watch'])->name('videos.watch');
+    Route::get('/videos/stream/{file:id}', [VideoStreamController::class, 'stream'])->name('videos.stream');
+});
+
+Route::middleware(['auth'])->group(function() {
     Route::get('/user-management', [UserManagementController::class, 'index'])->name('user-management');
 
-    Route::get('/file-archives', [LandingController::class, 'fileArchives'])->name('file-archives');
-    Route::get('/activity-logs', [LandingController::class, 'activityLogs'])->name('activity-logs');
+    Route::middleware(['role:admin'])->group(function() {
+        Route::get('/activity-logs', [\App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity-logs');
+    });
+
     Route::get('/settings', [LandingController::class, 'userManagement'])->name('settings');
 
     Route::get('/staff', [LandingController::class, 'staff'])->name('staff');
     Route::get('/file-share', [LandingController::class, 'fileShare'])->name('file-share');
 
+
     Route::get('/videos/{file:id}', [VideoController::class, 'watch'])->name('videos.watch');
     Route::get('/videos/stream/{file:id}', [VideoStreamController::class, 'stream'])->name('videos.stream');
-});
-
-Route::prefix('api')->group(function () {    
-    Route::post('/files/temp', [FileController::class, 'temp'])->name('files.temp');
-    Route::post('/files/upload-chunk', [FileController::class, 'uploadChunk']);
-    Route::post('/files/complete', [FileController::class, 'complete']);
-    Route::post('/files/update-metadata', [FileController::class, 'updateMetadata']);
-    Route::post('/files/abort', [FileController::class, 'abort']);
-
-    Route::post('/user-management/store', [UserController::class, 'store'])->name('user-management.store');
 });

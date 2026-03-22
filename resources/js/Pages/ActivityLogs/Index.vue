@@ -1,13 +1,19 @@
 <script setup>
     import AppLayout from '@shared/Layouts/App.vue';
+    import { Link } from '@inertiajs/vue3';
 
     defineOptions({
         layout: AppLayout
     });
+
+    defineProps({
+        logs: Object,
+        filters: Object,
+    });
 </script>
 
 <template>
-    <main class="layout-container flex h-full grow flex-col">
+    <main class="layout-container flex h-full grow flex-col overflow-y-auto">
         <div class="px-4 md:px-10 lg:px-20 xl:px-40 flex flex-1 justify-center py-5">
         <div class="layout-content-container flex flex-col max-w-[1200px] flex-1 w-full">
         <!-- Breadcrumbs -->
@@ -94,175 +100,34 @@
         </tr>
         </thead>
         <tbody class="divide-y divide-[#e7ebf3] dark:divide-gray-800 text-sm">
-        <!-- Row 1 -->
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
+        <tr v-for="log in logs.data" :key="log.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
         <td class="px-6 py-4 whitespace-nowrap text-[#4c669a] dark:text-gray-400">
         <div class="flex flex-col">
-        <span class="font-medium text-[#0d121b] dark:text-gray-200">Oct 24, 2023</span>
-        <span class="text-xs">10:45 AM</span>
+        <span class="font-medium text-[#0d121b] dark:text-gray-200">{{ new Date(log.created_at).toLocaleDateString() }}</span>
+        <span class="text-xs">{{ new Date(log.created_at).toLocaleTimeString() }}</span>
         </div>
         </td>
         <td class="px-6 py-4 whitespace-nowrap">
         <div class="flex items-center gap-3">
-        <div class="size-8 rounded-full bg-cover bg-center" data-alt="Portrait of Juan Dela Cruz" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuA3rZC5PqZvA9f-M9Fw3jrjS96raKn6v4bewreECTGelfaAKyACKYBo9ie2REInYwbfLu3Vy8bpJJr8GDukNIbqs9ChZywHRDoO0pCxhpsEM0FHNm26A_n8V-6fqlo0nxNzmzkWmwSPQlQFYnZCzDVIDDzWl6CZNn4VZktgAu1wvN9bdf836z_eDkEzxZSvvg6-VkcdXG_tMeO0f_-m67UN8BitGM6YXj4skiKpWLhdiK3DMeCzpShPyj8Z5qKjZ6EfeHuGdtMMYUCN");'></div>
+        <div class="size-8 rounded-full bg-cover bg-center shrink-0" :style="`background-image: url('https://ui-avatars.com/api/?name=${log.causer?.name || 'System'}')`"></div>
         <div>
-        <p class="font-medium text-[#0d121b] dark:text-white">Juan Dela Cruz</p>
-        <p class="text-xs text-[#4c669a]">juan.delacruz@cvsu.edu.ph</p>
+        <p class="font-medium text-[#0d121b] dark:text-white">{{ log.causer?.name || 'System' }}</p>
+        <p class="text-xs text-[#4c669a]">{{ log.causer?.email || 'N/A' }}</p>
         </div>
         </div>
         </td>
         <td class="px-6 py-4 whitespace-nowrap">
-        <span class="inline-flex items-center rounded-md bg-purple-50 dark:bg-purple-900/30 px-2 py-1 text-xs font-medium text-purple-700 dark:text-purple-300 ring-1 ring-inset ring-purple-700/10">Admin</span>
+        <span class="inline-flex items-center rounded-md bg-purple-50 dark:bg-purple-900/30 px-2 py-1 text-xs font-medium text-purple-700 dark:text-purple-300 ring-1 ring-inset ring-purple-700/10">{{ log.causer?.roles?.[0]?.name || 'N/A' }}</span>
         </td>
         <td class="px-6 py-4 whitespace-nowrap">
         <span class="inline-flex items-center gap-1.5 rounded-full bg-amber-50 dark:bg-amber-900/30 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-300 ring-1 ring-inset ring-amber-600/20">
         <span class="size-1.5 rounded-full bg-amber-500"></span>
-                                                            User Role Change
-                                                        </span>
+        {{ log.log_name || 'System Event' }}
+        </span>
         </td>
         <td class="px-6 py-4 text-[#0d121b] dark:text-gray-300">
-                                                        Changed role of <span class="font-medium">Maria Clara</span> from 'Viewer' to 'Editor'.
-                                                    </td>
-        <td class="px-6 py-4 whitespace-nowrap text-right">
-        <button class="text-[#4c669a] hover:text-primary transition-colors">
-        <span class="material-symbols-outlined">chevron_right</span>
-        </button>
+        {{ log.description }}
         </td>
-        </tr>
-        <!-- Row 2 -->
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
-        <td class="px-6 py-4 whitespace-nowrap text-[#4c669a] dark:text-gray-400">
-        <div class="flex flex-col">
-        <span class="font-medium text-[#0d121b] dark:text-gray-200">Oct 24, 2023</span>
-        <span class="text-xs">10:30 AM</span>
-        </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-        <div class="flex items-center gap-3">
-        <div class="size-8 rounded-full bg-cover bg-center" data-alt="Portrait of Maria Clara" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuBfic3e3QtgAMbdEoZUDanEakKEXYeKbvZbt2Aa6U9d6CM8AH8Q5fAJot654WqYhWOPQiHnoHV0SfZx2bQ4HLAL8tlQdO-wge4WoMj_hnXBkJGJycPk_YY55vRP2WfxMipaP7B7n2vJTFfHpuJ37yvGRcBSU9hwScTzCiZvCPQeUqGv4XNOOH_f9zT1cr74UL7JpiLayHh-nKmBYWK5PXBozUDgHFHvb4K3HW1N4-Q3vT5L_IOLJTUaxBvHaln5Cpdt-JmBhDp7g_f7");'></div>
-        <div>
-        <p class="font-medium text-[#0d121b] dark:text-white">Maria Clara</p>
-        <p class="text-xs text-[#4c669a]">maria.clara@cvsu.edu.ph</p>
-        </div>
-        </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-        <span class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900/30 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 ring-1 ring-inset ring-blue-700/10">Faculty</span>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-green-50 dark:bg-green-900/30 px-2.5 py-0.5 text-xs font-medium text-green-700 dark:text-green-300 ring-1 ring-inset ring-green-600/20">
-        <span class="size-1.5 rounded-full bg-green-500"></span>
-                                                            File Upload
-                                                        </span>
-        </td>
-        <td class="px-6 py-4 text-[#0d121b] dark:text-gray-300">
-                                                        Uploaded document <a class="text-primary hover:underline font-medium" href="#">BSCS Level 3 Accreditation.pdf</a> to Archives.
-                                                    </td>
-        <td class="px-6 py-4 whitespace-nowrap text-right">
-        <button class="text-[#4c669a] hover:text-primary transition-colors">
-        <span class="material-symbols-outlined">chevron_right</span>
-        </button>
-        </td>
-        </tr>
-        <!-- Row 3 -->
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
-        <td class="px-6 py-4 whitespace-nowrap text-[#4c669a] dark:text-gray-400">
-        <div class="flex flex-col">
-        <span class="font-medium text-[#0d121b] dark:text-gray-200">Oct 24, 2023</span>
-        <span class="text-xs">09:15 AM</span>
-        </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-        <div class="flex items-center gap-3">
-        <div class="size-8 rounded-full bg-cover bg-center" data-alt="Portrait of Jose Rizal" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuCsU2x7maCN6U2MnS6IKgs0cgx4Xcym_dHrnVeXAOSoKp1ZFmdP2BjSY8vuTbAL6KN6qB4V-tlE2SHTY8N5GXMKiaEL0TOkl50VbBwHhsX_y_RBmaqxPDCLaKh0AuKY16oWujlGC5Rhc05_vWzmAxAM29tQixtBhTVqEvQBGIbst3icvvYWGHvnK4FMHdHYyeJidS29TdQvae6OP2plXS1t_OpmgN6bW-KyIU7pFw7VD24vCUNeTpRtl563N9IIqPuE6867BVe7X3vD");'></div>
-        <div>
-        <p class="font-medium text-[#0d121b] dark:text-white">Jose Rizal</p>
-        <p class="text-xs text-[#4c669a]">jose.rizal@cvsu.edu.ph</p>
-        </div>
-        </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-        <span class="inline-flex items-center rounded-md bg-gray-50 dark:bg-gray-700 px-2 py-1 text-xs font-medium text-gray-600 dark:text-gray-300 ring-1 ring-inset ring-gray-500/10">Staff</span>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-blue-50 dark:bg-blue-900/30 px-2.5 py-0.5 text-xs font-medium text-blue-700 dark:text-blue-300 ring-1 ring-inset ring-blue-600/20">
-        <span class="size-1.5 rounded-full bg-blue-500"></span>
-                                                            System Login
-                                                        </span>
-        </td>
-        <td class="px-6 py-4 text-[#0d121b] dark:text-gray-300">
-                                                        Successful login via Web Portal from IP 192.168.1.15.
-                                                    </td>
-        <td class="px-6 py-4 whitespace-nowrap text-right">
-        <button class="text-[#4c669a] hover:text-primary transition-colors">
-        <span class="material-symbols-outlined">chevron_right</span>
-        </button>
-        </td>
-        </tr>
-        <!-- Row 4 -->
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
-        <td class="px-6 py-4 whitespace-nowrap text-[#4c669a] dark:text-gray-400">
-        <div class="flex flex-col">
-        <span class="font-medium text-[#0d121b] dark:text-gray-200">Oct 23, 2023</span>
-        <span class="text-xs">04:55 PM</span>
-        </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-        <div class="flex items-center gap-3">
-        <div class="size-8 rounded-full bg-cover bg-center" data-alt="Portrait of Andres Bonifacio" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAvXHrT-7yt35t7zEhPTOK241mxjYHaKyymaginc0XQJrfqJly3uFB7H37pxwYUIpogUCkO5h-TKxmXFTL3i-ujDmxtJTV-3_mTDvIbvWE_gwRMAyEQDZhlUztXi3r4Ca9_oiF59q0dua0wxjZwiwKk5v6mQGUDfjcf5tzq0QVOt90rHlgKPBaRshi6TtMsv5spWDJTdHbwHLvvm7z2X2HssHXBA2YWXFKw_NQAtmMdO9snmjz3ZVSKeEBQAD-nwy3qRUSfv-S-gl1W");'></div>
-        <div>
-        <p class="font-medium text-[#0d121b] dark:text-white">Andres Bonifacio</p>
-        <p class="text-xs text-[#4c669a]">andres.b@cvsu.edu.ph</p>
-        </div>
-        </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-        <span class="inline-flex items-center rounded-md bg-purple-50 dark:bg-purple-900/30 px-2 py-1 text-xs font-medium text-purple-700 dark:text-purple-300 ring-1 ring-inset ring-purple-700/10">Admin</span>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-900/30 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:text-red-300 ring-1 ring-inset ring-red-600/20">
-        <span class="size-1.5 rounded-full bg-red-500"></span>
-                                                            File Delete
-                                                        </span>
-        </td>
-        <td class="px-6 py-4 text-[#0d121b] dark:text-gray-300">
-                                                        Permanently deleted "Obsolete Syllabus 2020.pdf".
-                                                    </td>
-        <td class="px-6 py-4 whitespace-nowrap text-right">
-        <button class="text-[#4c669a] hover:text-primary transition-colors">
-        <span class="material-symbols-outlined">chevron_right</span>
-        </button>
-        </td>
-        </tr>
-        <!-- Row 5 -->
-        <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors group">
-        <td class="px-6 py-4 whitespace-nowrap text-[#4c669a] dark:text-gray-400">
-        <div class="flex flex-col">
-        <span class="font-medium text-[#0d121b] dark:text-gray-200">Oct 23, 2023</span>
-        <span class="text-xs">02:10 PM</span>
-        </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-        <div class="flex items-center gap-3">
-        <div class="size-8 rounded-full bg-cover bg-center" data-alt="Portrait of Apolinario Mabini" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuAI-hhK7ayBwT5P6EewE5LFV7kIwiN7toGHHhPnr95loeH8-7bdy64yKvZeNn4QI2dK3XF0aPrcjxL89kEFweJhhfZDcRSIHK8HEiKK7gpo7lXeMdY52mWmKCR_vjmAZYiHSo-xXibWwxYrEBl1oOW7bXiu1lBqpyySd-zg23oNwpsK5GaaScNoB9c33iVWOFZRO_P4YHaMuDjWsVjRD8aix8RuCZ1xrClT5G7W-iuaeVh6lV6P-d6HAtsBfP1K3pwDxzfT2qMOX3xO");'></div>
-        <div>
-        <p class="font-medium text-[#0d121b] dark:text-white">Apolinario Mabini</p>
-        <p class="text-xs text-[#4c669a]">apolinario.m@cvsu.edu.ph</p>
-        </div>
-        </div>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-        <span class="inline-flex items-center rounded-md bg-blue-50 dark:bg-blue-900/30 px-2 py-1 text-xs font-medium text-blue-700 dark:text-blue-300 ring-1 ring-inset ring-blue-700/10">Faculty</span>
-        </td>
-        <td class="px-6 py-4 whitespace-nowrap">
-        <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 dark:bg-gray-700 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:text-gray-300 ring-1 ring-inset ring-gray-500/10">
-        <span class="size-1.5 rounded-full bg-gray-500"></span>
-                                                            File Download
-                                                        </span>
-        </td>
-        <td class="px-6 py-4 text-[#0d121b] dark:text-gray-300">
-                                                        Downloaded "Faculty Roster 2023.xlsx".
-                                                    </td>
         <td class="px-6 py-4 whitespace-nowrap text-right">
         <button class="text-[#4c669a] hover:text-primary transition-colors">
         <span class="material-symbols-outlined">chevron_right</span>
@@ -277,24 +142,30 @@
         <div class="hidden sm:flex flex-1 items-center justify-between">
         <div>
         <p class="text-sm text-[#4c669a] dark:text-gray-400">
-                                                    Showing <span class="font-medium text-[#0d121b] dark:text-white">1</span> to <span class="font-medium text-[#0d121b] dark:text-white">5</span> of <span class="font-medium text-[#0d121b] dark:text-white">128</span> results
-                                                </p>
+            Showing <span class="font-medium text-[#0d121b] dark:text-white">{{ logs.from || 0 }}</span> to <span class="font-medium text-[#0d121b] dark:text-white">{{ logs.to || 0 }}</span> of <span class="font-medium text-[#0d121b] dark:text-white">{{ logs.total }}</span> results
+        </p>
         </div>
         <div>
         <nav aria-label="Pagination" class="isolate inline-flex -space-x-px rounded-md shadow-sm">
-        <a class="relative inline-flex items-center rounded-l-md px-2 py-2 text-[#4c669a] ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0" href="#">
-        <span class="sr-only">Previous</span>
-        <span class="material-symbols-outlined text-[20px]">chevron_left</span>
-        </a>
-        <a aria-current="page" class="relative z-10 inline-flex items-center bg-primary px-4 py-2 text-sm font-semibold text-white focus:z-20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary" href="#">1</a>
-        <a class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-[#0d121b] dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0" href="#">2</a>
-        <a class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-[#0d121b] dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0" href="#">3</a>
-        <span class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-[#4c669a] ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:outline-offset-0">...</span>
-        <a class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-[#0d121b] dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0" href="#">8</a>
-        <a class="relative inline-flex items-center rounded-r-md px-2 py-2 text-[#4c669a] ring-1 ring-inset ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0" href="#">
-        <span class="sr-only">Next</span>
-        <span class="material-symbols-outlined text-[20px]">chevron_right</span>
-        </a>
+            <template v-for="(link, index) in logs.links" :key="index">
+                <Link 
+                    v-if="link.url"
+                    :href="link.url" 
+                    class="relative inline-flex items-center px-4 py-2 text-sm font-semibold ring-1 ring-inset focus:z-20 focus:outline-offset-0"
+                    :class="[
+                        link.active 
+                            ? 'z-10 bg-primary text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary' 
+                            : 'text-[#0d121b] dark:text-gray-300 ring-gray-300 dark:ring-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700'
+                    ]"
+                >
+                    <span v-html="link.label"></span>
+                </Link>
+                <span 
+                    v-else 
+                    v-html="link.label"
+                    class="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-[#4c669a] ring-1 ring-inset ring-gray-300 dark:ring-gray-700 focus:outline-offset-0 opacity-50 cursor-not-allowed"
+                ></span>
+            </template>
         </nav>
         </div>
         </div>

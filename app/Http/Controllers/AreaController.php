@@ -54,8 +54,11 @@ class AreaController extends Controller
      */
     public function show(Area $area)
     {
+        $user = auth()->user() ?? auth('accreditor')->user();
+
         $files = $area
             ->files()
+            ->accessibleBy($user)
             ->with('college', 'program', 'uploadedBy.googleInfo')
             ->orderBy('created_at', 'desc')
             ->paginate(10)

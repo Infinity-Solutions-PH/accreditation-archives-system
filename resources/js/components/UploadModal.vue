@@ -2,11 +2,12 @@
     import { computed, ref, reactive, watch } from 'vue';
     import api from '@/axios.js';
 
-    const { currentArea, colleges, programs, areas } =  defineProps({
+    const { currentArea, colleges, programs, areas, isGeneral } =  defineProps({
         currentArea: Object,
         colleges: Object,
         programs: Object,
-        areas: Object
+        areas: Object,
+        isGeneral: Boolean
     });
 
     const emit = defineEmits(['close']);
@@ -29,7 +30,8 @@
         program_id: null,
         level: null,
         area_id: null,
-        tmp_id: null
+        tmp_id: null,
+        is_general: isGeneral || false
     });
 
     const MAX_SIZE = 2 * 1024 * 1024
@@ -137,7 +139,8 @@
                 college_id: metadata.college_id,
                 program_id: metadata.program_id,
                 level: metadata.level,
-                area_id: metadata.area_id
+                area_id: metadata.area_id,
+                is_general: metadata.is_general
             }
         }, {
             headers: { 'X-Requested-With': 'XMLHttpRequest' }
@@ -240,7 +243,7 @@
                                 </select>
                             </div>
                         </div>
-                        <div>
+                        <div v-if="!isGeneral">
                             <label class="block text-sm font-semibold text-text-main-light dark:text-white mb-1.5">Area</label>
                             <div class="relative">
                                 <select class="w-full pl-3.5 pr-10 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white appearance-none" v-model="metadata.area_id" :disabled="currentArea">

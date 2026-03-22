@@ -52,7 +52,8 @@ class FileController extends Controller
             'metadata.college_id' => ['nullable', 'exists:colleges,id'],
             'metadata.program_id' => ['nullable', 'exists:programs,id'],
             'metadata.area_id' => ['nullable', 'exists:areas,id'],
-            'metadata.level' => ['nullable', 'int']
+            'metadata.level' => ['nullable', 'int'],
+            'metadata.is_general' => ['nullable', 'boolean']
         ]);
 
         $file = File::where('tmp_id', $request->tmp_id)->firstOrFail();

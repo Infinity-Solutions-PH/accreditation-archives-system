@@ -1,23 +1,29 @@
 <script setup>
     import { ref } from 'vue';
+    import { router, Head } from '@inertiajs/vue3';
 
     import AppLayout from '@shared/Layouts/App.vue';
 
     import CreateUserModal from '@/components/CreateUserModal.vue';
+    import EditUserModal from '@/components/EditUserModal.vue';
 
     defineOptions({
         layout: AppLayout
     });
 
     defineProps({
-        users: Object,
+        users: [Object, Array],
         userStats: {
             type: Object,
             required: true
-        }
+        },
+        roles: Array,
+        colleges: Array,
+        programs: Array
     })
 
     const showCreateUserModal = ref(false);
+    const editingUser = ref(null);
 
     const openCreateUserModal = () => {
         showCreateUserModal.value = true;
@@ -25,6 +31,19 @@
 
     const closeCreateUserModal = () => {
         showCreateUserModal.value = false;
+    }
+
+    const editUser = (user) => {
+        editingUser.value = user;
+    }
+
+    const closeEditModal = () => {
+        editingUser.value = null;
+    }
+
+    const onUserUpdated = () => {
+        closeEditModal();
+        router.reload({ only: ['users', 'userStats'] });
     }
 </script>
 
@@ -172,22 +191,35 @@
                 </div>
             </td>
             <td class="p-4">
-                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border border-purple-100 dark:border-purple-800">
-                <span class="material-symbols-outlined text-[14px]">shield_person</span>
-                    IDO Staff
+                <div v-if="user.roles && user.roles.length > 0" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border border-purple-100 dark:border-purple-800">
+                    <span class="material-symbols-outlined text-[14px]">shield_person</span>
+                    {{ user.roles[0].name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
                 </div>
+                <div v-else class="text-xs text-slate-500 px-2 py-1">No Role</div>
             </td>
-            <td class="p-4">Quality Assurance Office</td>
             <td class="p-4">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 border border-green-100 dark:border-green-800">
-                <span class="size-1.5 rounded-full bg-green-500"></span>
-                Active
-            </span>
+                <div v-if="user.college">{{ user.college.name }}</div>
+                <div v-else class="text-slate-400 text-xs italic">Unassigned</div>
             </td>
-            <td class="p-4 text-slate-500 dark:text-slate-400">Just now</td>
+            <td class="p-4 flex flex-col items-start gap-1">
+                <span v-if="user.is_active" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 border border-green-100 dark:border-green-800">
+                    <span class="size-1.5 rounded-full bg-green-500"></span> Active
+                </span>
+                <span v-else class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                    <span class="size-1.5 rounded-full bg-slate-400"></span> Inactive
+                </span>
+                
+                <span v-if="user.role_status === 'pending'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-100 dark:border-amber-800">
+                    <span class="material-symbols-outlined text-[14px]">hourglass_top</span> Pending
+                </span>
+                <span v-else-if="user.role_status === 'rejected'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-100 dark:border-red-800">
+                    <span class="material-symbols-outlined text-[14px]">cancel</span> Rejected
+                </span>
+            </td>
+            <td class="p-4 text-slate-500 dark:text-slate-400">{{ new Date(user.updated_at).toLocaleDateString() }}</td>
             <td class="p-4 text-right">
                 <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button class="p-1.5 rounded text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Edit User">
+                    <button @click="editUser(user)" class="p-1.5 rounded text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Edit User">
                         <span class="material-symbols-outlined text-[20px]">edit</span>
                     </button>
                     <button class="p-1.5 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete User">
@@ -380,6 +412,15 @@
         <CreateUserModal 
             v-if="showCreateUserModal"
             @close="closeCreateUserModal"
+        />
+        <EditUserModal 
+            v-if="editingUser"
+            :user="editingUser"
+            :roles="roles"
+            :colleges="colleges"
+            :programs="programs"
+            @close="closeEditModal"
+            @updated="onUserUpdated"
         />
     </main>
 </template>

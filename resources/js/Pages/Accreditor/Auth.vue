@@ -1,9 +1,21 @@
 <script setup>
     import AuthLayout from '@shared/Layouts/Auth.vue';
+    import { useForm, Head, Link } from '@inertiajs/vue3';
 
     defineOptions({
         layout: AuthLayout
     });
+
+    const form = useForm({
+        email: '',
+        password: '',
+    });
+
+    const submit = () => {
+        form.post(route('accreditor.login'), {
+            onFinish: () => form.reset('password'),
+        });
+    };
 </script>
 
 <template>
@@ -55,11 +67,14 @@
                         <h1 class="text-3xl font-bold tracking-tight text-[#0d121b] dark:text-white">Accreditor Login</h1>
                         <p class="text-slate-500 dark:text-slate-400">Enter your assigned temporary credentials provided by the system administrator.</p>
                     </div>
-                    <form class="space-y-5" onsubmit="event.preventDefault();">
+                    <form class="space-y-5" @submit.prevent="submit">
+                        <div v-if="form.errors.email" class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+                            {{ form.errors.email }}
+                        </div>
                         <div class="space-y-2">
-                            <label class="text-[#0d121b] dark:text-gray-200 text-sm font-medium leading-normal" for="access-id">Accreditor ID / Username</label>
+                            <label class="text-[#0d121b] dark:text-gray-200 text-sm font-medium leading-normal" for="access-id">Accreditor Email / ID</label>
                             <div class="relative">
-                                <input class="form-input flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-accreditor/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-accreditor h-12 placeholder:text-[#4c669a] dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal transition-all" id="access-id" placeholder="e.g. ACC-2024-XXXX" required="" type="text"/>
+                                <input v-model="form.email" class="form-input flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-accreditor/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-accreditor h-12 placeholder:text-[#4c669a] dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal transition-all" id="access-id" placeholder="e.g. email@example.com" required="" type="email"/>
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
                                     <span class="material-symbols-outlined text-[20px]">badge</span>
                                 </div>
@@ -68,7 +83,7 @@
                         <div class="space-y-2">
                             <label class="text-[#0d121b] dark:text-gray-200 text-sm font-medium leading-normal" for="access-code">Temporary Access Code</label>
                             <div class="relative">
-                                <input class="form-input flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-accreditor/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-accreditor h-12 placeholder:text-[#4c669a] dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal transition-all" id="access-code" placeholder="Enter your 8-digit code" required="" type="password"/>
+                                <input v-model="form.password" class="form-input flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-accreditor/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-accreditor h-12 placeholder:text-[#4c669a] dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal transition-all" id="access-code" placeholder="Enter your 8-digit code" required="" type="password"/>
                                 <button class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-accreditor transition-colors focus:outline-none" type="button">
                                     <span class="material-symbols-outlined text-[20px]">visibility</span>
                                 </button>
@@ -78,7 +93,7 @@
                                 <p class="text-xs text-slate-500 dark:text-slate-400">Temporary codes expire after the scheduled evaluation period.</p>
                             </div>
                         </div>
-                        <button class="w-full h-12 bg-accreditor hover:bg-accreditor-hover text-white font-semibold rounded-lg shadow-sm shadow-accreditor/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2" type="submit">
+                        <button :disabled="form.processing" class="w-full h-12 bg-accreditor hover:bg-accreditor-hover text-white font-semibold rounded-lg shadow-sm shadow-accreditor/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" type="submit">
                             <span>Authenticate Access</span>
                             <span class="material-symbols-outlined text-sm">lock_open</span>
                         </button>
