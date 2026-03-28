@@ -4,15 +4,17 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Inertia\Inertia;
-use Illuminate\Support\Str;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Auth;
+use App\Http\Requests\StoreCollegeRequest;
+use App\Services\OnboardingService;
 
 class OnboardingController extends Controller
 {
-    public function __construct() {
+    protected $onboardingService;
+
+    public function __construct(OnboardingService $onboardingService) {
         Inertia::setRootView('layouts/auth');
+        $this->onboardingService = $onboardingService;
     }
 
     public function college()
@@ -27,45 +29,14 @@ class OnboardingController extends Controller
         ]);
     }
 
-    public function storeCollege(Request $request)
+    public function storeCollege(StoreCollegeRequest $request)
     {
-        $request->validate(['college_id' => 'required|exists:colleges,id']);
-        
-        $user = auth('web')->user();
+        $user = $this->onboardingService->completeCollegeSelection($request->college_id);
 
-        if ($user) {
-            $user->update([
-                'college_id' => $request->college_id,
-                'role_status' => 'pending'
-            ]);
-            return redirect()->route('onboarding.pending');
+        if (!$user) {
+            return redirect('/auth');
         }
 
-        $pendingUser = session()->get('pending_google_user');
-        if (!$pendingUser) return redirect('/auth');
-
-        $user = User::create([
-            'name' => $pendingUser['name'],
-            'email' => $pendingUser['email'],
-            'password' => Hash::make(Str::random(12)),
-            'college_id' => $request->college_id,
-            'role_status' => 'pending',
-            'is_active' => true,
-        ]);
-
-        $user->googleInfo()->create([
-            'google_id' => $pendingUser['google_id'],
-            'name' => $pendingUser['name'],
-            'email' => $pendingUser['email'],
-            'avatar' => $pendingUser['avatar'],
-            'hd' => $pendingUser['hd'],
-            'locale' => $pendingUser['locale'],
-        ]);
-
-        session()->forget('pending_google_user');
-        
-        Auth::login($user);
-        
         return redirect()->route('onboarding.pending');
     }
 
