@@ -6,6 +6,8 @@
 
     import CreateUserModal from '@/components/CreateUserModal.vue';
     import EditUserModal from '@/components/EditUserModal.vue';
+    import ConfirmationModal from '@/components/ConfirmationModal.vue';
+    import api from '@/axios.js';
 
     defineOptions({
         layout: AppLayout
@@ -43,8 +45,60 @@
 
     const onUserUpdated = () => {
         closeEditModal();
+        closeConfirmationModal();
         router.reload({ only: ['users', 'userStats'] });
     }
+
+    // Confirmation Logic
+    const confirmingAction = ref(null); // { user, type: 'approve' | 'reject' }
+    const isProcessingAction = ref(false);
+
+    const handleApprove = (user) => {
+        confirmingAction.value = {
+            user,
+            type: 'approve',
+            title: 'Approve User Request',
+            message: `Are you sure you want to approve ${user.name}'s account access? This will allow them to login and access assigned programs.`,
+            confirmText: 'Approve User',
+            confirmButtonClass: 'bg-green-600 hover:bg-green-700'
+        };
+    };
+
+    const handleReject = (user) => {
+        confirmingAction.value = {
+            user,
+            type: 'reject',
+            title: 'Reject User Request',
+            message: `Are you sure you want to reject ${user.name}'s request? They will not be able to access the system until approved.`,
+            confirmText: 'Reject Request',
+            confirmButtonClass: 'bg-red-600 hover:bg-red-700'
+        };
+    };
+
+    const closeConfirmationModal = () => {
+        confirmingAction.value = null;
+    };
+
+    const executeAction = async () => {
+        if (!confirmingAction.value || isProcessingAction.value) return;
+        
+        const { user, type } = confirmingAction.value;
+        const status = type === 'approve' ? 'approved' : 'rejected';
+        
+        isProcessingAction.value = true;
+        try {
+            await api.put(`/api/user-management/${user.id}/role-status`, {
+                role_status: status,
+                is_active: type === 'approve'
+            });
+            onUserUpdated();
+        } catch (error) {
+            console.error('Failed to update user status:', error);
+            // Optional: Add toast notification here
+        } finally {
+            isProcessingAction.value = false;
+        }
+    };
 
     const searchQuery = ref('');
     const roleFilter = ref('All Roles');
@@ -228,10 +282,17 @@
                                     <td class="p-4 text-slate-500 dark:text-slate-400">{{ new Date(user.updated_at).toLocaleDateString() }}</td>
                                     <td class="p-4 text-right">
                                         <div v-if="user.role_status === 'pending'" class="flex items-center justify-end gap-1">
-                                            <button class="flex items-center gap-1 px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-medium transition-colors shadow-sm">
+                                            <button 
+                                                @click="handleApprove(user)"
+                                                class="flex items-center gap-1 px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-medium transition-colors shadow-sm active:scale-95"
+                                            >
                                                 <span class="material-symbols-outlined text-[14px]">check</span> Approve
                                             </button>
-                                            <button class="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-white dark:hover:bg-slate-800 transition-colors" title="Reject">
+                                            <button 
+                                                @click="handleReject(user)"
+                                                class="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-white dark:hover:bg-slate-800 transition-colors active:scale-95" 
+                                                title="Reject"
+                                            >
                                                 <span class="material-symbols-outlined text-[20px]">close</span>
                                             </button>
                                         </div>
@@ -280,6 +341,18 @@
             :programs="programs"
             @close="closeEditModal"
             @updated="onUserUpdated"
+        />
+
+        <ConfirmationModal
+            v-if="confirmingAction"
+            :show="!!confirmingAction"
+            :title="confirmingAction.title"
+            :message="confirmingAction.message"
+            :confirmText="confirmingAction.confirmText"
+            :confirmButtonClass="confirmingAction.confirmButtonClass"
+            :isProcessing="isProcessingAction"
+            @close="closeConfirmationModal"
+            @confirm="executeAction"
         />
     </main>
 </template>

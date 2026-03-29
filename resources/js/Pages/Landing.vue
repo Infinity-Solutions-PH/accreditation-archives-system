@@ -1,9 +1,17 @@
 <script setup>
-    import { ref } from 'vue'
-
+    import { ref } from 'vue';
+    import { router } from '@inertiajs/vue3';
     import AppLayout from '@shared/Layouts/App.vue';
-
     import UploadModal from '@/components/UploadModal.vue';
+    import ConfirmationModal from '@/components/ConfirmationModal.vue';
+    import api from '@/axios.js';
+
+    const props = defineProps({
+        counts: Object,
+        pendingUsers: Array,
+        expiringFiles: Array,
+        recentActivity: Array
+    });
 
     const showUploadModal = ref(false);
 
@@ -18,6 +26,57 @@
     defineOptions({
         layout: AppLayout
     });
+
+    // Confirmation Logic
+    const confirmingAction = ref(null); // { user, type: 'approve' | 'reject' }
+    const isProcessingAction = ref(false);
+
+    const handleApprove = (user) => {
+        confirmingAction.value = {
+            user,
+            type: 'approve',
+            title: 'Approve User Request',
+            message: `Are you sure you want to approve ${user.name}'s account access?`,
+            confirmText: 'Approve User',
+            confirmButtonClass: 'bg-green-600 hover:bg-green-700'
+        };
+    };
+
+    const handleReject = (user) => {
+        confirmingAction.value = {
+            user,
+            type: 'reject',
+            title: 'Reject User Request',
+            message: `Are you sure you want to reject ${user.name}'s request?`,
+            confirmText: 'Reject Request',
+            confirmButtonClass: 'bg-red-600 hover:bg-red-700'
+        };
+    };
+
+    const closeConfirmationModal = () => {
+        confirmingAction.value = null;
+    };
+
+    const executeAction = async () => {
+        if (!confirmingAction.value || isProcessingAction.value) return;
+        
+        const { user, type } = confirmingAction.value;
+        const status = type === 'approve' ? 'approved' : 'rejected';
+        
+        isProcessingAction.value = true;
+        try {
+            await api.put(`/api/user-management/${user.id}/role-status`, {
+                role_status: status,
+                is_active: type === 'approve'
+            });
+            confirmingAction.value = null;
+            router.reload({ only: ['counts', 'pendingUsers', 'recentActivity'] });
+        } catch (error) {
+            console.error('Failed to update user status:', error);
+        } finally {
+            isProcessingAction.value = false;
+        }
+    };
 </script>
 
 <template>
@@ -45,38 +104,40 @@
             </div>
             <!-- Stats Cards -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-light dark:bg-surface-dark border border-[#cfd7e7] dark:border-gray-700 shadow-sm">
-            <div class="flex items-center justify-between">
-            <p class="text-text-muted-light dark:text-text-muted-dark text-sm font-medium uppercase tracking-wider">Total Documents</p>
-            <span class="material-symbols-outlined text-primary bg-blue-50 dark:bg-blue-900/20 p-1.5 rounded-lg">description</span>
-            </div>
-            <p class="text-text-main-light dark:text-white tracking-tight text-3xl font-bold leading-tight">1,240</p>
-            <span class="text-xs text-green-600 font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">trending_up</span> +12% from last month</span>
-            </div>
-            <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-light dark:bg-surface-dark border border-[#cfd7e7] dark:border-gray-700 shadow-sm">
-            <div class="flex items-center justify-between">
-            <p class="text-text-muted-light dark:text-text-muted-dark text-sm font-medium uppercase tracking-wider">Active Users</p>
-            <span class="material-symbols-outlined text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 p-1.5 rounded-lg">group</span>
-            </div>
-            <p class="text-text-main-light dark:text-white tracking-tight text-3xl font-bold leading-tight">85</p>
-            <span class="text-xs text-text-muted-light dark:text-text-muted-dark">Across 8 departments</span>
-            </div>
-            <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-light dark:bg-surface-dark border-l-4 border-l-orange-400 border-y border-r border-r-[#cfd7e7] border-y-[#cfd7e7] dark:border-y-gray-700 dark:border-r-gray-700 shadow-sm">
-            <div class="flex items-center justify-between">
-            <p class="text-text-muted-light dark:text-text-muted-dark text-sm font-medium uppercase tracking-wider">Pending Approvals</p>
-            <span class="material-symbols-outlined text-orange-500 bg-orange-50 dark:bg-orange-900/20 p-1.5 rounded-lg">person_add</span>
-            </div>
-            <p class="text-text-main-light dark:text-white tracking-tight text-3xl font-bold leading-tight">3</p>
-            <span class="text-xs text-orange-600 font-medium">Requires immediate action</span>
-            </div>
-            <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-light dark:bg-surface-dark border border-[#cfd7e7] dark:border-gray-700 shadow-sm">
-            <div class="flex items-center justify-between">
-            <p class="text-text-muted-light dark:text-text-muted-dark text-sm font-medium uppercase tracking-wider">Expiring Soon</p>
-            <span class="material-symbols-outlined text-red-500 bg-red-50 dark:bg-red-900/20 p-1.5 rounded-lg">timer</span>
-            </div>
-            <p class="text-text-main-light dark:text-white tracking-tight text-3xl font-bold leading-tight">12</p>
-            <span class="text-xs text-red-600 font-medium">Documents expiring &lt; 30 days</span>
-            </div>
+                <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-light dark:bg-surface-dark border border-[#cfd7e7] dark:border-gray-700 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <p class="text-text-muted-light dark:text-text-muted-dark text-sm font-medium uppercase tracking-wider">Total Documents</p>
+                        <span class="material-symbols-outlined text-primary bg-blue-50 dark:bg-blue-900/20 p-1.5 rounded-lg">description</span>
+                    </div>
+                    <p class="text-text-main-light dark:text-white tracking-tight text-3xl font-bold leading-tight">{{ counts.totalDocuments?.toLocaleString() }}</p>
+                    <span class="text-xs text-green-600 font-medium flex items-center gap-1"><span class="material-symbols-outlined text-[14px]">trending_up</span> Documents tracked</span>
+                </div>
+                <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-light dark:bg-surface-dark border border-[#cfd7e7] dark:border-gray-700 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <p class="text-text-muted-light dark:text-text-muted-dark text-sm font-medium uppercase tracking-wider">Active Users</p>
+                        <span class="material-symbols-outlined text-indigo-600 bg-indigo-50 dark:bg-indigo-900/20 p-1.5 rounded-lg">group</span>
+                    </div>
+                    <p class="text-text-main-light dark:text-white tracking-tight text-3xl font-bold leading-tight">{{ counts.activeUsers }}</p>
+                    <span class="text-xs text-text-muted-light dark:text-text-muted-dark font-medium">Verified system access</span>
+                </div>
+                <div 
+                    v-if="$page.props.auth?.roles?.some(r => ['admin', 'ido_staff', 'college_officer'].includes(r))"
+                    class="flex flex-col gap-2 rounded-xl p-5 bg-surface-light dark:bg-surface-dark border-l-4 border-l-orange-400 border-y border-r border-r-[#cfd7e7] border-y-[#cfd7e7] dark:border-y-gray-700 dark:border-r-gray-700 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <p class="text-text-muted-light dark:text-text-muted-dark text-sm font-medium uppercase tracking-wider">Pending Approvals</p>
+                        <span class="material-symbols-outlined text-orange-500 bg-orange-50 dark:bg-orange-900/20 p-1.5 rounded-lg">person_add</span>
+                    </div>
+                    <p class="text-text-main-light dark:text-white tracking-tight text-3xl font-bold leading-tight">{{ counts.pendingApprovals }}</p>
+                    <span class="text-xs text-orange-600 font-medium">Requires immediate action</span>
+                </div>
+                <div class="flex flex-col gap-2 rounded-xl p-5 bg-surface-light dark:bg-surface-dark border border-[#cfd7e7] dark:border-gray-700 shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <p class="text-text-muted-light dark:text-text-muted-dark text-sm font-medium uppercase tracking-wider">Expiring Soon</p>
+                        <span class="material-symbols-outlined text-red-500 bg-red-50 dark:bg-red-900/20 p-1.5 rounded-lg">timer</span>
+                    </div>
+                    <p class="text-text-main-light dark:text-white tracking-tight text-3xl font-bold leading-tight">{{ counts.expiringSoon }}</p>
+                    <span class="text-xs text-red-600 font-medium">Documents expiring &lt; 30 days</span>
+                </div>
             </div>
             <!-- Dashboard Main Grid -->
             <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -135,77 +196,56 @@
             </div>
             </div>
             <!-- Pending Approvals Table -->
-            <div class="flex flex-col rounded-xl bg-surface-light dark:bg-surface-dark border border-[#cfd7e7] dark:border-gray-700 shadow-sm overflow-hidden">
-            <div class="p-6 border-b border-[#cfd7e7] dark:border-gray-700 flex justify-between items-center">
-            <h3 class="text-text-main-light dark:text-white text-lg font-bold">Pending User Approvals</h3>
-            <a class="text-primary text-sm font-bold hover:underline" href="#">View All</a>
-            </div>
-            <div class="overflow-x-auto">
-            <table class="w-full text-left text-sm whitespace-nowrap">
-            <thead class="bg-background-light dark:bg-gray-800 text-text-muted-light dark:text-text-muted-dark font-medium uppercase text-xs">
-            <tr>
-            <th class="px-6 py-3">Name</th>
-            <th class="px-6 py-3">Department</th>
-            <th class="px-6 py-3">Role</th>
-            <th class="px-6 py-3">Date</th>
-            <th class="px-6 py-3 text-right">Actions</th>
-            </tr>
-            </thead>
-            <tbody class="divide-y divide-[#e7ebf3] dark:divide-gray-700">
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-            <td class="px-6 py-4 flex items-center gap-3">
-            <div class="size-8 rounded-full bg-gray-200 bg-cover bg-center" data-alt="Portrait of Maria Santos" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD3QfC4I02aYgWVUOl2Vta6J5xZ5Y5nlq_c-vqn4ziAC7eIWWIpIPN9owO-_8PxTeU0DzOX0LBQ1Id9nVoG1nC42bSqgMzBTG6m1PnwvWmBZw2c0tHLcR7wxmimyToQCchw7a3xFW3XC5zDtBXee1Nqg1eBZw4LvG9UA9vv-I3cA_u-pgV3DI6B_OTXeZFynzTiihojXb_CBUjCdVauIr0jAD73NvFi2rl_G2npFbEgeDKRUnxAyaFH16vpBPlJKkCKTBRqxmkFW_zT");'></div>
-            <div class="font-bold text-text-main-light dark:text-white">Maria Santos</div>
-            </td>
-            <td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark">College of Engineering</td>
-            <td class="px-6 py-4"><span class="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-bold">Editor</span></td>
-            <td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark">Oct 24, 2023</td>
-            <td class="px-6 py-4 text-right flex justify-end gap-2">
-            <button class="size-8 flex items-center justify-center rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" title="Approve">
-            <span class="material-symbols-outlined text-[18px]">check</span>
-            </button>
-            <button class="size-8 flex items-center justify-center rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors" title="Deny">
-            <span class="material-symbols-outlined text-[18px]">close</span>
-            </button>
-            </td>
-            </tr>
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-            <td class="px-6 py-4 flex items-center gap-3">
-            <div class="size-8 rounded-full bg-gray-200 bg-cover bg-center" data-alt="Portrait of Juan Dela Cruz" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuB4pe1w5NVQAX39cKnXB2yu470rywcV-Kl59Qx9ea2QLHKiMIC8exkGcYrn2WzIyzEHNuGekUD8OYIoVPT4DsIsfTDGkuHIwSdR-R6u1FOcL0TM-mVhKaEM4-S0Og_STJzq4WwVhlZzbOiEHWHz9awIMYldLV06TjWGdVqpQ0eQYahuKA0lPieMvqnjhtg72tZJotGr2oFdYuedWaVI16jRBvmNcAucktEd-fT3lB9TafhHbpWsU6clQobneWwfWzSmtdR-lum_XnpG");'></div>
-            <div class="font-bold text-text-main-light dark:text-white">Juan Dela Cruz</div>
-            </td>
-            <td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark">College of Nursing</td>
-            <td class="px-6 py-4"><span class="px-2 py-1 rounded bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300 text-xs font-bold">Viewer</span></td>
-            <td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark">Oct 23, 2023</td>
-            <td class="px-6 py-4 text-right flex justify-end gap-2">
-            <button class="size-8 flex items-center justify-center rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" title="Approve">
-            <span class="material-symbols-outlined text-[18px]">check</span>
-            </button>
-            <button class="size-8 flex items-center justify-center rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors" title="Deny">
-            <span class="material-symbols-outlined text-[18px]">close</span>
-            </button>
-            </td>
-            </tr>
-            <tr class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-            <td class="px-6 py-4 flex items-center gap-3">
-            <div class="size-8 rounded-full bg-gray-200 bg-cover bg-center" data-alt="Portrait of Ana Reyes" style='background-image: url("https://lh3.googleusercontent.com/aida-public/AB6AXuD-aaklSkTT-FdNfPitaBm10hP2rGc5TJ7Gp2FUVa27bSfpIavCz39fmbUs6U-qV_dSv1G0HrU02vR-oQWUPUixWfdIOI4LDW0oSwUKikhL0XpV0_oFOXj9xER1HOukjvIfjtZxgLe8H4CQLJ96PkI4GCmaW1N69jnccCmvFP2_YW3yvj3n6lD6murTe4CU80mP33_XLnbL0tYOLmjcv0criNAi5W5vk3GnLsWUnXaZ9zzfWubXjA2YltkWO6KOpnw3_eVUA9bdBVUP");'></div>
-            <div class="font-bold text-text-main-light dark:text-white">Ana Reyes</div>
-            </td>
-            <td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark">HR Department</td>
-            <td class="px-6 py-4"><span class="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-xs font-bold">Editor</span></td>
-            <td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark">Oct 22, 2023</td>
-            <td class="px-6 py-4 text-right flex justify-end gap-2">
-            <button class="size-8 flex items-center justify-center rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors" title="Approve">
-            <span class="material-symbols-outlined text-[18px]">check</span>
-            </button>
-            <button class="size-8 flex items-center justify-center rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors" title="Deny">
-            <span class="material-symbols-outlined text-[18px]">close</span>
-            </button>
-            </td>
-            </tr>
-            </tbody>
-            </table>
-            </div>
+            <div 
+                v-if="$page.props.auth?.roles?.some(r => ['admin', 'ido_staff', 'college_officer'].includes(r))"
+                class="flex flex-col rounded-xl bg-surface-light dark:bg-surface-dark border border-[#cfd7e7] dark:border-gray-700 shadow-sm overflow-hidden">
+                <div class="p-6 border-b border-[#cfd7e7] dark:border-gray-700 flex justify-between items-center">
+                    <h3 class="text-text-main-light dark:text-white text-lg font-bold">Pending User Approvals</h3>
+                    <Link class="text-primary text-sm font-bold hover:underline" :href="route('user-management')">View All</Link>
+                </div>
+                <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm whitespace-nowrap">
+                <thead class="bg-background-light dark:bg-gray-800 text-text-muted-light dark:text-text-muted-dark font-medium uppercase text-xs">
+                <tr>
+                <th class="px-6 py-3">Name</th>
+                <th class="px-6 py-3">Department</th>
+                <th class="px-6 py-3">Role</th>
+                <th class="px-6 py-3">Date</th>
+                <th class="px-6 py-3 text-right">Actions</th>
+                </tr>
+                </thead>
+                <tbody class="divide-y divide-[#e7ebf3] dark:divide-gray-700">
+                    <tr v-if="pendingUsers.length === 0">
+                        <td colspan="5" class="px-6 py-10 text-center text-text-muted-light dark:text-text-muted-dark italic">No pending user approvals at this time.</td>
+                    </tr>
+                    <tr v-for="user in pendingUsers" :key="user.id" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <td class="px-6 py-4 flex items-center gap-3">
+                            <div class="size-8 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary flex items-center justify-center text-xs font-bold font-primary overflow-hidden">
+                                <img v-if="user.google_info?.avatar" :src="user.google_info.avatar" class="size-full object-cover" />
+                                <span v-else>{{ user.name.charAt(0) }}</span>
+                            </div>
+                            <div class="font-bold text-text-main-light dark:text-white">{{ user.name }}</div>
+                        </td>
+                        <td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark text-xs truncate max-w-[150px]">{{ user.college?.name || 'Unassigned' }}</td>
+                        <td class="px-6 py-4">
+                            <span v-if="user.roles?.[0]" class="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-[10px] font-bold uppercase tracking-wider">
+                                {{ user.roles[0].name.replace('_', ' ') }}
+                            </span>
+                            <span v-else class="text-xs text-text-muted-light italic">None</span>
+                        </td>
+                        <td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark text-xs">{{ new Date(user.created_at).toLocaleDateString() }}</td>
+                        <td class="px-6 py-4 text-right flex justify-end gap-2">
+                            <button @click="handleApprove(user)" class="size-8 flex items-center justify-center rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors active:scale-90" title="Approve">
+                                <span class="material-symbols-outlined text-[18px]">check</span>
+                            </button>
+                            <button @click="handleReject(user)" class="size-8 flex items-center justify-center rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors active:scale-90" title="Deny">
+                                <span class="material-symbols-outlined text-[18px]">close</span>
+                            </button>
+                        </td>
+                    </tr>
+                </tbody>
+                </table>
+                </div>
             </div>
             </div>
             <!-- Right Column (Side) -->
@@ -220,45 +260,23 @@
             <p class="text-xs text-text-muted-light dark:text-text-muted-dark">Files needing renewal within 30 days</p>
             </div>
             <div class="flex flex-col divide-y divide-[#e7ebf3] dark:divide-gray-700 max-h-[300px] overflow-y-auto">
-            <div class="p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-            <div class="bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 p-2 rounded shrink-0">
-            <span class="material-symbols-outlined text-[20px]">description</span>
-            </div>
-            <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-text-main-light dark:text-white truncate">Curriculum Audit 2020.pdf</p>
-            <p class="text-xs text-red-600 font-medium">Expires in 2 days</p>
-            </div>
-            <button class="text-text-muted-light hover:text-primary transition-colors">
-            <span class="material-symbols-outlined text-[20px]">more_vert</span>
-            </button>
-            </div>
-            <div class="p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-            <div class="bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-2 rounded shrink-0">
-            <span class="material-symbols-outlined text-[20px]">description</span>
-            </div>
-            <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-text-main-light dark:text-white truncate">Safety Certifications.docx</p>
-            <p class="text-xs text-orange-600 font-medium">Expires in 15 days</p>
-            </div>
-            <button class="text-text-muted-light hover:text-primary transition-colors">
-            <span class="material-symbols-outlined text-[20px]">more_vert</span>
-            </button>
-            </div>
-            <div class="p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-            <div class="bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-2 rounded shrink-0">
-            <span class="material-symbols-outlined text-[20px]">description</span>
-            </div>
-            <div class="flex-1 min-w-0">
-            <p class="text-sm font-bold text-text-main-light dark:text-white truncate">Faculty Roster Q3.xlsx</p>
-            <p class="text-xs text-orange-600 font-medium">Expires in 21 days</p>
-            </div>
-            <button class="text-text-muted-light hover:text-primary transition-colors">
-            <span class="material-symbols-outlined text-[20px]">more_vert</span>
-            </button>
-            </div>
+                <div v-if="expiringFiles.length === 0" class="p-8 text-center text-text-muted-light dark:text-text-muted-dark text-xs italic">
+                    No documents expiring soon.
+                </div>
+                <div v-for="file in expiringFiles" :key="file.id" class="p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                    <div class="bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-2 rounded shrink-0">
+                        <span class="material-symbols-outlined text-[20px]">description</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-bold text-text-main-light dark:text-white truncate">{{ file.title }}</p>
+                        <p class="text-xs" :class="new Date(file.expiration) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) ? 'text-red-600' : 'text-orange-600'">
+                            Expires {{ new Date(file.expiration).toLocaleDateString() }}
+                        </p>
+                    </div>
+                </div>
             </div>
             <div class="p-3 border-t border-[#cfd7e7] dark:border-gray-700 text-center">
-            <a class="text-xs font-bold text-primary hover:underline" href="#">View All 12 Files</a>
+                <a class="text-xs font-bold text-primary hover:underline" href="#">View Repository</a>
             </div>
             </div>
             <!-- Activity Log Feed -->
@@ -267,40 +285,18 @@
             <h3 class="text-text-main-light dark:text-white text-base font-bold">Recent Activity</h3>
             </div>
             <div class="p-5 overflow-y-auto">
-            <div class="relative pl-4 border-l-2 border-[#e7ebf3] dark:border-gray-700 flex flex-col gap-6">
-            <!-- Item 1 -->
-            <div class="relative">
-            <div class="absolute -left-[21px] top-1 bg-primary rounded-full size-2.5 outline outline-4 outline-white dark:outline-surface-dark"></div>
-            <div class="flex flex-col gap-1">
-            <p class="text-sm text-text-main-light dark:text-white"><span class="font-bold">Admin</span> approved <span class="font-bold">Maria Santos</span> as Editor.</p>
-            <p class="text-xs text-text-muted-light dark:text-text-muted-dark">10 mins ago</p>
-            </div>
-            </div>
-            <!-- Item 2 -->
-            <div class="relative">
-            <div class="absolute -left-[21px] top-1 bg-gray-300 dark:bg-gray-600 rounded-full size-2.5 outline outline-4 outline-white dark:outline-surface-dark"></div>
-            <div class="flex flex-col gap-1">
-            <p class="text-sm text-text-main-light dark:text-white"><span class="font-bold">John Doe</span> uploaded 3 new files to <span class="text-primary cursor-pointer hover:underline">Engineering Dept</span>.</p>
-            <p class="text-xs text-text-muted-light dark:text-text-muted-dark">1 hour ago</p>
-            </div>
-            </div>
-            <!-- Item 3 -->
-            <div class="relative">
-            <div class="absolute -left-[21px] top-1 bg-gray-300 dark:bg-gray-600 rounded-full size-2.5 outline outline-4 outline-white dark:outline-surface-dark"></div>
-            <div class="flex flex-col gap-1">
-            <p class="text-sm text-text-main-light dark:text-white"><span class="font-bold">System</span> archived 5 expired documents.</p>
-            <p class="text-xs text-text-muted-light dark:text-text-muted-dark">Yesterday at 5:00 PM</p>
-            </div>
-            </div>
-            <!-- Item 4 -->
-            <div class="relative">
-            <div class="absolute -left-[21px] top-1 bg-gray-300 dark:bg-gray-600 rounded-full size-2.5 outline outline-4 outline-white dark:outline-surface-dark"></div>
-            <div class="flex flex-col gap-1">
-            <p class="text-sm text-text-main-light dark:text-white"><span class="font-bold">Sarah Lee</span> updated her profile information.</p>
-            <p class="text-xs text-text-muted-light dark:text-text-muted-dark">Yesterday at 2:30 PM</p>
-            </div>
-            </div>
-            </div>
+                <div class="relative pl-4 border-l-2 border-[#e7ebf3] dark:border-gray-700 flex flex-col gap-6">
+                    <div v-if="recentActivity.length === 0" class="text-xs text-text-muted-light italic">No recent activity recorded.</div>
+                    <div v-for="activity in recentActivity" :key="activity.id" class="relative">
+                        <div class="absolute -left-[21px] top-1 bg-primary rounded-full size-2.5 outline outline-4 outline-white dark:outline-surface-dark"></div>
+                        <div class="flex flex-col gap-1">
+                            <p class="text-sm text-text-main-light dark:text-white">
+                                <span class="font-bold">{{ activity.causer_name }}</span> {{ activity.description }}
+                            </p>
+                            <p class="text-xs text-text-muted-light dark:text-text-muted-dark">{{ activity.created_at_human }}</p>
+                        </div>
+                    </div>
+                </div>
             </div>
             </div>
             </div>
@@ -309,6 +305,18 @@
         <UploadModal 
             v-if="showUploadModal"
             @close="closeUploadModal"
+        />
+
+        <ConfirmationModal
+            v-if="confirmingAction"
+            :show="!!confirmingAction"
+            :title="confirmingAction.title"
+            :message="confirmingAction.message"
+            :confirmText="confirmingAction.confirmText"
+            :confirmButtonClass="confirmingAction.confirmButtonClass"
+            :isProcessing="isProcessingAction"
+            @close="closeConfirmationModal"
+            @confirm="executeAction"
         />
     </main>
 </template>

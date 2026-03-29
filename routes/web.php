@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserController;
 use App\Http\Middleware\CheckRoleStatus;
 use App\Http\Controllers\VideoController;
 use App\Http\Controllers\LogoutController;
@@ -41,6 +42,7 @@ Route::middleware('auth:web')->group(function() {
 Route::middleware(['auth:web,accreditor', CheckRoleStatus::class])->group(function() {
     Route::get('/dashboard', [LandingController::class, 'index'])->name('dashboard');
     Route::get('/taskforce', [LandingController::class, 'taskforce'])->name('taskforce');
+    Route::get('/profile', [LandingController::class, 'profile'])->name('profile');
 
     Route::get('/areas', [AreaController::class, 'index'])->name('areas');
     Route::get('/areas/{area:slug}', [AreaController::class, 'show'])->name('areas.slug');

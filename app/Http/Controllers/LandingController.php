@@ -4,9 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Area;
 use App\Models\File;
+use App\Models\User;
 use Inertia\Inertia;
 use App\Models\College;
 use App\Models\Program;
+use Spatie\Activitylog\Models\Activity;
 
 class LandingController extends Controller
 {
@@ -16,7 +18,63 @@ class LandingController extends Controller
     }
 
     public function index() {
-        return Inertia::render('Landing');
+        $totalDocuments = File::count();
+        $activeUsers = User::where('is_active', true)->where('role_status', 'approved')->count();
+        $pendingApprovals = User::where('role_status', 'pending')->count();
+        $expiringSoon = File::whereNotNull('expiration')
+            ->where('expiration', '<=', now()->addDays(30))
+            ->count();
+
+        $pendingUsers = User::with(['college', 'roles', 'googleInfo'])
+            ->where('role_status', 'pending')
+            ->latest()
+            ->limit(3)
+            ->get();
+
+        $expiringFiles = File::whereNotNull('expiration')
+            ->where('expiration', '<=', now()->addDays(30))
+            ->orderBy('expiration', 'asc')
+            ->limit(5)
+            ->get();
+
+        $recentActivity = Activity::with('causer')
+            ->latest()
+            ->limit(5)
+            ->get()
+            ->map(function($activity) {
+                return [
+                    'id' => $activity->id,
+                    'description' => $activity->description,
+                    'causer_name' => $activity->causer ? $activity->causer->name : 'System',
+                    'created_at_human' => $activity->created_at->diffForHumans(),
+                    'properties' => $activity->properties,
+                ];
+            });
+
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+        $isAdministrative = $user->hasRole(['admin', 'ido_staff', 'college_officer']);
+
+        return Inertia::render('Landing', [
+            'counts' => [
+                'totalDocuments' => $totalDocuments,
+                'activeUsers' => $activeUsers,
+                'pendingApprovals' => $isAdministrative ? $pendingApprovals : 0,
+                'expiringSoon' => $expiringSoon,
+            ],
+            'pendingUsers' => $isAdministrative ? $pendingUsers : [],
+            'expiringFiles' => $expiringFiles,
+            'recentActivity' => $recentActivity,
+        ]);
+    }
+
+    public function profile() {
+        /** @var \App\Models\User $user */
+        $user = auth()->user()->load(['college', 'program', 'roles', 'permissions']);
+        
+        return Inertia::render('Profile/Index', [
+            'user' => $user
+        ]);
     }
 
     public function taskforce() {

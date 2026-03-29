@@ -93,6 +93,10 @@ class GoogleAuthController extends Controller
             return redirect()->route('onboarding.rejected');
         }
 
+        if ($user->hasRole('taskforce')) {
+            return redirect()->route('profile');
+        }
+
         return redirect()->intended('/areas');
     }
  

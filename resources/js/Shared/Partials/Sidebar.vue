@@ -46,13 +46,6 @@
                     </SidebarLink>
                 </nav>
             </div>
-            <!-- Bottom Action -->
-            <div class="flex flex-col gap-2">
-                <Link :href="route('logout')" method="post" as="button" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors">
-                    <span class="material-symbols-outlined text-[24px]">logout</span>
-                    <p class="text-sm font-medium leading-normal">Sign Out</p>
-                </Link>
-            </div>
         </div>
     </aside>
 </template>
