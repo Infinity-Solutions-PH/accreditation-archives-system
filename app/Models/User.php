@@ -3,13 +3,12 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
-use Carbon\Carbon;
 use Illuminate\Support\Facades\Hash;
+use Spatie\Permission\Traits\HasRoles;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
-use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
 {
@@ -68,6 +67,13 @@ class User extends Authenticatable
     public function program()
     {
         return $this->belongsTo(Program::class);
+    }
+    
+    public function sharedFiles()
+    {
+        return $this->belongsToMany(File::class, 'file_user_shares')
+                    ->withPivot('shared_by')
+                    ->withTimestamps();
     }
     
     protected function isPasswordDefault(): Attribute

@@ -3,12 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\Setting;
+use App\Models\Accreditor;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use App\Models\GoogleUserInfo;
+use App\Models\AccreditationEvent;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Http\RedirectResponse;
 use Laravel\Socialite\Facades\Socialite;
 
@@ -39,13 +41,30 @@ class GoogleAuthController extends Controller
         // Find existing google user info
         $googleInfo = GoogleUserInfo::where('google_id', $googleId)->first();
         $user = User::where('email', $email)->first();
+        $accreditor = Accreditor::where('email', $email)->first();
 
-        // Enforce domain check for cvsu.edu.ph
-        if (!Str::endsWith($email, '@cvsu.edu.ph')) {
-            return redirect('/auth')->withErrors(['email' => 'Only @cvsu.edu.ph emails are allowed.']);
+        // Enforce domain check
+        if (!$accreditor) {
+            $strictDomains = (bool) Setting::get('auth_strict_domains', true);
+            $whitelistedDomainsString = Setting::get('auth_whitelisted_domains', 'cvsu.edu.ph');
+            $whitelistedDomains = array_map('trim', explode(',', $whitelistedDomainsString));
+
+            $isDomainValid = false;
+            foreach ($whitelistedDomains as $whitelistedDomain) {
+                if (Str::endsWith($email, '@' . $whitelistedDomain)) {
+                    $isDomainValid = true;
+                    break;
+                }
+            }
+
+            // If it's a new regular user and domain check is strict, it must pass
+            // Existing users are allowed regardless of domain (they were manually added)
+            if (!$user && $strictDomains && !$isDomainValid) {
+                return redirect('/auth')->withErrors(['email' => 'Your email domain is not authorized for staff registration.']);
+            }
         }
 
-        if (!$user) {
+        if (!$user && !$accreditor) {
             session()->put('pending_google_user', [
                 'name' => $name,
                 'email' => $email,
@@ -58,46 +77,82 @@ class GoogleAuthController extends Controller
         }
 
         if (!$googleInfo) {
-            if (!$user) {
-                $password = Str::random(12);
-                
-                $user = User::create([
+            if ($user) {
+                $googleInfo = $user->googleInfo()->create([
+                    'google_id' => $googleId,
                     'name' => $name,
                     'email' => $email,
-                    'password' => Hash::make($password),
-                    'must_change_password' => true,
+                    'hd' => $hd,
+                    'avatar' => $picture,
+                    'locale' => $locale,
                 ]);
-                // $user->assignRole('patient');
+            } elseif ($accreditor) {
+                $googleInfo = $accreditor->googleInfo()->create([
+                    'google_id' => $googleId,
+                    'name' => $name,
+                    'email' => $email,
+                    'hd' => $hd,
+                    'avatar' => $picture,
+                    'locale' => $locale,
+                ]);
+            }
+        }
+
+        if ($user) {
+            Auth::guard('web')->login($user);
+
+            activity()
+                ->useLog('authentication')
+                ->performedOn($user)
+                ->causedBy($user)
+                ->log('User logged in via Google Auth');
+            
+            if ($user->role_status === 'pending') {
+                return redirect()->route('onboarding.pending');
+            } elseif ($user->role_status === 'rejected') {
+                return redirect()->route('onboarding.rejected');
             }
 
-            $googleInfo = $user->googleInfo()->create([
-                'google_id' => $googleId,
-                'name' => $name,
-                'email' => $email,
-                'hd' => $hd,
-                'avatar' => $picture,
-                'locale' => $locale,
-                'access_token' => null,
-                'refresh_token' => null,
-                'expires_in' => null,
+            if ($user->hasRole('taskforce')) {
+                return redirect()->route('file-archives', ['type' => 'personal']);
+            }
+
+            if ($user->hasRole('accreditor')) {
+                $latestEvent = AccreditationEvent::where('status', 'active')->latest()->first();
+
+                if (!$latestEvent) {
+                    return redirect()->route('accreditor.no-active-event');
+                }
+
+                return redirect()->route('file-archives', [
+                    'type' => 'event',
+                    'event_id' => $latestEvent->id
+                ]);
+            }
+            
+            return redirect()->intended('/dashboard');
+        } elseif ($accreditor) {
+            Auth::guard('accreditor')->login($accreditor);
+
+            activity()
+                ->useLog('authentication')
+                ->performedOn($accreditor)
+                ->causedBy($accreditor)
+                ->log('Accreditor logged in via Google Auth');
+
+            $latestEvent = AccreditationEvent::where('status', 'active')->latest()->first();
+
+            if (!$latestEvent) {
+                return redirect()->route('accreditor.no-active-event');
+            }
+
+            return redirect()->route('file-archives', [
+                'type' => 'event',
+                'event_id' => $latestEvent->id
             ]);
         }
 
-        $user->load('googleInfo');
-
-        Auth::login($user);
-
-        if ($user->role_status === 'pending') {
-            return redirect()->route('onboarding.pending');
-        } elseif ($user->role_status === 'rejected') {
-            return redirect()->route('onboarding.rejected');
-        }
-
-        if ($user->hasRole('taskforce')) {
-            return redirect()->route('profile');
-        }
-
-        return redirect()->intended('/areas');
+        return redirect()->intended('/file-archives?type=personal');
     }
  
     /**

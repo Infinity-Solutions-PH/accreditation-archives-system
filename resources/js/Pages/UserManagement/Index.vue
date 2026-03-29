@@ -1,6 +1,7 @@
 <script setup>
-    import { ref, computed } from 'vue';
-    import { router, Head } from '@inertiajs/vue3';
+    import { ref, watch } from 'vue';
+    import { router, Head, Link } from '@inertiajs/vue3';
+    import { useDebounceFn } from '@vueuse/core';
 
     import AppLayout from '@shared/Layouts/App.vue';
 
@@ -14,18 +15,20 @@
     });
 
     const props = defineProps({
-        users: [Object, Array],
+        users: Object, // Laravel Paginator
         userStats: {
             type: Object,
             required: true
         },
         roles: Array,
         colleges: Array,
-        programs: Array
+        programs: Array,
+        filters: Object
     })
 
     const showCreateUserModal = ref(false);
     const editingUser = ref(null);
+    const isLoading = ref(false);
 
     const openCreateUserModal = () => {
         showCreateUserModal.value = true;
@@ -87,46 +90,46 @@
         
         isProcessingAction.value = true;
         try {
-            await api.put(`/api/user-management/${user.id}/role-status`, {
+            await api.put(`/user-management/${user.id}/role-status`, {
                 role_status: status,
                 is_active: type === 'approve'
             });
             onUserUpdated();
         } catch (error) {
             console.error('Failed to update user status:', error);
-            // Optional: Add toast notification here
         } finally {
             isProcessingAction.value = false;
         }
     };
 
-    const searchQuery = ref('');
-    const roleFilter = ref('All Roles');
-    const statusFilter = ref('All Status');
+    const searchQuery = ref(props.filters.search || '');
+    const roleFilter = ref(props.filters.role || 'All Roles');
+    const statusFilter = ref(props.filters.status || 'All Status');
 
-    const filteredUsers = computed(() => {
-        return props.users.filter(user => {
-            if (roleFilter.value !== 'All Roles') {
-                if (!user.roles || user.roles.length === 0) return false;
-                if (roleFilter.value === 'IDO Staff' && user.roles[0].name !== 'ido_staff') return false;
-                if (roleFilter.value === 'College Officer' && user.roles[0].name !== 'college_officer') return false;
-                if (roleFilter.value === 'Taskforce' && user.roles[0].name !== 'taskforce') return false;
-            }
-            if (statusFilter.value !== 'All Status') {
-                if (statusFilter.value === 'Active' && (!user.is_active || user.role_status !== 'approved')) return false;
-                if (statusFilter.value === 'Pending' && user.role_status !== 'pending') return false;
-                if (statusFilter.value === 'Inactive' && (user.is_active && user.role_status !== 'pending' && user.role_status !== 'rejected')) return false;
-                if (statusFilter.value === 'Rejected' && user.role_status !== 'rejected') return false;
-            }
-            if (searchQuery.value) {
-                const sq = searchQuery.value.toLowerCase();
-                return (user.name && user.name.toLowerCase().includes(sq)) || 
-                       (user.email && user.email.toLowerCase().includes(sq)) || 
-                       (user.college && user.college.name.toLowerCase().includes(sq));
-            }
-            return true;
+    // Debounced server-side filtering matching Activity Logs logic
+    const updateFilters = useDebounceFn(() => {
+        router.get(route('user-management'), {
+            search: searchQuery.value,
+            role: roleFilter.value,
+            status: statusFilter.value
+        }, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onStart: () => { isLoading.value = true; },
+            onFinish: () => { isLoading.value = false; }
         });
+    }, 500);
+
+    watch([searchQuery, roleFilter, statusFilter], () => {
+        updateFilters();
     });
+
+    const resetFilters = () => {
+        searchQuery.value = '';
+        roleFilter.value = 'All Roles';
+        statusFilter.value = 'All Status';
+    };
 </script>
 
 <template>
@@ -186,24 +189,37 @@
                 </div>
                 <!-- Main Table Section -->
                 <div class="bg-white dark:bg-[#1a2234] rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
-                    <!-- Filters Toolbar -->
-                    <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col lg:flex-row gap-4 justify-between items-start lg:items-center bg-slate-50/50 dark:bg-slate-800/20">
-                        <!-- Search -->
-                        <div class="relative w-full lg:w-96">
-                            <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
-                            <input v-model="searchQuery" class="w-full pl-10 pr-4 py-2 bg-white dark:bg-[#151b2b] border border-slate-300 dark:border-slate-600 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500" placeholder="Search by name, email, or college..." type="text"/>
+                <!-- Filters and Search Toolbar -->
+                <div class="flex flex-col gap-4">
+                    <div class="bg-white dark:bg-[#151c2b] rounded-2xl p-6 shadow-sm border border-[#e7ebf3] dark:border-gray-800 flex flex-col lg:flex-row gap-6 justify-between items-end">
+                        <!-- Search Bar -->
+                        <div class="w-full lg:w-1/3">
+                            <label class="block text-xs font-bold text-[#4c669a] uppercase tracking-wider mb-2">Search Users</label>
+                            <div class="flex w-full items-stretch rounded-xl h-11 border border-[#e7ebf3] dark:border-gray-700 bg-[#f8f9fc] dark:bg-gray-800/50 overflow-hidden focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all" :class="{'opacity-50 pointer-events-none': isLoading}">
+                                <div class="text-[#4c669a] flex items-center justify-center pl-3 pr-2">
+                                    <span class="material-symbols-outlined text-[20px]">search</span>
+                                </div>
+                                <input v-model="searchQuery" :disabled="isLoading" class="flex w-full min-w-0 flex-1 bg-transparent text-[#0d121b] dark:text-white focus:outline-0 h-full placeholder:text-[#9ca3af] text-sm font-medium" placeholder="Search by name, email, or college..."/>
+                            </div>
                         </div>
-                        <!-- Filter Actions -->
-                        <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
-                            <div class="flex items-center gap-2">
-                                <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Filter:</span>
-                                <select v-model="roleFilter" class="bg-white dark:bg-[#151b2b] border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2 cursor-pointer">
+
+                        <!-- Filter Selection -->
+                        <div class="flex flex-wrap gap-4 w-full lg:w-auto flex-1 justify-end">
+                            <!-- Role Filter -->
+                            <div class="w-full sm:w-auto min-w-[180px]">
+                                <label class="block text-xs font-bold text-[#4c669a] uppercase tracking-wider mb-2">User Role</label>
+                                <select v-model="roleFilter" :disabled="isLoading" class="w-full h-11 rounded-xl border border-[#e7ebf3] dark:border-gray-700 bg-[#f8f9fc] dark:bg-gray-800/50 px-4 text-sm font-medium text-[#0d121b] dark:text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                     <option>All Roles</option>
                                     <option>IDO Staff</option>
                                     <option>College Officer</option>
                                     <option>Taskforce</option>
                                 </select>
-                                <select v-model="statusFilter" class="bg-white dark:bg-[#151b2b] border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm rounded-lg focus:ring-primary focus:border-primary block p-2 cursor-pointer">
+                            </div>
+
+                            <!-- Status Filter -->
+                            <div class="w-full sm:w-auto min-w-[180px]">
+                                <label class="block text-xs font-bold text-[#4c669a] uppercase tracking-wider mb-2">Account Status</label>
+                                <select v-model="statusFilter" :disabled="isLoading" class="w-full h-11 rounded-xl border border-[#e7ebf3] dark:border-gray-700 bg-[#f8f9fc] dark:bg-gray-800/50 px-4 text-sm font-medium text-[#0d121b] dark:text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                     <option>All Status</option>
                                     <option>Active</option>
                                     <option>Pending</option>
@@ -211,16 +227,30 @@
                                     <option>Inactive</option>
                                 </select>
                             </div>
-                            <div class="h-6 w-px bg-slate-300 dark:bg-slate-600 hidden sm:block"></div>
-                            <button class="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-primary dark:hover:text-blue-400 text-sm font-medium transition-colors">
-                                <span class="material-symbols-outlined text-[20px]">filter_list</span>
-                                <span>Advanced</span>
-                            </button>
+
+                            <!-- Reset Button -->
+                            <div class="flex items-end">
+                                <button @click="resetFilters" :disabled="isLoading" class="flex h-11 px-4 shrink-0 items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-[#4c669a] hover:text-primary transition-all font-bold text-sm gap-2 disabled:opacity-50" title="Reset Filters">
+                                    <span class="material-symbols-outlined text-[20px]">restart_alt</span>
+                                    <span>Reset</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
+                </div>
                     <!-- Table -->
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse">
+                    <div class="overflow-x-auto relative min-h-[400px]">
+                        <!-- Loading Overlay -->
+                        <div v-if="isLoading" class="absolute inset-x-0 top-0 h-1 bg-primary/20 overflow-hidden z-[10]">
+                            <div class="h-full bg-primary animate-[loading_2s_infinite_ease-in-out]"></div>
+                        </div>
+                        <div v-if="isLoading" class="absolute inset-0 bg-white/40 dark:bg-slate-900/40 backdrop-blur-[1px] flex items-center justify-center z-[5]">
+                            <div class="p-3 rounded-full bg-white dark:bg-slate-800 shadow-xl border border-slate-100 dark:border-slate-700">
+                                <span class="material-symbols-outlined animate-spin text-primary">progress_activity</span>
+                            </div>
+                        </div>
+
+                        <table class="w-full text-left border-collapse transition-all duration-300" :class="{'opacity-50 grayscale-[0.5] pointer-events-none': isLoading}">
                             <thead>
                                 <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
                                     <th class="p-4 w-12">
@@ -237,7 +267,7 @@
                             <tbody class="divide-y divide-slate-200 dark:divide-slate-700 text-sm text-slate-700 dark:text-slate-300">
                                 <!-- Row 1 -->
                                 <tr
-                                    v-for="user in filteredUsers" :key="user.id"
+                                    v-for="user in users.data" :key="user.id"
                                     class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
                                     <td class="p-4">
                                         <input class="rounded border-slate-300 text-primary focus:ring-primary bg-white dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
@@ -245,41 +275,43 @@
                                     <td class="p-4">
                                         <div class="flex items-center gap-3">
                                             <div class="size-9 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary flex items-center justify-center text-sm font-bold">
-                                                <img v-if="user?.google_info?.avatar" :src="user?.google_info?.avatar" class="size-9 rounded-full object-cover" />
-                                                <span v-else>{{ user.name.charAt(0).toUpperCase() }}</span>
+                                                <img v-if="user?.google_info?.avatar" :src="user.google_info.avatar" class="size-9 rounded-full object-cover" />
+                                                <span v-else>{{ user?.name?.charAt(0).toUpperCase() || '?' }}</span>
                                             </div>
                                             <div>
-                                                <div class="font-medium text-slate-900 dark:text-white">{{ user.name }}</div>
-                                                <div class="text-slate-500 dark:text-slate-400 text-xs">{{ user.email }}</div>
+                                                <div class="font-medium text-slate-900 dark:text-white">{{ user?.name || 'Unknown User' }}</div>
+                                                <div class="text-slate-500 dark:text-slate-400 text-xs">{{ user?.email || 'No Email' }}</div>
                                             </div>
                                         </div>
                                     </td>
                                     <td class="p-4">
-                                        <div v-if="user.roles && user.roles.length > 0" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border border-purple-100 dark:border-purple-800">
+                                        <div v-if="user.roles && user.roles.length > 0" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs text-nowrap font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border border-purple-100 dark:border-purple-800">
                                             <span class="material-symbols-outlined text-[14px]">shield_person</span>
                                             {{ user.roles[0].name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
                                         </div>
                                         <div v-else class="text-xs text-slate-500 px-2 py-1">No Role</div>
                                     </td>
                                     <td class="p-4">
-                                        <div v-if="user.college">{{ user.college.name }} ({{ user.college.code }})</div>
+                                        <div v-if="user?.college">{{ user.college.name }} ({{ user.college.code }})</div>
                                         <div v-else class="text-slate-400 text-xs italic">Unassigned</div>
                                     </td>
                                     <td class="p-4 flex flex-col items-start gap-1">
-                                        <span v-if="user.role_status === 'approved' && user.is_active" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 border border-green-100 dark:border-green-800">
+                                        <span v-if="user?.role_status === 'approved' && user?.is_active" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 border border-green-100 dark:border-green-800">
                                             <span class="size-1.5 rounded-full bg-green-500"></span> Active
                                         </span>
-                                        <span v-else-if="user.role_status === 'approved' && !user.is_active" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                        <span v-else-if="user?.role_status === 'approved' && !user?.is_active" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
                                             <span class="size-1.5 rounded-full bg-slate-400"></span> Inactive
                                         </span>
-                                        <span v-if="user.role_status === 'pending'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-100 dark:border-amber-800">
+                                        <span v-if="user?.role_status === 'pending'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-100 dark:border-amber-800">
                                             <span class="material-symbols-outlined text-[14px]">hourglass_top</span> Pending
                                         </span>
-                                        <span v-else-if="user.role_status === 'rejected'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-100 dark:border-red-800">
+                                        <span v-else-if="user?.role_status === 'rejected'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-100 dark:border-red-800">
                                             <span class="material-symbols-outlined text-[14px]">cancel</span> Rejected
                                         </span>
                                     </td>
-                                    <td class="p-4 text-slate-500 dark:text-slate-400">{{ new Date(user.updated_at).toLocaleDateString() }}</td>
+                                    <td class="p-4 text-slate-500 dark:text-slate-400">
+                                        {{ user?.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'N/A' }}
+                                    </td>
                                     <td class="p-4 text-right">
                                         <div v-if="user.role_status === 'pending'" class="flex items-center justify-end gap-1">
                                             <button 
@@ -310,20 +342,31 @@
                         </table>
                     </div>
                     <!-- Pagination -->
-                    <div class="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
-                        <span class="text-sm text-slate-500 dark:text-slate-400">Showing <span class="font-medium text-slate-900 dark:text-white">1</span> to <span class="font-medium text-slate-900 dark:text-white">5</span> of <span class="font-medium text-slate-900 dark:text-white">1,284</span> results</span>
+                    <div v-if="users.total > 0" class="p-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between">
+                        <span class="text-sm text-slate-500 dark:text-slate-400">
+                            Showing <span class="font-medium text-slate-900 dark:text-white">{{ users.from }}</span> to <span class="font-medium text-slate-900 dark:text-white">{{ users.to }}</span> of <span class="font-medium text-slate-900 dark:text-white">{{ users.total.toLocaleString() }}</span> results
+                        </span>
                         <div class="flex items-center gap-1">
-                            <button class="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 disabled:opacity-50 transition-colors">
-                                <span class="material-symbols-outlined text-[20px]">chevron_left</span>
-                            </button>
-                            <button class="px-3 py-1 rounded bg-primary text-white text-sm font-medium">1</button>
-                            <button class="px-3 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-medium transition-colors">2</button>
-                            <button class="px-3 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-medium transition-colors">3</button>
-                                <span class="px-2 text-slate-400">...</span>
-                            <button class="px-3 py-1 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 text-sm font-medium transition-colors">24</button>
-                            <button class="p-2 rounded hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-colors">
-                                <span class="material-symbols-outlined text-[20px]">chevron_right</span>
-                            </button>
+                            <template v-for="(link, index) in users.links" :key="index">
+                                <Link
+                                    v-if="link.url"
+                                    :href="link.url"
+                                    :class="[
+                                        'px-3 py-1 rounded text-sm font-medium transition-colors flex items-center justify-center min-w-[32px]',
+                                        link.active
+                                            ? 'bg-primary text-white'
+                                            : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                                    ]"
+                                >
+                                    <span v-html="link.label"></span>
+                                </Link>
+                                <span
+                                    v-else
+                                    class="px-3 py-1 text-sm font-medium text-slate-400 cursor-not-allowed min-w-[32px]"
+                                >
+                                    {{ link.label }}
+                                </span>
+                            </template>
                         </div>
                     </div>
                 </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use App\Models\AccreditationEvent;
 
 class AuthController extends Controller
 {
@@ -39,10 +40,33 @@ class AuthController extends Controller
             $request->session()->regenerate();
             $user = auth()->user();
 
+            activity()
+                ->useLog('authentication')
+                ->performedOn($user)
+                ->causedBy($user)
+                ->log('User logged in via institutional credentials.');
+
             if ($user->role_status === 'pending') {
                 return redirect()->route('onboarding.pending');
             } elseif ($user->role_status === 'rejected') {
                 return redirect()->route('onboarding.rejected');
+            }
+            
+            if ($user->hasRole('taskforce')) {
+                return redirect()->route('file-archives', ['type' => 'personal']);
+            }
+
+            if ($user->hasRole('accreditor')) {
+                $latestEvent = AccreditationEvent::where('status', 'active')->latest()->first();
+                
+                if (!$latestEvent) {
+                    return redirect()->route('accreditor.no-active-event');
+                }
+
+                return redirect()->route('file-archives', [
+                    'type' => 'event',
+                    'event_id' => $latestEvent->id
+                ]);
             }
             
             return redirect()->intended('/dashboard');

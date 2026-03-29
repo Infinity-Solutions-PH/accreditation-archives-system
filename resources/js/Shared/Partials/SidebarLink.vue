@@ -12,7 +12,15 @@
     const page = usePage();
 
     const isActive = computed(() => {
-        return page.url.startsWith(new URL(props.href, window.location.origin).pathname)
+        // If the href has query parameters, we want a more precise match
+        if (props.href.includes('?')) {
+            return page.url === new URL(props.href, window.location.origin).search.replace('?', '') 
+                ? page.url.includes(new URL(props.href, window.location.origin).search)
+                : page.url.startsWith(props.href.replace(window.location.origin, ''));
+        }
+        
+        const url = new URL(props.href, window.location.origin);
+        return page.url.startsWith(url.pathname) && !page.url.includes('?');
     })
 </script>
 

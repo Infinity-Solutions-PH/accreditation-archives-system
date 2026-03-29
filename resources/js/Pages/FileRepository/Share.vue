@@ -1,224 +1,214 @@
 <script setup>
+    import { ref, onMounted, onUnmounted } from 'vue';
+    import { Link, router } from '@inertiajs/vue3';
     import AppLayout from '@shared/Layouts/App.vue';
+    import FileViewerModal from '@/components/FileViewerModal.vue';
+
+    const props = defineProps({
+        files: Object,
+        colleges: Object,
+        programs: Object,
+        areas: Object,
+        activeEvents: Array
+    });
+
+    function getFileIcon(extension) {
+        const ext = extension?.toLowerCase();
+        if (!ext) return 'insert_drive_file';
+        if (ext === 'pdf') return 'picture_as_pdf';
+        if (ext === 'doc' || ext === 'docx') return 'description';
+        if (ext === 'xls' || ext === 'xlsx') return 'table_chart';
+        if (['png','jpg','jpeg','gif'].includes(ext)) return 'image';
+        if (['mp4','mov','webm'].includes(ext)) return 'videocam';
+        if (['mp3','wav','ogg'].includes(ext)) return 'audiotrack';
+        return 'insert_drive_file';
+    }
 
     defineOptions({
         layout: AppLayout
     });
+
+    const showFileViewerModal = ref(false);
+    const selectedFile = ref(null);
+
+    const openFileViewerModal = (file) => {
+        selectedFile.value = file;
+        showFileViewerModal.value = true;
+    }
+
+    const closeFileViewerModal = () => {
+        showFileViewerModal.value = false;
+    }
+
+    const isLoading = ref(false);
+
+    let unregisterStart = null;
+    let unregisterFinish = null;
+
+    onMounted(() => {
+        unregisterStart = router.on('start', () => { isLoading.value = true; });
+        unregisterFinish = router.on('finish', () => { isLoading.value = false; });
+    });
+
+    onUnmounted(() => {
+        if (unregisterStart) unregisterStart();
+        if (unregisterFinish) unregisterFinish();
+    });
 </script>
 
 <template>
-    <main class="flex-1 w-full max-w-[1280px] mx-auto px-4 md:px-10 py-8">
-<!-- Breadcrumbs -->
-<div class="flex flex-wrap gap-2 mb-6 text-sm">
-<a class="text-slate-500 dark:text-slate-400 hover:text-primary font-medium transition-colors" href="#">Home</a>
-<span class="text-slate-400 dark:text-slate-600">/</span>
-<a class="text-slate-500 dark:text-slate-400 hover:text-primary font-medium transition-colors" href="#">Accreditation</a>
-<span class="text-slate-400 dark:text-slate-600">/</span>
-<a class="text-slate-500 dark:text-slate-400 hover:text-primary font-medium transition-colors" href="#">Level 3</a>
-<span class="text-slate-400 dark:text-slate-600">/</span>
-<span class="text-slate-900 dark:text-white font-medium">Share</span>
-</div>
-<!-- Page Heading -->
-<div class="flex flex-col md:flex-row md:justify-between md:items-end gap-4 mb-8">
-<div class="flex flex-col gap-2">
-<h1 class="text-slate-900 dark:text-white text-3xl md:text-4xl font-black leading-tight tracking-tight">Share Documents</h1>
-<p class="text-slate-500 dark:text-slate-400 text-base">Securely distribute accreditation files to faculty and accreditation bodies.</p>
-</div>
-<div class="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded-full border border-blue-100 dark:border-blue-800">
-<span class="material-symbols-outlined text-primary text-[18px]">lock</span>
-<span>End-to-end encrypted</span>
-</div>
-</div>
-<!-- Main Content Split -->
-<div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-<!-- Left Column: Selected Files (4 columns) -->
-<div class="lg:col-span-4 flex flex-col gap-4">
-<div class="flex justify-between items-center">
-<h3 class="text-slate-900 dark:text-white text-lg font-bold">Selected Files (2)</h3>
-<button class="text-primary text-sm font-semibold hover:underline">Add more</button>
-</div>
-<!-- File Item 1 -->
-<div class="group flex items-center gap-3 bg-surface-light dark:bg-surface-dark p-3 rounded-lg border border-border-light dark:border-border-dark shadow-sm hover:border-primary/50 transition-all">
-<div class="flex items-center justify-center rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 shrink-0 size-10">
-<span class="material-symbols-outlined">picture_as_pdf</span>
-</div>
-<div class="flex-1 min-w-0">
-<p class="text-slate-900 dark:text-white text-sm font-medium truncate">Curriculum_Vitae_2023.pdf</p>
-<p class="text-slate-500 dark:text-slate-400 text-xs">2.4 MB • Uploaded today</p>
-</div>
-<button class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
-<span class="material-symbols-outlined text-[20px]">close</span>
-</button>
-</div>
-<!-- File Item 2 -->
-<div class="group flex items-center gap-3 bg-surface-light dark:bg-surface-dark p-3 rounded-lg border border-border-light dark:border-border-dark shadow-sm hover:border-primary/50 transition-all">
-<div class="flex items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 shrink-0 size-10">
-<span class="material-symbols-outlined">description</span>
-</div>
-<div class="flex-1 min-w-0">
-<p class="text-slate-900 dark:text-white text-sm font-medium truncate">Extension_Activities_Report.docx</p>
-<p class="text-slate-500 dark:text-slate-400 text-xs">1.8 MB • Modified yesterday</p>
-</div>
-<button class="text-slate-400 hover:text-red-500 dark:hover:text-red-400 transition-colors">
-<span class="material-symbols-outlined text-[20px]">close</span>
-</button>
-</div>
-<!-- Dropzone Placeholder -->
-<div class="border-2 border-dashed border-border-light dark:border-border-dark rounded-xl p-6 flex flex-col items-center justify-center text-center bg-background-light dark:bg-surface-dark/50 hover:bg-slate-50 dark:hover:bg-surface-dark transition-colors cursor-pointer">
-<span class="material-symbols-outlined text-slate-400 text-4xl mb-2">cloud_upload</span>
-<p class="text-sm text-slate-600 dark:text-slate-300 font-medium">Drag additional files here</p>
-<p class="text-xs text-slate-400">or click to browse</p>
-</div>
-</div>
-<!-- Right Column: Sharing Configuration (8 columns) -->
-<div class="lg:col-span-8">
-<div class="bg-surface-light dark:bg-surface-dark rounded-xl border border-border-light dark:border-border-dark shadow-sm p-6 lg:p-8">
-<h3 class="text-xl font-bold text-slate-900 dark:text-white mb-6">Configuration</h3>
-<div class="space-y-6">
-<!-- Recipients Input -->
-<div class="space-y-2">
-<label class="block text-sm font-medium text-slate-700 dark:text-slate-200">Add People or Groups</label>
-<div class="relative">
-<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 material-symbols-outlined text-[20px]">person_add</span>
-<input class="w-full pl-10 pr-4 py-3 rounded-lg border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary focus:border-transparent placeholder-slate-400" placeholder="Enter email, name, or department..." type="text"/>
-<div class="absolute right-2 top-2 p-1 bg-slate-200 dark:bg-slate-700 rounded text-xs text-slate-600 dark:text-slate-300 font-mono">CMD + K</div>
-</div>
-<!-- Selected Recipients Tags -->
-<div class="flex flex-wrap gap-2 mt-3">
-<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-100 dark:border-blue-800">
-<span class="material-symbols-outlined text-[16px]">group</span>
-                                    Quality Assurance Dept.
-                                    <button class="hover:text-red-500"><span class="material-symbols-outlined text-[16px]">close</span></button>
-</span>
-<span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
-<div class="size-5 rounded-full bg-indigo-500 text-white flex items-center justify-center text-[10px]">JD</div>
-                                    Juan Dela Cruz
-                                    <button class="hover:text-red-500"><span class="material-symbols-outlined text-[16px]">close</span></button>
-</span>
-</div>
-</div>
-<div class="h-px bg-border-light dark:bg-border-dark w-full"></div>
-<!-- Permissions & Settings -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-<!-- Permission Level -->
-<div class="space-y-2">
-<label class="block text-sm font-medium text-slate-700 dark:text-slate-200">Permission Level</label>
-<div class="relative">
-<select class="w-full pl-10 pr-10 py-2.5 rounded-lg border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-primary focus:border-primary appearance-none cursor-pointer">
-<option>View Only (Restricted)</option>
-<option>Can Comment</option>
-<option>Can Edit</option>
-<option>Co-Owner</option>
-</select>
-<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 material-symbols-outlined text-[20px]">visibility</span>
-<span class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 material-symbols-outlined text-[20px] pointer-events-none">expand_more</span>
-</div>
-<p class="text-xs text-slate-500 dark:text-slate-400">Viewers cannot download or print files.</p>
-</div>
-<!-- Expiry Settings -->
-<div class="space-y-2">
-<label class="block text-sm font-medium text-slate-700 dark:text-slate-200">Link Expiry (Optional)</label>
-<div class="relative">
-<input class="w-full pl-10 pr-4 py-2.5 rounded-lg border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-primary focus:border-primary placeholder-slate-400" type="date"/>
-<span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500 material-symbols-outlined text-[20px]">calendar_clock</span>
-</div>
-</div>
-</div>
-<!-- Message -->
-<div class="space-y-2">
-<label class="block text-sm font-medium text-slate-700 dark:text-slate-200">Message (Optional)</label>
-<textarea class="w-full px-4 py-3 rounded-lg border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-primary focus:border-primary placeholder-slate-400 min-h-[100px]" placeholder="Add a note to the recipients explaining the contents..."></textarea>
-</div>
-<!-- Options Checkboxes -->
-<div class="flex flex-col sm:flex-row gap-4 pt-2">
-<label class="inline-flex items-center cursor-pointer group">
-<input checked="" class="rounded border-slate-300 text-primary focus:ring-primary bg-slate-50 dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
-<span class="ml-2 text-sm text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">Notify people via email</span>
-</label>
-<label class="inline-flex items-center cursor-pointer group">
-<input class="rounded border-slate-300 text-primary focus:ring-primary bg-slate-50 dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
-<span class="ml-2 text-sm text-slate-700 dark:text-slate-300 group-hover:text-primary transition-colors">Require log-in to access</span>
-</label>
-</div>
-<!-- Footer Buttons -->
-<div class="flex items-center justify-end gap-3 pt-4 border-t border-border-light dark:border-border-dark mt-6">
-<button class="px-5 py-2.5 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">Cancel</button>
-<button class="px-6 py-2.5 rounded-lg text-sm font-semibold text-white bg-primary hover:bg-primary-dark shadow-lg shadow-blue-500/20 flex items-center gap-2 transition-all active:scale-95">
-<span class="material-symbols-outlined text-[18px]">send</span>
-                                Share Files
-                            </button>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- Recent Shares Section -->
-<div class="mt-12">
-<h3 class="text-slate-900 dark:text-white text-xl font-bold leading-tight tracking-[-0.015em] mb-4">Recent Sharing Activity</h3>
-<div class="overflow-x-auto rounded-xl border border-border-light dark:border-border-dark shadow-sm bg-surface-light dark:bg-surface-dark">
-<table class="w-full text-left text-sm text-slate-600 dark:text-slate-300">
-<thead class="bg-background-light dark:bg-slate-800/50 text-slate-900 dark:text-white uppercase font-semibold text-xs border-b border-border-light dark:border-border-dark">
-<tr>
-<th class="px-6 py-4">File Name</th>
-<th class="px-6 py-4">Shared With</th>
-<th class="px-6 py-4">Date</th>
-<th class="px-6 py-4">Permissions</th>
-<th class="px-6 py-4 text-right">Action</th>
-</tr>
-</thead>
-<tbody class="divide-y divide-border-light dark:divide-border-dark">
-<!-- Row 1 -->
-<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-<td class="px-6 py-4 font-medium text-slate-900 dark:text-white flex items-center gap-3">
-<span class="material-symbols-outlined text-blue-500">description</span>
-                                Accreditation_Area_IV_Draft.docx
+    <main class="flex-1 overflow-y-auto scroll-smooth w-full max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Breadcrumbs -->
+        <nav aria-label="Breadcrumb" class="flex mb-6">
+            <ol class="flex items-center space-x-2">
+                <li>
+                    <Link class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm font-medium" :href="route('dashboard')">Home</Link>
+                </li>
+                <li>
+                    <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
+                </li>
+                <li>
+                    <span class="text-slate-900 dark:text-white text-sm font-semibold">Shared Drive</span>
+                </li>
+            </ol>
+        </nav>
+        
+        <!-- Page Header & Actions -->
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
+            <div class="flex flex-col gap-2 max-w-2xl">
+                <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Shared with Me</h1>
+                <p class="text-slate-600 dark:text-slate-400 text-base">
+                    Documents securely shared directly with you by other peers or administrators.
+                </p>
+            </div>
+            <div class="flex items-center gap-3 shrink-0">
+                <Link :href="route('file-archives', { type: 'general' })"
+                    class="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 hover:bg-slate-50 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors border border-slate-200 dark:border-slate-700 shadow-sm">
+                    <span class="material-symbols-outlined text-[20px]">folder_open</span>
+                    Go to General Repository
+                </Link>
+            </div>
+        </div>
+
+        <!-- Filter & Search Toolbar -->
+        <div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
+            <div class="flex flex-col lg:flex-row gap-4 items-center justify-between">
+                <!-- Search -->
+                <div class="w-full lg:w-96 relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <span class="material-symbols-outlined text-slate-400">search</span>
+                    </div>
+                    <input class="block w-full pl-10 pr-3 py-2.5 border border-slate-300 dark:border-slate-600 rounded-lg leading-5 bg-white dark:bg-slate-800 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm text-slate-900 dark:text-white" placeholder="Search shared files..." type="text"/>
+                </div>
+            </div>
+        </div>
+
+        <!-- Standard Table -->
+        <div class="overflow-hidden bg-white dark:bg-surface-dark rounded-3xl border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-200/50 dark:shadow-none relative">
+            <!-- Loading Overlay -->
+            <div v-if="isLoading" class="absolute inset-x-0 top-0 h-1 bg-primary/20 overflow-hidden z-[10]">
+                <div class="h-full bg-primary animate-[loading_2s_infinite_ease-in-out]"></div>
+            </div>
+            <div v-if="isLoading" class="absolute inset-0 bg-white/40 dark:bg-background-dark/40 backdrop-blur-[1px] flex items-center justify-center z-[5]">
+                <div class="p-3 rounded-full bg-white dark:bg-surface-dark shadow-xl border border-gray-100 dark:border-gray-800">
+                    <span class="material-symbols-outlined animate-spin text-primary">progress_activity</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse" :class="{'opacity-60 grayscale-[0.3]': isLoading}">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                            <th class="p-4 w-12 text-center" scope="col">
+                                <span class="material-symbols-outlined text-slate-400 text-[18px]">attachment</span>
+                            </th>
+                            <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">File Name</th>
+                            <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell" scope="col">Original Uploader</th>
+                            <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden lg:table-cell" scope="col">Shared By</th>
+                            <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Date Shared</th>
+                            <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right" scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <!-- Empty State -->
+                        <tr v-if="files.data.length === 0">
+                            <td colspan="6" class="p-12 text-center">
+                                <div class="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
+                                    <span class="material-symbols-outlined text-[48px] mb-3 opacity-50">folder_shared</span>
+                                    <p class="text-sm font-medium">No files have been shared with you yet.</p>
+                                </div>
                             </td>
-<td class="px-6 py-4">
-<div class="flex -space-x-2">
-<img alt="User 1" class="w-8 h-8 rounded-full border-2 border-white dark:border-surface-dark object-cover" data-alt="Small avatar of a female user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAHXLETR-OPHRuGbK_uZ3dwTu4Zp_ieJ4Haz91rHRzSRGgeHfivoHTvC_ncuXENMqs70ohQ4AgnbLovjjwd_g9L_0_NLDqx9LxqCEyZUhdPXoGJAB8nuWoHaqnj10yFv0wj9IJxjuyQH50_2RgKhCn8OaMfdx1753lvVRg9aYwXk0s-eluGMJKRUCbEW3bx4Ww2b5uKADCnIWGJRF9xNoqYjocmKszccq9QqYlQITimSbO9c6lBGXytPnGP_BYEsIAEbu090yWZjZbJ"/>
-<img alt="User 2" class="w-8 h-8 rounded-full border-2 border-white dark:border-surface-dark object-cover" data-alt="Small avatar of a male user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCUCFg07WtdZeWqao32hKq8Xwcobf2o-cCZS3NRgxlXFH_9OloXa9raJ6XA0Jlhmcd8W_tiO2cxtW33evoR5Dbub7Tblv2-oiUaqvyutPeFdFXNBPyF7hhUz1QB6WXFcevRZavJLTxpcamJz4npHu95TOrWEvacjuyA1LY-3koklQyHSfI2Omdk5HFZWPksNKzwCIWG3kL2KTiZkGHTBDLLubMcfjeCICvyAF9XWjA6PHDa1JRXoTBbp5qt_sIgUmG_UdN9uyC83xkC"/>
-<div class="w-8 h-8 rounded-full border-2 border-white dark:border-surface-dark bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs text-slate-600 dark:text-slate-300 font-bold">+3</div>
-</div>
-</td>
-<td class="px-6 py-4">Oct 24, 2023</td>
-<td class="px-6 py-4">
-<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
-                                    Editor
-                                </span>
-</td>
-<td class="px-6 py-4 text-right">
-<button class="text-slate-400 hover:text-primary transition-colors">
-<span class="material-symbols-outlined">more_vert</span>
-</button>
-</td>
-</tr>
-<!-- Row 2 -->
-<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-<td class="px-6 py-4 font-medium text-slate-900 dark:text-white flex items-center gap-3">
-<span class="material-symbols-outlined text-red-500">picture_as_pdf</span>
-                                Faculty_Summary_Report.pdf
+                        </tr>
+
+                        <!-- Rows -->
+                        <tr v-for="file in files.data" :key="file.id" 
+                            class="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" 
+                            @click="openFileViewerModal(file)">
+                            
+                            <td class="p-4 text-center">
+                                <div class="size-2 rounded-full mx-auto" :class="'bg-emerald-500'"></div>
                             </td>
-<td class="px-6 py-4">
-<div class="flex items-center gap-2">
-<div class="size-8 rounded-full bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-300 flex items-center justify-center text-xs font-bold border-2 border-white dark:border-surface-dark">AB</div>
-<span class="text-slate-600 dark:text-slate-400">Dr. A. Bernando</span>
-</div>
-</td>
-<td class="px-6 py-4">Oct 22, 2023</td>
-<td class="px-6 py-4">
-<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300">
-                                    Viewer
-                                </span>
-</td>
-<td class="px-6 py-4 text-right">
-<button class="text-slate-400 hover:text-primary transition-colors">
-<span class="material-symbols-outlined">more_vert</span>
-</button>
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
-</main>
+                            <td class="p-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="size-10 shrink-0 bg-blue-50 dark:bg-blue-900/30 rounded-lg flex items-center justify-center text-blue-600 dark:text-blue-400">
+                                        <span class="material-symbols-outlined">{{ getFileIcon(file.extension) }}</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-slate-900 dark:text-slate-200 text-sm">{{ file.title }}</span>
+                                        <span class="text-xs text-slate-500">{{ file.size_human }} • {{ file.extension?.toUpperCase() }}</span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="p-4 hidden md:table-cell">
+                                <div class="flex items-center gap-2">
+                                    <div class="size-6 rounded-full bg-cover bg-center bg-gray-200"
+                                        :style='{backgroundImage: `url(${file.uploaded_by?.google_info?.avatar || "https://lh3.googleusercontent.com/aida-public/AB6AXuAyd5GytrCn8kduh_Iuz0ySh5VVrmNP9pRGZMCPzCw5qgasNtIJeBvV38fJsICfT0uXATEWKrP1qSMUXTaiHEQ8QlR55UnM8zPob4lCVCQMVGRZVHaAITVT4hDYMsn2SBAQG1hJU1-yzIM_hWYfqnjVd9KLcTp60WDFeiZjIEai35-EjfEXHTVciP8uvi348D8T_7Q-o3H1SQbjAtaRU8emjmcB_i11XzlzHfEy61ZQtfoVyE55JOhPta5juvgvhscAr4N_QxvipB-R"})`}'>
+                                    </div>
+                                    <span class="text-sm text-slate-600 dark:text-slate-400">{{ file.uploaded_by?.name || 'Unknown' }}</span>
+                                </div>
+                            </td>
+                            <td class="p-4 hidden lg:table-cell text-sm font-medium text-slate-700 dark:text-slate-300">
+                                <!-- Pivot properties access via file.pivot -->
+                                <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-slate-400">person</span> Shared direct</span>
+                            </td>
+                            <td class="p-4 text-sm text-slate-600 dark:text-slate-400">
+                                {{ new Date(file.pivot?.created_at || file.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) }}
+                            </td>
+                            <td class="p-4 text-right">
+                                <div class="flex items-center justify-end gap-2">
+                                    <button class="text-slate-400 hover:text-primary p-1.5 rounded transition hover:bg-slate-100 dark:hover:bg-slate-700">
+                                        <span class="material-symbols-outlined text-[20px]">download</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Pagination -->
+            <div v-if="files.links && files.data.length > 0" class="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-surface-dark">
+                <div class="hidden sm:flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
+                    <span>Showing {{ files.from }} to {{ files.to }} of {{ files.total }} results</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <template v-for="link in files.links" :key="link.label">
+                        <Link v-if="link.url" :href="link.url" v-html="link.label"
+                            :class="[
+                                'px-3 py-1 rounded text-sm transition-colors',
+                                link.active ? 'bg-primary text-white' : 'hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'
+                            ]"
+                        />
+                        <span v-else v-html="link.label" class="px-3 py-1 rounded text-sm text-slate-400 cursor-not-allowed opacity-50"></span>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <FileViewerModal 
+            v-if="showFileViewerModal"
+            :file="selectedFile"
+            @close="closeFileViewerModal"
+        />
+    </main>
 </template>

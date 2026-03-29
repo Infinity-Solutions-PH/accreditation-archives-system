@@ -33,6 +33,10 @@ class File extends Model
         'is_general' => 'boolean',
     ];
 
+    protected $hidden = [
+        'uploaded_by'
+    ];
+
     protected $appends = [
         'size',
         'size_human',
@@ -67,6 +71,20 @@ class File extends Model
         return $this->belongsTo(User::class, 'uploaded_by');
     }
 
+    public function accreditationEvents()
+    {
+        return $this->belongsToMany(AccreditationEvent::class, 'accreditation_event_files')
+                    ->withPivot('area_id', 'shared_by')
+                    ->withTimestamps();
+    }
+
+    public function sharedWithUsers()
+    {
+        return $this->belongsToMany(User::class, 'file_user_shares')
+                    ->withPivot('shared_by')
+                    ->withTimestamps();
+    }
+
     public function scopeAccessibleBy($query, $user)
     {
         if (!$user) {
@@ -79,7 +97,17 @@ class File extends Model
             }
 
             return $query->where(function ($q) use ($user) {
-                $q->where('is_general', true);
+                // General Drive: Visible if 'is_general' AND (belongs to user's college OR is global/NULL)
+                $q->where(function ($general) use ($user) {
+                    $general->where('is_general', true)
+                        ->where(function($col) use ($user) {
+                            $col->where('college_id', $user->college_id)
+                                ->orWhereNull('college_id');
+                        });
+                });
+
+                // Personal files (My Drive): Always visible to the uploader
+                $q->orWhere('uploaded_by', $user->id);
 
                 if ($user->hasRole('college_officer')) {
                     $q->orWhere('college_id', $user->college_id);
@@ -87,23 +115,24 @@ class File extends Model
 
                 if ($user->hasRole('taskforce')) {
                     $q->orWhere(function ($subQ) use ($user) {
-                        $subQ->where('college_id', $user->college_id)
-                             ->where('program_id', $user->program_id);
+                        $subQ->where('college_id', $user->college_id);
+                        if ($user->program_id) {
+                            $subQ->where('program_id', $user->program_id);
+                        }
                     });
                 }
+
+                // Explicitly shared with the user
+                $q->orWhereHas('sharedWithUsers', function ($subQ) use ($user) {
+                    $subQ->where('users.id', $user->id);
+                });
             });
         }
 
         if ($user instanceof Accreditor) {
-            return $query->where(function ($q) use ($user) {
-                $q->where('is_general', true)
-                  ->orWhere(function ($subQ) use ($user) {
-                      $subQ->where('college_id', $user->college_id)
-                           ->where('program_id', $user->program_id);
-                      if ($user->level) {
-                          $subQ->where('level', $user->level);
-                      }
-                  });
+            // Accreditors see files shared specifically to their linked event
+            return $query->whereHas('accreditationEvents', function ($q) use ($user) {
+                $q->where('accreditation_events.id', $user->accreditation_event_id);
             });
         }
 

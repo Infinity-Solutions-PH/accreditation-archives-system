@@ -13,6 +13,7 @@ class GoogleUserInfo extends Model
 
     protected $fillable = [
         'user_id',
+        'accreditor_id',
         'google_id',
         'name',
         'email',
@@ -27,5 +28,10 @@ class GoogleUserInfo extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function accreditor()
+    {
+        return $this->belongsTo(Accreditor::class);
     }
 }

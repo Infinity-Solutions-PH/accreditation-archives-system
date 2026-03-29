@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Notification;
+use App\Notifications\RegistrationPendingNotification;
 
 class OnboardingService
 {
@@ -26,6 +28,13 @@ class OnboardingService
                 'college_id' => $collegeId,
                 'role_status' => 'pending'
             ]);
+
+            activity()
+                ->useLog('onboarding')
+                ->performedOn($user)
+                ->causedBy($user)
+                ->log("User updated college selection to: " . ($user->college->name ?? $collegeId));
+
             return $user;
         }
 
@@ -45,6 +54,12 @@ class OnboardingService
             'is_active' => true,
         ]);
 
+        activity()
+            ->useLog('onboarding')
+            ->performedOn($user)
+            ->causedBy($user)
+            ->log("User completed onboarding and selected college: " . ($user->college->name ?? $collegeId));
+
         // 4. Create the linked GoogleInfo.
         $user->googleInfo()->create([
             'google_id' => $pendingUser['google_id'],
@@ -60,6 +75,13 @@ class OnboardingService
 
         // 6. Log the user in.
         Auth::login($user);
+
+        // 7. Notify the College Accreditation Officer (CAO)
+        $cao = User::role('college_officer')
+            ->where('college_id', $collegeId)
+            ->get();
+            
+        Notification::send($cao, new RegistrationPendingNotification($user));
 
         return $user;
     }

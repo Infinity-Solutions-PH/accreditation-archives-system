@@ -24,7 +24,7 @@
 
         form.email = form.email.trim().toLowerCase() + '@cvsu.edu.ph';
 
-        await api.post('/api/user-management/store', {
+        await api.post('/user-management/store', {
             name: form.name,
             email: form.email
         }, {

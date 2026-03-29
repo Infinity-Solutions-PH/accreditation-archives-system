@@ -15,35 +15,48 @@
                     <h1 class="text-text-main-light dark:text-text-main-dark text-lg font-bold leading-normal">CvSU Admin</h1>
                 </div>
                 <!-- Navigation Links -->
-                <nav class="flex flex-col gap-2">
-                    <SidebarLink :href="route('dashboard')">
-                        <template #icon>dashboard</template>
-                        <template #label>Dashboard</template>
-                    </SidebarLink>
-                    <SidebarLink :href="route('user-management')">
-                        <template #icon>group</template>
-                        <template #label>User Management</template>
-                    </SidebarLink>
-                    <SidebarLink :href="route('taskforce')" v-if="page.props.auth?.roles?.some(r => ['admin', 'ido_staff'].includes(r))">
-                        <template #icon>safety_divider</template>
-                        <template #label>Taskforce</template>
-                    </SidebarLink>
-                    <SidebarLink :href="route('areas')">
-                        <template #icon>folder_open</template>
-                        <template #label>AACCUP Areas</template>
-                    </SidebarLink>
-                    <SidebarLink :href="route('file-archives')">
-                        <template #icon>description</template>
-                        <template #label>General Files</template>
-                    </SidebarLink>
-                    <SidebarLink :href="route('activity-logs')" v-if="page.props.auth?.roles?.includes('admin')">
-                        <template #icon>history</template>
-                        <template #label>Activity Logs</template>
-                    </SidebarLink>
-                    <SidebarLink :href="route('settings')">
-                        <template #icon>settings</template>
-                        <template #label>Settings</template>
-                    </SidebarLink>
+                <nav class="flex flex-col gap-1">
+                    <!-- Overview Section (Only for Admins/Staff) -->
+                    <div v-if="page.props.auth?.roles?.some(r => ['admin', 'ido_staff', 'college_officer'].includes(r))" class="mb-2">
+                        <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Overview</p>
+                        <SidebarLink :href="route('dashboard')">
+                            <template #icon>dashboard</template>
+                            <template #label>Dashboard</template>
+                        </SidebarLink>
+                        <SidebarLink :href="route('user-management')">
+                            <template #icon>group</template>
+                            <template #label>User Management</template>
+                        </SidebarLink>
+                        <SidebarLink :href="route('taskforce')" v-if="page.props.auth?.roles?.some(r => ['admin', 'ido_staff'].includes(r))">
+                            <template #icon>safety_divider</template>
+                            <template #label>Taskforce</template>
+                        </SidebarLink>
+                        <SidebarLink :href="route('activity-logs')" v-if="page.props.auth?.roles?.includes('admin')">
+                            <template #icon>history</template>
+                            <template #label>Activity Logs</template>
+                        </SidebarLink>
+                    </div>
+
+                    <!-- Repository Section -->
+                    <div>
+                        <p class="px-3 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 mt-2">Repository</p>
+                        <SidebarLink :href="route('file-archives', { type: 'personal' })">
+                            <template #icon>hard_drive</template>
+                            <template #label>My Drive</template>
+                        </SidebarLink>
+                        <SidebarLink :href="route('file-archives', { type: 'general' })">
+                            <template #icon>description</template>
+                            <template #label>General Files</template>
+                        </SidebarLink>
+                        <SidebarLink :href="route('events.index')">
+                            <template #icon>event_note</template>
+                            <template #label>Accreditation</template>
+                        </SidebarLink>
+                        <SidebarLink :href="route('areas')" v-if="page.props.auth?.roles?.some(r => ['admin', 'ido_staff'].includes(r))">
+                            <template #icon>folder_open</template>
+                            <template #label>AACCUP Areas</template>
+                        </SidebarLink>
+                    </div>
                 </nav>
             </div>
         </div>

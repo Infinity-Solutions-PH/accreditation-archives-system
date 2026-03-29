@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\File;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use App\Services\ChunkedUploadService;
 use App\Http\Requests\UploadChunkRequest;
 use App\Http\Requests\CreateTempFileRequest;
@@ -87,5 +88,43 @@ class FileController extends Controller
         }
 
         return response()->json(['status' => 'aborted']);
+    }
+
+    /**
+     * Inline file viewer support
+     */
+    public function view(File $file)
+    {
+        // Enforce the same accessibility scope
+        $isAccessible = File::accessibleBy(auth()->user())->where('id', $file->id)->exists();
+        abort_unless($isAccessible, 403, 'You do not have permission to view this file.');
+
+        $cleanPath = str_replace('private/', '', $file->path);
+        
+        if (!Storage::disk('local')->exists($cleanPath)) {
+            abort(404, 'File not found on disk.');
+        }
+
+        return Storage::disk('local')->response($cleanPath, $file->original_filename, [
+            'Content-Disposition' => 'inline; filename="' . $file->original_filename . '"',
+            'Content-Type' => Storage::disk('local')->mimeType($cleanPath)
+        ]);
+    }
+
+    /**
+     * Standard force-download support
+     */
+    public function download(File $file)
+    {
+        $isAccessible = File::accessibleBy(auth()->user())->where('id', $file->id)->exists();
+        abort_unless($isAccessible, 403, 'You do not have permission to download this file.');
+
+        $cleanPath = str_replace('private/', '', $file->path);
+
+        if (!Storage::disk('local')->exists($cleanPath)) {
+            abort(404, 'File not found on disk.');
+        }
+
+        return Storage::disk('local')->download($cleanPath, $file->original_filename);
     }
 }

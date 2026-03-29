@@ -8,6 +8,8 @@ use App\Models\College;
 use App\Models\Program;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
+use App\Http\Resources\UserResource;
+use Illuminate\Support\Facades\Auth;
 
 class UserManagementController extends Controller
 {
@@ -16,7 +18,7 @@ class UserManagementController extends Controller
         Inertia::setRootView('layouts/app');
     }
 
-    public function index() {
+    public function index(Request $request) {
         /** @var \App\Models\User $currentUser */
         $currentUser = auth()->user();
 
@@ -30,25 +32,57 @@ class UserManagementController extends Controller
             $query->where('college_id', $currentUser->college_id);
         }
 
-        $activeUsers = (clone $query)->where('is_active', true)->count();
+        // Apply Filters
+        $query->when($request->search, function ($q, $search) {
+            $q->where(function ($sub) use ($search) {
+                $sub->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhereHas('college', fn($c) => $c->where('name', 'like', "%{$search}%"));
+            });
+        });
+
+        $query->when($request->role && $request->role !== 'All Roles', function ($q, $role) {
+            $roleSlug = strtolower(str_replace(' ', '_', $role));
+            $q->whereHas('roles', fn($r) => $r->where('name', $roleSlug));
+        });
+
+        $query->when($request->status && $request->status !== 'All Status', function ($q, $status) {
+            switch ($status) {
+                case 'Active':
+                    $q->where('is_active', true)->where('role_status', 'approved');
+                    break;
+                case 'Pending':
+                    $q->where('role_status', 'pending');
+                    break;
+                case 'Inactive':
+                    $q->where(fn($sub) => $sub->where('is_active', false)->orWhereIn('role_status', ['pending', 'rejected']));
+                    break;
+                case 'Rejected':
+                    $q->where('role_status', 'rejected');
+                    break;
+            }
+        });
+
+        $activeUsers = (clone $query)->where('is_active', true)->where('role_status', 'approved')->count();
         $inactiveUsers = (clone $query)->where('is_active', false)->count();
         $pendingUsers = (clone $query)->where('role_status', 'pending')->count();
         $officerUsers = (clone $query)->whereHas('roles', fn($q) => $q->where('name', 'college_officer'))->count();
 
-        $users = $query->get();
+        $users = $query->latest()->paginate(20)->withQueryString();
         
-        $roles =Role::all();
+        $roles = Role::all();
         $colleges = College::all();
         $programs = Program::all();
 
         return Inertia::render('UserManagement/Index', [
+            'filters' => $request->only(['search', 'role', 'status']),
             'userStats' => [
                 'active' => $activeUsers,
                 'inactive' => $inactiveUsers,
                 'pending' => $pendingUsers,
                 'officers' => $officerUsers,
             ],
-            'users' => $users,
+            'users' => $users->through(fn($user) => UserResource::make($user)->resolve()),
             'roles' => $roles,
             'colleges' => $colleges,
             'programs' => $programs
@@ -94,9 +128,19 @@ class UserManagementController extends Controller
             'is_active' => $request->has('is_active') ? $request->is_active : $user->is_active,
         ]);
         
-        if ($request->role_status === 'approved' && $request->role) {
-            $user->syncRoles([$request->role]);
+        if ($request->role_status === 'approved') {
+            if ($request->role) {
+                $user->syncRoles([$request->role]);
+            } elseif ($user->roles->isEmpty()) {
+                $user->assignRole('taskforce');
+            }
         }
+
+        activity()
+            ->useLog('user_management')
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->log("Updated user status/role for: {$user->email}. New Status: {$request->role_status}, Role: " . ($request->role ?? 'N/A'));
 
         return response()->json(['message' => 'User updated successfully']);
     }

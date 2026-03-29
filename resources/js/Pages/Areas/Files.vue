@@ -1,10 +1,11 @@
 <script setup>
-    import { ref } from 'vue';
+    import { ref, onMounted, onUnmounted } from 'vue';
+    import { router } from '@inertiajs/vue3';
 
     import AppLayout from '@shared/Layouts/App.vue';
 
     import UploadModal from '@/components/UploadModal.vue';
-    import VideoPlayerModal from '@/components/VideoPlayerModal.vue';
+    import FileViewerModal from '@/components/FileViewerModal.vue';
 
     const props = defineProps({
         files: Object,
@@ -41,21 +42,32 @@
         showUploadModal.value = false;
     }
 
-    const showVideoPlayerModal = ref(false);
-    const selectedVideo = ref(null);
+    const showFileViewerModal = ref(false);
+    const selectedFile = ref(null);
 
-    const openVideoPlayerModal = (file) => {
-        if(
-            !['mp4','mov','webm'].includes(file.extension?.toLowerCase())
-        ) return;
-
-        selectedVideo.value = file;
-        showVideoPlayerModal.value = true;
+    const openFileViewerModal = (file) => {
+        selectedFile.value = file;
+        showFileViewerModal.value = true;
     }
 
-    const closeVideoPlayerModal = () => {
-        showVideoPlayerModal.value = false;
+    const closeFileViewerModal = () => {
+        showFileViewerModal.value = false;
     }
+
+    const isLoading = ref(false);
+
+    let unregisterStart = null;
+    let unregisterFinish = null;
+
+    onMounted(() => {
+        unregisterStart = router.on('start', () => { isLoading.value = true; });
+        unregisterFinish = router.on('finish', () => { isLoading.value = false; });
+    });
+
+    onUnmounted(() => {
+        if (unregisterStart) unregisterStart();
+        if (unregisterFinish) unregisterFinish();
+    });
 </script>
 
 <template>
@@ -133,9 +145,19 @@
             </div>
         </div>
         <!-- Files Table -->
-        <div class="bg-surface-light dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-        <div class="overflow-x-auto">
-        <table class="w-full text-left border-collapse">
+        <div class="bg-surface-light dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden relative">
+            <!-- Loading Overlay -->
+            <div v-if="isLoading" class="absolute inset-x-0 top-0 h-1 bg-primary/20 overflow-hidden z-[10]">
+                <div class="h-full bg-primary animate-[loading_2s_infinite_ease-in-out]"></div>
+            </div>
+            <div v-if="isLoading" class="absolute inset-0 bg-white/40 dark:bg-background-dark/40 backdrop-blur-[1px] flex items-center justify-center z-[5]">
+                <div class="p-3 rounded-full bg-white dark:bg-surface-dark shadow-xl border border-gray-100 dark:border-gray-800">
+                    <span class="material-symbols-outlined animate-spin text-primary">progress_activity</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse" :class="{'opacity-60 grayscale-[0.3]': isLoading}">
         <thead>
         <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
         <th class="p-4 w-12 text-center" scope="col">
@@ -151,7 +173,7 @@
         </thead>
         <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
         <!-- Row 1: Active -->
-        <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors" v-for="file in files.data" :key="file.id" @click="openVideoPlayerModal(file)">
+        <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" v-for="file in files.data" :key="file.id" @click="openFileViewerModal(file)">
             <td class="p-4 text-center">
                 <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
             </td>
@@ -369,11 +391,11 @@
             :currentArea="area"
             @close="closeUploadModal"
         />
-        <VideoPlayerModal 
-            v-if="showVideoPlayerModal"
-            :video="selectedVideo"
+        <FileViewerModal 
+            v-if="showFileViewerModal"
+            :file="selectedFile"
             :currentArea="area"
-            @close="closeVideoPlayerModal"
+            @close="closeFileViewerModal"
         />
     </main>
 </template>

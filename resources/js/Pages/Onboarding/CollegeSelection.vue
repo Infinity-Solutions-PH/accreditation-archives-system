@@ -75,10 +75,21 @@
                         </div>
                         
                         <!-- Submit Button -->
-                        <button :disabled="form.processing" class="w-full h-12 bg-primary hover:bg-primary-hover text-white font-semibold rounded-lg shadow-sm shadow-primary/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" type="submit">
-                            <span>Submit Request</span>
-                            <span class="material-symbols-outlined text-sm">send</span>
-                        </button>
+                        <div class="flex flex-col gap-3">
+                            <button :disabled="form.processing" class="w-full h-12 bg-primary hover:bg-primary-hover text-white font-semibold rounded-lg shadow-sm shadow-primary/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" type="submit">
+                                <span>Submit Request</span>
+                                <span class="material-symbols-outlined text-sm">send</span>
+                            </button>
+                            
+                            <!-- Logout Button -->
+                            <button 
+                                type="button" 
+                                @click="$inertia.post(route('logout'))"
+                                class="w-full h-11 border border-gray-200 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800/50 text-slate-600 dark:text-slate-400 font-medium rounded-lg transition-all flex items-center justify-center gap-2">
+                                <span class="material-symbols-outlined text-[18px]">logout</span>
+                                <span>Cancel & Sign Out</span>
+                            </button>
+                        </div>
                     </form>
                 </div>
             </div>

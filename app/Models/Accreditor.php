@@ -12,8 +12,19 @@ class Accreditor extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'password', 'expires_at', 
-        'college_id', 'program_id', 'level', 'created_by'
+        'college_id', 'program_id', 'level', 'created_by',
+        'accreditation_event_id'
     ];
+
+    public function accreditationEvent()
+    {
+        return $this->belongsTo(AccreditationEvent::class);
+    }
+
+    public function googleInfo()
+    {
+        return $this->hasOne(GoogleUserInfo::class);
+    }
 
     protected $hidden = [
         'password',

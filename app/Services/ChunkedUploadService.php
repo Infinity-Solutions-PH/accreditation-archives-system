@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use App\Models\File;
+use App\Models\User;
+use App\Notifications\FileUploadedNotification;
 use Illuminate\Support\Str;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Log;
@@ -13,6 +15,7 @@ class ChunkedUploadService
     public function createTemporaryMetadata(array $data): File
     {
         $tmpId = Str::uuid()->toString();
+        $user = auth()->user();
 
         $file = File::create([
             'title' => $data['metadata']['title'] ?? "Untitled-File",
@@ -21,7 +24,9 @@ class ChunkedUploadService
             'extension' => pathinfo($data['filename'], PATHINFO_EXTENSION),
             'tmp_id' => $tmpId,
             'status' => 'uploading',
-            'uploaded_by' => auth()->id() ?? null
+            'uploaded_by' => $user->id ?? null,
+            'college_id' => $user->college_id ?? null,
+            'is_general' => $data['metadata']['is_general'] ?? false
         ]);
 
         Storage::makeDirectory("tmp/$tmpId");
@@ -74,8 +79,22 @@ class ChunkedUploadService
             'college_id' => $metadata['college_id'] ?? $file->college_id,
             'program_id' => $metadata['program_id'] ?? $file->program_id,
             'area_id' => $metadata['area_id'] ?? $file->area_id,
-            'level' => $metadata['level'] ?? $file->level
+            'level' => $metadata['level'] ?? $file->level,
+            'is_general' => $metadata['is_general'] ?? $file->is_general
         ]);
+
+        // Notify if uploader is taskforce
+        $uploader = $file->uploadedBy;
+        if ($uploader && $uploader->hasRole('taskforce') && $file->status === 'completed') {
+            $recipients = User::role(['college_officer', 'taskforce'])
+                ->where('college_id', $file->college_id)
+                ->where('id', '!=', $uploader->id)
+                ->get();
+            
+            foreach ($recipients as $recipient) {
+                $recipient->notify(new FileUploadedNotification($file));
+            }
+        }
     }
 
     public function abort(File $file): void

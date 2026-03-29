@@ -19,11 +19,12 @@ class AccreditorAccountController extends Controller
             'college_id' => 'required|exists:colleges,id',
             'program_id' => 'required|exists:programs,id',
             'level' => 'nullable|string',
+            'accreditation_event_id' => 'nullable|exists:accreditation_events,id',
         ]);
 
         $password = Str::random(10);
 
-        $accreditor = Accreditor::create([
+        $accreditorData = [
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($password),
@@ -32,13 +33,20 @@ class AccreditorAccountController extends Controller
             'program_id' => $request->program_id,
             'level' => $request->level,
             'created_by' => auth()->id(),
-        ]);
+            'accreditation_event_id' => $request->accreditation_event_id,
+        ];
 
-        // In a real app we'd dispatch an email here.
-        // Mail::to($accreditor->email)->send(new AccreditorCredentialsMail($accreditor, $password));
+        $accreditor = Accreditor::create($accreditorData);
+
+        // Send invite notification with credentials
+        $event = $request->accreditation_event_id 
+            ? \App\Models\AccreditationEvent::find($request->accreditation_event_id) 
+            : null;
+            
+        $accreditor->notify(new \App\Notifications\AccreditorInviteNotification($password, $event));
 
         return response()->json([
-            'message' => 'Accreditor created successfully',
+            'message' => 'Accreditor created successfully and invitation sent.',
             'password' => $password, // Return mostly for dev/admin visibility
             'accreditor' => $accreditor
         ], 201);

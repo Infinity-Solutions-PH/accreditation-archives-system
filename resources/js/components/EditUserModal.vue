@@ -28,7 +28,7 @@
         isSaving.value = true;
 
         try {
-            await api.put(`/api/user-management/${props.user.id}/role-status`, {
+            await api.put(`/user-management/${props.user.id}/role-status`, {
                 role_status: form.role_status,
                 role: form.role || null,
                 college_id: form.college_id || null,

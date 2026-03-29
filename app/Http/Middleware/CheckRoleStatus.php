@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 
 class CheckRoleStatus
@@ -11,6 +12,8 @@ class CheckRoleStatus
     public function handle(Request $request, Closure $next): Response
     {
         $user = auth('web')->user();
+        Log::info("User: " . $user);
+        Log::info("Request: " . json_encode($request->all()));
 
         if ($user && !$user->hasRole(['admin', 'ido_staff'])) {
             // Force college selection if missing (exclude admin/ido_staff)

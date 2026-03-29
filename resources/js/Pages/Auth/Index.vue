@@ -6,6 +6,10 @@
         layout: AuthLayout
     });
 
+    const props = defineProps({
+        status: String,
+    });
+
     const form = useForm({
         email: '',
         password: '',
@@ -72,7 +76,12 @@
                     </div>
                     <!-- Main Form -->
                     <form class="space-y-5" @submit.prevent="submit">
-                        <div v-if="form.errors.email" class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+                        <div v-if="status" class="p-4 mb-4 text-sm text-green-800 rounded-lg bg-green-50 dark:bg-gray-800/50 dark:text-green-400 border border-green-100 dark:border-green-900/30 flex items-center gap-2" role="alert">
+                            <span class="material-symbols-outlined text-[18px]">check_circle</span>
+                            {{ status }}
+                        </div>
+                        <div v-if="form.errors.email" class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800/50 dark:text-red-400 border border-red-100 dark:border-red-900/30 flex items-center gap-2" role="alert">
+                            <span class="material-symbols-outlined text-[18px]">error</span>
                             {{ form.errors.email }}
                         </div>
                         <!-- Email Field -->
@@ -101,7 +110,7 @@
                         </div>
                         <!-- Forgot Password Link -->
                         <div class="flex justify-end">
-                            <a class="text-sm font-medium text-primary hover:text-primary-hover hover:underline decoration-2 underline-offset-2 transition-all" href="#">Forgot password?</a>
+                            <Link class="text-sm font-medium text-primary hover:text-primary-hover hover:underline decoration-2 underline-offset-2 transition-all" :href="route('password.request')">Forgot password?</Link>
                         </div>
                         <!-- Submit Button -->
                         <button :disabled="form.processing" class="w-full h-12 bg-primary hover:bg-primary-hover text-white font-semibold rounded-lg shadow-sm shadow-primary/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" type="submit">
