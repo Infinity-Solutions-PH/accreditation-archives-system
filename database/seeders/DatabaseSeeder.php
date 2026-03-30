@@ -3,8 +3,8 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 
 class DatabaseSeeder extends Seeder
 {
@@ -17,15 +17,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             RolesAndPermissionsSeeder::class,
-        ]);
-
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@cvsu.edu.ph'],
-            ['name' => 'Administrator', 'password' => bcrypt('password')]
-        );
-        $admin->assignRole('admin');
-
-        $this->call([
+            AdminSeeder::class,
             AreaSeeder::class,
             CollegeSeeder::class,
             ProgramSeeder::class,
