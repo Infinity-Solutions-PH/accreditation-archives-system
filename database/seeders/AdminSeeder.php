@@ -19,6 +19,7 @@ class AdminSeeder extends Seeder
                 'name' => 'System Administrator',
                 'password' => Hash::make('password123'),
                 'role_status' => 'approved',
+                'is_active' => true,
             ]
         );
 
