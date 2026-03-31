@@ -24,6 +24,10 @@ class StoreUserRequest extends FormRequest
         return [
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+            'role' => ['required', 'string', 'in:admin,college_officer,ido_staff,taskforce'],
+            'college_id' => ['required', 'exists:colleges,id'],
+            'program_id' => ['nullable', 'exists:programs,id'],
+            'send_email' => ['boolean']
         ];
     }
 }

@@ -374,6 +374,9 @@
         </div>
         <CreateUserModal 
             v-if="showCreateUserModal"
+            :roles="roles"
+            :colleges="colleges"
+            :programs="programs"
             @close="closeCreateUserModal"
         />
         <EditUserModal 

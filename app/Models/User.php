@@ -27,6 +27,7 @@ class User extends Authenticatable
         'college_id',
         'program_id',
         'role_status',
+        'is_active',
     ];
 
     /**
