@@ -27,7 +27,7 @@ class AllAreasCompleteNotification extends Notification
             'type' => 'success',
             'icon' => 'check_circle',
             'event_id' => $this->event->id,
-            'url' => route('file-archives', ['event_id' => $this->event->id])
+            'url' => route('areas', ['event' => $this->event->slug])
         ];
     }
 }

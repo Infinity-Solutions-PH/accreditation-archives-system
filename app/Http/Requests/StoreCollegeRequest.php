@@ -23,6 +23,7 @@ class StoreCollegeRequest extends FormRequest
     {
         return [
             'college_id' => ['required', 'exists:colleges,id'],
+            'program_id' => ['nullable', 'exists:programs,id'],
         ];
     }
 

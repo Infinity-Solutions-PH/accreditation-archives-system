@@ -11,16 +11,14 @@ class AccreditorInviteNotification extends Notification
 {
     use Queueable;
 
-    public $password;
-    public $event;
+    protected $password;
 
     /**
      * Create a new notification instance.
      */
-    public function __construct($password, $event = null)
+    public function __construct($password)
     {
         $this->password = $password;
-        $this->event = $event;
     }
 
     /**
@@ -38,21 +36,16 @@ class AccreditorInviteNotification extends Notification
      */
     public function toMail(object $notifiable): MailMessage
     {
-        $mail = (new MailMessage)
-                    ->subject('Invitation to Accreditation Drive')
-                    ->greeting('Hello, ' . $notifiable->name . '!')
-                    ->line('You have been invited as an Accreditor for the IDO Archives System.');
-                    
-        if ($this->event) {
-            $mail->line('You are assigned to the accreditation session: ' . $this->event->title);
-        }
-
-        return $mail->line('Your login credentials are:')
-                    ->line('Email: ' . $notifiable->email)
-                    ->line('Password: ' . $this->password)
-                    ->action('Login Now', url('/accreditor/auth'))
-                    ->line('If you have a Google account registered with this email, you can also sign in via Google.')
-                    ->line('Thank you for using our application!');
+        return (new MailMessage)
+            ->subject('Invitation to CvSU Accreditation Archives')
+            ->greeting('Hello, ' . $notifiable->name . '!')
+            ->line('You have been invited to join the CvSU Accreditation Archives system as an Accreditor.')
+            ->line('You can access the system using the following credentials:')
+            ->line('**Email:** ' . $notifiable->email)
+            ->line('**Password:** ' . $this->password)
+            ->action('Login to System', route('accreditor.auth'))
+            ->line('Your access is temporary and will expire on ' . ($notifiable->expires_at ? $notifiable->expires_at->format('M d, Y') : 'N/A') . '.')
+            ->line('Thank you for your service!');
     }
 
     /**

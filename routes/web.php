@@ -3,12 +3,13 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AreaController;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\FileController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\FileController;
 use App\Http\Middleware\CheckRoleStatus;
 use App\Http\Controllers\VideoController;
 use App\Http\Controllers\LogoutController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\LandingController;
 use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\GoogleAuthController;
@@ -18,6 +19,7 @@ use App\Http\Controllers\VideoStreamController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\UserManagementController;
 use App\Http\Controllers\Auth\NewPasswordController;
+use App\Http\Controllers\AccreditorAccountController;
 use App\Http\Controllers\AccreditationEventController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Accreditor\AuthController as AccreditorAuthController;
@@ -58,8 +60,34 @@ Route::middleware(['auth:web,accreditor', CheckRoleStatus::class])->group(functi
     Route::get('/profile', [LandingController::class, 'profile'])->name('profile');
     Route::patch('/profile', [LandingController::class, 'updateProfile'])->name('profile.update');
 
-    Route::get('/areas', [AreaController::class, 'index'])->name('areas');
-    Route::get('/areas/{area:slug}', [AreaController::class, 'show'])->name('areas.slug');
+    Route::prefix('accreditation')->scopeBindings(false)->group(function() {
+        Route::get('/events', [AccreditationEventController::class, 'index'])->name('events.index');
+        Route::get('/events/{event}/areas', [AreaController::class, 'index'])->name('areas');
+        Route::get('/events/{event}/areas/{area:slug}', [AreaController::class, 'show'])->name('areas.slug');
+
+        // File Management
+        Route::get('/files/p/{uuid}', [FileController::class, 'sharedView'])->name('files.shared'); // Permanent link
+        Route::post('/files/{file}/request-access', [FileController::class, 'requestAccess'])->name('files.request-access');
+        Route::get('/files/{file}/shares', [FileController::class, 'getShares'])->name('files.get-shares');
+        Route::get('/files/search-events', [FileController::class, 'searchEvents'])->name('files.search-events');
+        Route::get('/files/search-users', [FileController::class, 'searchUsers'])->name('files.search-users');
+        Route::post('/files/requests/{accessRequest}/approve', [FileController::class, 'approveAccess'])->name('files.approve-access');
+        Route::post('/files/{file}/update', [FileController::class, 'updateFile'])->name('files.update');
+
+        Route::post('/events/unshare/{event}/{area}', [AccreditationEventController::class, 'unshareFile'])->name('events.unshare');
+    });
+
+    // Comments
+    Route::scopeBindings(false)->group(function() {
+        Route::get('/events/{event}/areas/{area}/comments', [CommentController::class, 'index'])->name('comments.index');
+        Route::post('/events/{event}/areas/{area}/comments', [CommentController::class, 'store'])->name('comments.store');
+    });
+    Route::delete('/comments/{comment}', [CommentController::class, 'destroy'])->name('comments.destroy');
+
+    // Accreditor Specific
+    Route::get('/accreditor/dashboard', [AccreditationEventController::class, 'accreditorDashboard'])->name('accreditor.dashboard');
+    Route::get('/accreditor/expired', [OnboardingController::class, 'expired'])->name('accreditor.expired');
+    Route::post('/accreditor/request-extension', [AccreditorAccountController::class, 'requestExtension'])->name('accreditor.request-extension');
 
     Route::get('/file-archives', [LandingController::class, 'fileArchives'])->name('file-archives');
     
@@ -81,6 +109,12 @@ Route::middleware(['auth:web,accreditor', CheckRoleStatus::class])->group(functi
 
 Route::middleware(['auth', CheckRoleStatus::class])->group(function() {
     Route::get('/user-management', [UserManagementController::class, 'index'])->name('user-management');
+    Route::post('/user-management', [UserController::class, 'store'])->name('user-management.store');
+    Route::put('/user-management/{user}/role-status', [UserManagementController::class, 'updateRoleStatus'])->name('user-management.role-status');
+
+    Route::post('/accreditors', [AccreditorAccountController::class, 'store'])->name('accreditors.store');
+    Route::get('/accreditors/search', [AccreditorAccountController::class, 'search'])->name('accreditors.search');
+    Route::put('/accreditors/{accreditor}', [AccreditorAccountController::class, 'update'])->name('accreditors.update');
 
     Route::middleware(['role:admin'])->group(function() {
         Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs');
@@ -98,7 +132,7 @@ Route::middleware(['auth', CheckRoleStatus::class])->group(function() {
     Route::get('/videos/stream/{file:id}', [VideoStreamController::class, 'stream'])->name('videos.stream');
 
     // Accreditation Events
-    Route::get('/events', [AccreditationEventController::class, 'index'])->name('events.index');
+    // Removed old events.index as it was moved to the accreditation prefix group above.
     Route::post('/events', [AccreditationEventController::class, 'store'])->name('events.store');
     Route::put('/events/{accreditationEvent}', [AccreditationEventController::class, 'update'])->name('events.update');
 });

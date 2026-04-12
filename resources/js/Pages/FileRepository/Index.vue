@@ -4,7 +4,8 @@
     import AppLayout from '@shared/Layouts/App.vue';
     import UploadModal from '@/components/UploadModal.vue';
     import FileViewerModal from '@/components/FileViewerModal.vue';
-    import ShareFileModal from '@/components/ShareFileModal.vue';
+    import FileShareModal from '@/Components/FileShareModal.vue';
+    import FileEditModal from '@/Components/FileEditModal.vue';
 
     const props = defineProps({
         files: Object,
@@ -55,13 +56,31 @@
         showFileViewerModal.value = false;
     }
 
-    const showShareModal = ref(false);
-    const selectedFileToShare = ref(null);
+    const isShareModalOpen = ref(false);
+    const isEditModalOpen = ref(false);
+    const activeFile = ref(null);
 
     const openShareModal = (file) => {
-        selectedFileToShare.value = file;
-        showShareModal.value = true;
-    }
+        activeFile.value = file;
+        isShareModalOpen.value = true;
+    };
+
+    const openEditModal = (file) => {
+        activeFile.value = file;
+        isEditModalOpen.value = true;
+    };
+
+    const copyPermanentLink = (file) => {
+        const url = route('files.shared', file.uuid);
+        navigator.clipboard.writeText(url);
+        if (window.toast) {
+            window.toast('Permanent link copied to clipboard!', 'success');
+        }
+    };
+
+    const handleFileUpdated = () => {
+        router.reload({ preserveScroll: true });
+    };
 
     const isLoading = ref(false);
     
@@ -282,9 +301,50 @@
                                 <td class="p-4 text-sm text-slate-600 dark:text-slate-400">{{ file.uploaded_by_name || file.uploaded_by?.name }}</td>
                                 <td class="p-4 text-sm text-slate-600 dark:text-slate-400">{{ new Date(file.created_at).toLocaleDateString() }}</td>
                                 <td class="p-4 text-right">
-                                    <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700">
-                                        <span class="material-symbols-outlined text-[20px]">more_vert</span>
-                                    </button>
+                                    <div class="flex items-center justify-end gap-1">
+                                        <button 
+                                            @click.stop="openFileViewerModal(file)"
+                                            class="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                                            title="View Internally"
+                                        >
+                                            <span class="material-symbols-outlined text-[20px]">visibility</span>
+                                        </button>
+
+                                        <button 
+                                            @click.stop="copyPermanentLink(file)"
+                                            class="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                                            title="Copy Permanent Link"
+                                        >
+                                            <span class="material-symbols-outlined text-[20px]">link</span>
+                                        </button>
+
+                                        <a 
+                                            :href="route('files.download', file.id)"
+                                            @click.stop
+                                            class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                            title="Download"
+                                        >
+                                            <span class="material-symbols-outlined text-[20px]">download</span>
+                                        </a>
+
+                                        <button 
+                                            v-if="currentType !== 'shared' && !$page.props.auth.is_accreditor"
+                                            @click.stop="openShareModal(file)"
+                                            class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                            title="Share & Permissions"
+                                        >
+                                            <span class="material-symbols-outlined text-[20px]">share</span>
+                                        </button>
+
+                                        <button 
+                                            v-if="currentType !== 'shared' && ($page.props.auth.roles?.includes('admin') || file.uploaded_by === $page.props.auth.user.id)"
+                                            @click.stop="openEditModal(file)"
+                                            class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                            title="Edit / Replace"
+                                        >
+                                            <span class="material-symbols-outlined text-[20px]">edit</span>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                             <tr v-if="files.data.filter(f => f.assigned_area_id == area.id).length === 0">
@@ -382,16 +442,48 @@
                 </span>
             </td>
             <td class="p-4 text-right">
-                <div class="flex items-center justify-end gap-2">
-                    <button v-if="currentType !== 'shared'" @click.stop="openShareModal(file)" title="Share to virtual drive"
-                        class="text-primary hover:bg-primary/10 p-1.5 rounded-lg transition-colors">
-                        <span class="material-symbols-outlined text-[20px]">share_windows</span>
+                <div class="flex items-center justify-end gap-1">
+                    <button 
+                        @click.stop="openFileViewerModal(file)"
+                        class="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                        title="View Internally"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">visibility</span>
                     </button>
-                    <button v-if="currentType === 'shared'" class="text-slate-400 hover:text-primary p-1.5 rounded transition hover:bg-slate-100 dark:hover:bg-slate-700">
+
+                    <button 
+                        @click.stop="copyPermanentLink(file)"
+                        class="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                        title="Copy Permanent Link"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">link</span>
+                    </button>
+
+                    <a 
+                        :href="route('files.download', file.id)"
+                        @click.stop
+                        class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                        title="Download"
+                    >
                         <span class="material-symbols-outlined text-[20px]">download</span>
+                    </a>
+
+                    <button 
+                        v-if="currentType !== 'shared' && !$page.props.auth.is_accreditor"
+                        @click.stop="openShareModal(file)"
+                        class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                        title="Share & Permissions"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">share</span>
                     </button>
-                    <button class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded hover:bg-slate-100 dark:hover:bg-slate-700">
-                        <span class="material-symbols-outlined text-[20px]">more_vert</span>
+
+                    <button 
+                        v-if="currentType !== 'shared' && ($page.props.auth.roles?.includes('admin') || file.uploaded_by === $page.props.auth.user.id)"
+                        @click.stop="openEditModal(file)"
+                        class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                        title="Edit / Replace"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">edit</span>
                     </button>
                 </div>
             </td>
@@ -433,12 +525,18 @@
             :file="selectedFile"
             @close="closeFileViewerModal"
         />
-        <ShareFileModal 
-            v-if="showShareModal"
-            :file="selectedFileToShare"
-            :activeEvents="activeEvents"
-            :areas="areas"
-            @close="showShareModal = false"
+        <FileShareModal 
+            v-if="activeFile"
+            :is-open="isShareModalOpen"
+            :file="activeFile"
+            @close="isShareModalOpen = false"
+        />
+        <FileEditModal 
+            v-if="activeFile"
+            :is-open="isEditModalOpen"
+            :file="activeFile"
+            @close="isEditModalOpen = false"
+            @updated="handleFileUpdated"
         />
     </main>
 </template>

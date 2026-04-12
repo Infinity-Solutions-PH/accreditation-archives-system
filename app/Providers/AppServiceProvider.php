@@ -19,6 +19,8 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
+        \App\Models\File::observe(\App\Observers\FileObserver::class);
+
         Event::listen(function (Login $event) {
             $isGoogle = request()->routeIs('google.callback');
             $loginType = $isGoogle ? 'Google System Login' : 'System Login';

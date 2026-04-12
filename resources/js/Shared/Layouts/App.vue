@@ -4,6 +4,7 @@
     import axios from 'axios';
     import Sidebar from '@shared/Partials/Sidebar.vue';
     import NotificationDropdown from '@/components/NotificationDropdown.vue';
+    import ToastList from '@/Components/ToastList.vue';
 
     const isUserDropdownOpen = ref(false);
     const dropdownRef = ref(null);
@@ -144,7 +145,7 @@
                                 </div>
                                 <div class="px-2">
                                     <Link v-for="event in searchResults.events" :key="event.id"
-                                          :href="route('file-archives', { event_id: event.id })"
+                                          :href="route('areas', { event: event.slug })"
                                           @click="showResults = false"
                                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-gray-800/60 group transition-all">
                                         <div class="size-8 rounded-lg bg-amber-50 dark:bg-amber-900/20 text-amber-500 flex items-center justify-center shrink-0">
@@ -249,6 +250,9 @@
                 </div>
             </header>
             <slot />
+
+            <!-- Global Notifications -->
+            <ToastList />
         </div>
     </div>
 </template>

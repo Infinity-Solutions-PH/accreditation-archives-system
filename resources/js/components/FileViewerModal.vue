@@ -42,6 +42,8 @@
         }
     });
 
+    const showDetails = ref(false);
+
     const closeModal = () => {
         emit('close');
     };
@@ -72,6 +74,14 @@
                     </div>
                 </div>
                 <div class="flex gap-3">
+                    <button 
+                        @click="showDetails = !showDetails"
+                        class="flex cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 transition-colors"
+                        :class="showDetails ? 'bg-primary text-white' : 'bg-[#232f48] text-slate-300 hover:bg-[#2d3b5a]'"
+                    >
+                        <span class="material-symbols-outlined text-lg">{{ showDetails ? 'info_i' : 'info' }}</span>
+                        <span class="text-sm font-bold">{{ showDetails ? 'Hide Details' : 'Show Details' }}</span>
+                    </button>
                     <a :href="route('files.download', { file: file.id })" 
                        class="flex min-w-[120px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] transition-colors hover:bg-primary/90">
                         <span class="material-symbols-outlined text-lg">download</span>
@@ -132,7 +142,10 @@
                 </div>
 
                 <!-- Sidebar Metadata -->
-                <aside class="w-full lg:w-[360px] bg-[#111722] border-l border-[#232f48] flex flex-col overflow-y-auto shrink-0 transition-all duration-500">
+                <aside 
+                    class="bg-[#111722] border-l border-[#232f48] flex flex-col overflow-y-auto shrink-0 transition-all duration-500 ease-in-out"
+                    :class="showDetails ? 'w-full lg:w-[360px] opacity-100' : 'w-0 opacity-0 border-none overflow-hidden'"
+                >
                     <div class="p-6">
                         <h3 class="text-white text-lg font-bold mb-6">File Details</h3>
                         <div class="space-y-6">

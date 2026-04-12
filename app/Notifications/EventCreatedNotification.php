@@ -27,7 +27,7 @@ class EventCreatedNotification extends Notification
             'type' => 'event',
             'icon' => 'event',
             'event_id' => $this->event->id,
-            'url' => route('file-archives', ['event_id' => $this->event->id])
+            'url' => route('areas', ['event' => $this->event->slug])
         ];
     }
 }

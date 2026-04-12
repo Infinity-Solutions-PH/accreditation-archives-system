@@ -26,13 +26,17 @@ class OnboardingController extends Controller
         }
         
         return Inertia::render('Onboarding/CollegeSelection', [
-            'colleges' => College::orderBy('name')->get()
+            'colleges' => College::orderBy('name')->get(),
+            'programs' => \App\Models\Program::orderBy('name')->get()
         ]);
     }
 
     public function storeCollege(StoreCollegeRequest $request)
     {
-        $user = $this->onboardingService->completeCollegeSelection($request->college_id);
+        $user = $this->onboardingService->completeCollegeSelection(
+            $request->college_id, 
+            $request->program_id
+        );
 
         if (!$user) {
             return redirect('/auth');
@@ -81,6 +85,18 @@ class OnboardingController extends Controller
             return redirect('/dashboard');
         }
         return Inertia::render('Onboarding/Rejected');
+    }
+
+    public function expired()
+    {
+        $user = auth('accreditor')->user();
+        if (!$user || ($user->expires_at && $user->expires_at >= now())) {
+            return redirect('/dashboard');
+        }
+
+        return Inertia::render('Accreditor/Expired', [
+            'accreditor' => $user
+        ]);
     }
 
     public function noActiveEvent()

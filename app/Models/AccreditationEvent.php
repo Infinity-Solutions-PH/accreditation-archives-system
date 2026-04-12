@@ -2,18 +2,35 @@
 
 namespace App\Models;
 
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 
 class AccreditationEvent extends Model
 {
     protected $fillable = [
-        'title', 'description', 'college_id', 'program_id', 
+        'title', 'slug', 'description', 'college_id', 'program_id', 
         'level', 'expires_at', 'status', 'created_by'
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
     ];
+
+    protected static function booted()
+    {
+        static::creating(function ($event) {
+            $event->slug = Str::slug($event->title);
+        });
+
+        static::updating(function ($event) {
+            $event->slug = Str::slug($event->title);
+        });
+    }
+
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
 
     public function college()
     {
@@ -39,6 +56,7 @@ class AccreditationEvent extends Model
 
     public function accreditors()
     {
-        return $this->hasMany(Accreditor::class);
+        return $this->belongsToMany(Accreditor::class, 'accreditor_event_access')
+                    ->withTimestamps();
     }
 }

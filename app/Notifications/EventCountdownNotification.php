@@ -27,7 +27,7 @@ class EventCountdownNotification extends Notification
             'type' => 'reminder',
             'icon' => 'timer',
             'event_id' => $this->event->id,
-            'url' => route('file-archives', ['event_id' => $this->event->id])
+            'url' => route('areas', ['event' => $this->event->slug])
         ];
     }
 }

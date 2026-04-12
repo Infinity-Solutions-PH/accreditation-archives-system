@@ -24,31 +24,50 @@ class EventAccreditorController extends Controller
     public function store(Request $request, AccreditationEvent $event)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|email|unique:accreditors,email',
+            'name' => 'required_without:accreditor_id|string|max:255',
+            'email' => 'required_without:accreditor_id|email',
+            'accreditor_id' => 'nullable|exists:accreditors,id'
         ]);
 
-        $accreditor = Accreditor::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make(Str::random(24)), // Random password, primarily using Google Auth
-            'accreditation_event_id' => $event->id,
-            'college_id' => $event->college_id,
-            'program_id' => $event->program_id,
-            'level' => $event->level,
-            'expires_at' => $event->expires_at,
-            'created_by' => auth()->id(),
-        ]);
+        if ($request->accreditor_id) {
+            $accreditor = Accreditor::findOrFail($request->accreditor_id);
+        } else {
+            // Find or create based on email
+            $accreditor = Accreditor::firstOrCreate(
+                ['email' => $request->email],
+                [
+                    'name' => $request->name,
+                    'password' => Hash::make(Str::random(24)),
+                    'role_status' => 'approved',
+                    'is_active' => true,
+                    'expires_at' => $event->expires_at,
+                    'created_by' => auth()->id(),
+                ]
+            );
+        }
+
+        // Attach to event if not already attached
+        if (!$accreditor->events()->where('accreditation_event_id', $event->id)->exists()) {
+            $accreditor->events()->attach($event->id);
+        }
+
+        // Expiration Logic: apply event expiration if account is expired or event expires later than current account
+        $currentExpiry = $accreditor->expires_at;
+        $eventExpiry = $event->expires_at;
+
+        if (!$currentExpiry || $currentExpiry < now() || $eventExpiry > $currentExpiry) {
+            $accreditor->update(['expires_at' => $eventExpiry]);
+        }
 
         activity()
             ->useLog('events')
             ->performedOn($event)
             ->causedBy(auth()->user())
-            ->log("Added accreditor: {$accreditor->name} ({$accreditor->email}) to event: {$event->title}");
+            ->log("Added accreditor: {$accreditor->name} to event: {$event->title}");
 
         return response()->json([
             'message' => 'Accreditor added successfully.',
-            'accreditor' => $accreditor->load('college', 'program')
+            'accreditor' => $accreditor->load('events')
         ]);
     }
 

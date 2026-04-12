@@ -65,7 +65,7 @@
                             <h2 class="text-xl font-bold tracking-tight">CvSU Accreditation Archives</h2>
                         </div>
                         <h1 class="text-3xl font-bold tracking-tight text-[#0d121b] dark:text-white">Accreditor Login</h1>
-                        <p class="text-slate-500 dark:text-slate-400">Enter your assigned temporary credentials provided by the system administrator.</p>
+                        <p class="text-slate-500 dark:text-slate-400">Enter your assigned credentials provided by the system administrator.</p>
                     </div>
                     <form class="space-y-5" @submit.prevent="submit">
                         <div v-if="form.errors.email" class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
@@ -81,16 +81,16 @@
                             </div>
                         </div>
                         <div class="space-y-2">
-                            <label class="text-[#0d121b] dark:text-gray-200 text-sm font-medium leading-normal" for="access-code">Temporary Access Code</label>
+                            <label class="text-[#0d121b] dark:text-gray-200 text-sm font-medium leading-normal" for="access-code">Password</label>
                             <div class="relative">
-                                <input v-model="form.password" class="form-input flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-accreditor/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-accreditor h-12 placeholder:text-[#4c669a] dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal transition-all" id="access-code" placeholder="Enter your 8-digit code" required="" type="password"/>
+                                <input v-model="form.password" class="form-input flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-accreditor/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-accreditor h-12 placeholder:text-[#4c669a] dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal transition-all" id="access-code" placeholder="Enter your password" required="" type="password"/>
                                 <button class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-accreditor transition-colors focus:outline-none" type="button">
                                     <span class="material-symbols-outlined text-[20px]">visibility</span>
                                 </button>
                             </div>
                             <div class="flex items-start gap-1.5 mt-2">
                                 <span class="material-symbols-outlined text-xs text-amber-500 mt-0.5">warning</span>
-                                <p class="text-xs text-slate-500 dark:text-slate-400">Temporary codes expire after the scheduled evaluation period.</p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Your access will automatically expire after the scheduled evaluation period.</p>
                             </div>
                         </div>
                         <button :disabled="form.processing" class="w-full h-12 bg-accreditor hover:bg-accreditor-hover text-white font-semibold rounded-lg shadow-sm shadow-accreditor/30 transition-all active:scale-[0.98] flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed" type="submit">

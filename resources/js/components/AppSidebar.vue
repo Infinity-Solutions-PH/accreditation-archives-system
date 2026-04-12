@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { SidebarProps } from '@/components/ui/sidebar'
-
+import { usePage } from '@inertiajs/vue3'
+import { computed } from 'vue'
 import {
   BookOpen,
   Bot,
@@ -12,6 +13,12 @@ import {
   Send,
   Settings2,
   SquareTerminal,
+  LayoutDashboard,
+  Users,
+  CalendarDays,
+  FolderArchive,
+  MessageSquare,
+  FileText
 } from "lucide-vue-next"
 
 import NavMain from '@/components/NavMain.vue'
@@ -32,129 +39,91 @@ const props = withDefaults(defineProps<SidebarProps>(), {
   variant: "inset",
 })
 
-const data = {
-  user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
-  },
-  navMain: [
+const page = usePage()
+const auth = computed(() => page.props.auth)
+const isAccreditor = computed(() => auth.value?.is_accreditor)
+
+const dynamicNavMain = computed(() => {
+  if (isAccreditor.value) {
+    return [
+      {
+        title: "Accreditation",
+        url: "/accreditor/dashboard?tab=active",
+        icon: CalendarDays,
+        isActive: true,
+      },
+      {
+        title: "Archives",
+        url: "/accreditor/dashboard?tab=archives",
+        icon: FolderArchive,
+      },
+      {
+        title: "Messages",
+        url: "#",
+        icon: MessageSquare,
+        items: [
+          { title: "Comments", url: "#" },
+          { title: "Notifications", url: "#" },
+        ]
+      }
+    ]
+  }
+
+  // Default / System User Navigation
+  return [
     {
-      title: "Playground",
-      url: "#",
-      icon: SquareTerminal,
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: LayoutDashboard,
       isActive: true,
-      items: [
-        {
-          title: "History",
-          url: "#",
-        },
-        {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
-          url: "#",
-        },
-      ],
     },
     {
-      title: "Models",
-      url: "#",
-      icon: Bot,
-      items: [
-        {
-          title: "Genesis",
-          url: "#",
-        },
-        {
-          title: "Explorer",
-          url: "#",
-        },
-        {
-          title: "Quantum",
-          url: "#",
-        },
-      ],
+      title: "User Management",
+      url: "/user-management",
+      icon: Users,
     },
     {
-      title: "Documentation",
-      url: "#",
-      icon: BookOpen,
-      items: [
-        {
-          title: "Introduction",
-          url: "#",
-        },
-        {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
-          url: "#",
-        },
-        {
-          title: "Changelog",
-          url: "#",
-        },
-      ],
+      title: "Events",
+      url: "/events",
+      icon: CalendarDays,
     },
     {
-      title: "Settings",
-      url: "#",
-      icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
+      title: "Repository",
+      url: "/repository",
+      icon: FileText,
     },
-  ],
-  navSecondary: [
+  ]
+})
+
+const dynamicProjects = computed(() => {
+  if (isAccreditor.value) return []
+  
+  return [
     {
-      title: "Support",
-      url: "#",
-      icon: LifeBuoy,
-    },
-    {
-      title: "Feedback",
-      url: "#",
-      icon: Send,
-    },
-  ],
-  projects: [
-    {
-      name: "Design Engineering",
+      name: "Monitoring",
       url: "#",
       icon: Frame,
     },
     {
-      name: "Sales & Marketing",
+      name: "Reports",
       url: "#",
       icon: PieChart,
     },
-    {
-      name: "Travel",
-      url: "#",
-      icon: Map,
-    },
-  ],
-}
+  ]
+})
+
+const navSecondary = [
+  {
+    title: "Support",
+    url: "#",
+    icon: LifeBuoy,
+  },
+  {
+    title: "Feedback",
+    url: "#",
+    icon: Send,
+  },
+]
 </script>
 
 <template>
@@ -163,13 +132,13 @@ const data = {
       <SidebarMenu>
         <SidebarMenuItem>
           <SidebarMenuButton size="lg" as-child>
-            <a href="#">
-              <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-                <Command class="size-4" />
+            <a href="/">
+              <div class="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
+                C
               </div>
               <div class="grid flex-1 text-left text-sm leading-tight">
-                <span class="truncate font-medium">Acme Inc</span>
-                <span class="truncate text-xs">Enterprise</span>
+                <span class="truncate font-bold">CvSU Archives</span>
+                <span class="truncate text-xs">Accreditation System</span>
               </div>
             </a>
           </SidebarMenuButton>
@@ -177,12 +146,12 @@ const data = {
       </SidebarMenu>
     </SidebarHeader>
     <SidebarContent>
-      <NavMain :items="data.navMain" />
-      <NavProjects :projects="data.projects" />
-      <NavSecondary :items="data.navSecondary" class="mt-auto" />
+      <NavMain :items="dynamicNavMain" />
+      <NavProjects :projects="dynamicProjects" />
+      <NavSecondary :items="navSecondary" class="mt-auto" />
     </SidebarContent>
     <SidebarFooter>
-      <NavUser :user="data.user" />
+      <NavUser :user="auth.user" />
     </SidebarFooter>
   </Sidebar>
 </template>

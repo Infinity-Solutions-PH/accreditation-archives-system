@@ -39,7 +39,7 @@ class AuthController extends Controller
             }
 
             $request->session()->regenerate();
-            return redirect()->intended('/areas');
+            return redirect()->intended(route('accreditor.dashboard'));
         }
 
         return back()->withErrors([

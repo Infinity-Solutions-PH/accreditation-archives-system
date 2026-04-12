@@ -18,7 +18,7 @@ class OnboardingService
      * @return User|null
      * @throws \Exception
      */
-    public function completeCollegeSelection($collegeId): ?User
+    public function completeCollegeSelection($collegeId, $programId = null): ?User
     {
         $user = auth('web')->user();
 
@@ -26,6 +26,7 @@ class OnboardingService
         if ($user) {
             $user->update([
                 'college_id' => $collegeId,
+                'program_id' => $programId,
                 'role_status' => 'pending'
             ]);
 
@@ -50,6 +51,7 @@ class OnboardingService
             'email' => $pendingUser['email'],
             'password' => Hash::make(Str::random(12)),
             'college_id' => $collegeId,
+            'program_id' => $programId,
             'role_status' => 'pending',
             'is_active' => true,
         ]);

@@ -14,7 +14,14 @@ class HandleInertiaRequests extends Middleware
      *
      * @var string
      */
-    protected $rootView = 'app';
+    public function rootView(Request $request): string
+    {
+        if (auth('accreditor')->check()) {
+            return 'layouts.accreditor';
+        }
+
+        return 'layouts.app';
+    }
 
     /**
      * Determines the current asset version.
@@ -42,6 +49,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $user ? $user->only(['id', 'name', 'email', 'google_info']) : null,
                 'roles' => $user && method_exists($user, 'getRoleNames') ? $user->getRoleNames() : [],
+                'is_accreditor' => $user instanceof \App\Models\Accreditor,
             ],
         ];
     }

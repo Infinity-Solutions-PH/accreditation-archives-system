@@ -5,6 +5,7 @@ namespace App\Models;
 use Carbon\Carbon;
 use App\Models\User;
 use App\Models\Accreditor;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
 
@@ -48,6 +49,12 @@ class File extends Model
     // Delete temp file when record deleted
     protected static function booted()
     {
+        static::creating(function ($file) {
+            if (!$file->uuid) {
+                $file->uuid = (string) Str::uuid();
+            }
+        });
+
         static::deleting(function ($file) {
             $cleanPath = str_replace('private/', '', $file->path);
             if ($file->path && Storage::exists($cleanPath)) {
@@ -83,6 +90,11 @@ class File extends Model
         return $this->belongsToMany(User::class, 'file_user_shares')
                     ->withPivot('shared_by')
                     ->withTimestamps();
+    }
+
+    public function accessRequests()
+    {
+        return $this->hasMany(FileAccessRequest::class);
     }
 
     public function scopeAccessibleBy($query, $user)
@@ -130,9 +142,9 @@ class File extends Model
         }
 
         if ($user instanceof Accreditor) {
-            // Accreditors see files shared specifically to their linked event
+            // Accreditors see files shared specifically to events they are assigned to
             return $query->whereHas('accreditationEvents', function ($q) use ($user) {
-                $q->where('accreditation_events.id', $user->accreditation_event_id);
+                $q->whereIn('accreditation_events.id', $user->events->pluck('id'));
             });
         }
 

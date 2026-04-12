@@ -55,7 +55,7 @@
                 area_id: selectedAreaId.value
             });
 
-            eventSuccess.value = 'File seamlessly shared to Virtual Room!';
+            eventSuccess.value = 'File seamlessly shared to Accreditation Event!';
             emit('shared');
             
             setTimeout(() => {
@@ -166,7 +166,7 @@
                     :class="activeTab === 'event' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
                     @click="activeTab = 'event'">
                     <span class="material-symbols-outlined text-[20px]">meeting_room</span>
-                    Virtual Room
+                    Accreditation Event
                 </button>
                 <button 
                     class="flex-1 py-4 text-sm font-bold flex justify-center items-center gap-2 border-b-2 transition"
@@ -220,7 +220,7 @@
                         :disabled="isSharingEvent || isAlreadySharedToEvent"
                         class="w-full flex items-center justify-center gap-2 px-4 py-3 bg-primary hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white rounded-lg text-sm font-bold transition-colors shadow-md shadow-blue-500/20">
                         <span class="material-symbols-outlined text-[20px]">{{ isAlreadySharedToEvent ? 'check' : (isSharingEvent ? 'sync' : 'share') }}</span>
-                        {{ isAlreadySharedToEvent ? 'Already Mapped to this Area' : (isSharingEvent ? 'Mapping...' : 'Share to Virtual Room') }}
+                        {{ isAlreadySharedToEvent ? 'Already Mapped to this Area' : (isSharingEvent ? 'Mapping...' : 'Share to Accreditation Event') }}
                     </button>
                 </div>
 

@@ -23,6 +23,7 @@
         roles: Array,
         colleges: Array,
         programs: Array,
+        events: Array,
         filters: Object
     })
 
@@ -90,7 +91,7 @@
         
         isProcessingAction.value = true;
         try {
-            await api.put(`/user-management/${user.id}/role-status`, {
+            await api.put(route('user-management.role-status', user.id), {
                 role_status: status,
                 is_active: type === 'approve'
             });
@@ -105,13 +106,15 @@
     const searchQuery = ref(props.filters.search || '');
     const roleFilter = ref(props.filters.role || 'All Roles');
     const statusFilter = ref(props.filters.status || 'All Status');
+    const activeTab = ref(props.filters.tab || 'users');
 
     // Debounced server-side filtering matching Activity Logs logic
     const updateFilters = useDebounceFn(() => {
         router.get(route('user-management'), {
             search: searchQuery.value,
             role: roleFilter.value,
-            status: statusFilter.value
+            status: statusFilter.value,
+            tab: activeTab.value
         }, {
             preserveState: true,
             preserveScroll: true,
@@ -121,7 +124,7 @@
         });
     }, 500);
 
-    watch([searchQuery, roleFilter, statusFilter], () => {
+    watch([searchQuery, roleFilter, statusFilter, activeTab], () => {
         updateFilters();
     });
 
@@ -159,34 +162,56 @@
                 </button>
                 </div>
                 <!-- Stats Cards -->
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     <div class="bg-white dark:bg-[#1a2234] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-1">
                         <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Active Users</span>
                         <div class="flex items-baseline gap-2">
                             <span class="text-2xl font-bold text-slate-900 dark:text-white">{{ userStats.active }}</span>
-                            <span class="text-green-600 text-sm font-medium bg-green-50 dark:bg-green-900/20 px-1.5 py-0.5 rounded flex items-center">
-                                <span class="material-symbols-outlined text-[14px] mr-0.5">trending_up</span> 5%
-                            </span>
                         </div>
                     </div>
-                    <div @click="statusFilter = 'Pending'" class="bg-white dark:bg-[#1a2234] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-1 relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-colors">
+                    <div @click="statusFilter = 'Pending'; activeTab = 'users'" class="bg-white dark:bg-[#1a2234] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-1 relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-colors">
                         <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                            <span class="material-symbols-outlined text-6xl text-primary">person_add</span>
+                            <span class="material-symbols-outlined text-4xl text-primary">person_add</span>
                         </div>
                         <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Pending Requests</span>
                         <div class="flex items-baseline gap-2">
                             <span class="text-2xl font-bold text-slate-900 dark:text-white">{{ userStats.pending || 0 }}</span>
-                            <span class="text-primary text-sm font-medium">Needs Approval</span>
                         </div>
                     </div>
                     <div class="bg-white dark:bg-[#1a2234] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-1">
                         <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Faculty Admins</span>
                         <div class="flex items-baseline gap-2">
                             <span class="text-2xl font-bold text-slate-900 dark:text-white">{{ userStats.officers || 0 }}</span>
-                            <span class="text-slate-400 text-sm font-medium">College Officers</span>
+                        </div>
+                    </div>
+                    <div @click="activeTab = 'accreditors'" class="bg-white dark:bg-[#1a2234] p-5 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm flex flex-col gap-1 relative overflow-hidden group cursor-pointer hover:border-primary/50 transition-colors">
+                        <div class="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                            <span class="material-symbols-outlined text-4xl text-primary">verified_user</span>
+                        </div>
+                        <span class="text-slate-500 dark:text-slate-400 text-sm font-medium">Total Accreditors</span>
+                        <div class="flex items-baseline gap-2">
+                            <span class="text-2xl font-bold text-slate-900 dark:text-white">{{ userStats.accreditors || 0 }}</span>
                         </div>
                     </div>
                 </div>
+                <!-- Tab Switcher -->
+                <div class="flex border-b border-slate-200 dark:border-slate-700">
+                    <button 
+                        @click="activeTab = 'users'"
+                        class="px-6 py-3 text-sm font-bold transition-all border-b-2"
+                        :class="activeTab === 'users' ? 'text-primary border-primary bg-primary/5' : 'text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300'"
+                    >
+                        System Users
+                    </button>
+                    <button 
+                        @click="activeTab = 'accreditors'"
+                        class="px-6 py-3 text-sm font-bold transition-all border-b-2"
+                        :class="activeTab === 'accreditors' ? 'text-primary border-primary bg-primary/5' : 'text-slate-500 border-transparent hover:text-slate-700 dark:hover:text-slate-300'"
+                    >
+                        Accreditors
+                    </button>
+                </div>
+
                 <!-- Main Table Section -->
                 <div class="bg-white dark:bg-[#1a2234] rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden flex flex-col">
                 <!-- Filters and Search Toolbar -->
@@ -206,7 +231,7 @@
                         <!-- Filter Selection -->
                         <div class="flex flex-wrap gap-4 w-full lg:w-auto flex-1 justify-end">
                             <!-- Role Filter -->
-                            <div class="w-full sm:w-auto min-w-[180px]">
+                            <div v-if="activeTab === 'users'" class="w-full sm:w-auto min-w-[180px]">
                                 <label class="block text-xs font-bold text-[#4c669a] uppercase tracking-wider mb-2">User Role</label>
                                 <select v-model="roleFilter" :disabled="isLoading" class="w-full h-11 rounded-xl border border-[#e7ebf3] dark:border-gray-700 bg-[#f8f9fc] dark:bg-gray-800/50 px-4 text-sm font-medium text-[#0d121b] dark:text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                     <option>All Roles</option>
@@ -253,86 +278,103 @@
                         <table class="w-full text-left border-collapse transition-all duration-300" :class="{'opacity-50 grayscale-[0.5] pointer-events-none': isLoading}">
                             <thead>
                                 <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">
-                                    <th class="p-4 w-12">
-                                    <input class="rounded border-slate-300 text-primary focus:ring-primary bg-white dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
+                                    <th class="p-4 w-12 text-center">
+                                        #
                                     </th>
                                     <th class="p-4">User Details</th>
-                                    <th class="p-4">Role</th>
-                                    <th class="p-4">Office</th>
+                                    <th v-if="activeTab === 'users'" class="p-4">Role</th>
+                                    <th class="p-4">{{ activeTab === 'users' ? 'Office' : 'Affiliation' }}</th>
                                     <th class="p-4">Status</th>
-                                    <th class="p-4">Last Active</th>
+                                    <th class="p-4">{{ activeTab === 'users' ? 'Last Active' : 'Access Expiry' }}</th>
                                     <th class="p-4 text-right">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-200 dark:divide-slate-700 text-sm text-slate-700 dark:text-slate-300">
                                 <!-- Row 1 -->
                                 <tr
-                                    v-for="user in users.data" :key="user.id"
+                                    v-for="(item, index) in users.data" :key="item.id"
                                     class="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors group">
-                                    <td class="p-4">
-                                        <input class="rounded border-slate-300 text-primary focus:ring-primary bg-white dark:bg-slate-700 dark:border-slate-600" type="checkbox"/>
+                                    <td class="p-4 text-center text-xs text-slate-400">
+                                        {{ index + 1 }}
                                     </td>
                                     <td class="p-4">
-                                        <div class="flex items-center gap-3">
-                                            <div class="size-9 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary flex items-center justify-center text-sm font-bold">
-                                                <img v-if="user?.google_info?.avatar" :src="user.google_info.avatar" class="size-9 rounded-full object-cover" />
-                                                <span v-else>{{ user?.name?.charAt(0).toUpperCase() || '?' }}</span>
+                                        <div class="flex items-center gap-3" @click="activeTab === 'accreditors' ? editUser(item) : null">
+                                            <div class="size-9 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary flex items-center justify-center text-sm font-bold shadow-sm">
+                                                <img v-if="item?.google_info?.avatar" :src="item.google_info.avatar" class="size-9 rounded-full object-cover" />
+                                                <span v-else>{{ item?.name?.charAt(0).toUpperCase() || '?' }}</span>
                                             </div>
                                             <div>
-                                                <div class="font-medium text-slate-900 dark:text-white">{{ user?.name || 'Unknown User' }}</div>
-                                                <div class="text-slate-500 dark:text-slate-400 text-xs">{{ user?.email || 'No Email' }}</div>
+                                                <div class="font-bold text-slate-900 dark:text-white">{{ item?.name || 'Unknown User' }}</div>
+                                                <div class="text-slate-500 dark:text-slate-400 text-xs">{{ item?.email || 'No Email' }}</div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="p-4">
-                                        <div v-if="user.roles && user.roles.length > 0" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs text-nowrap font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border border-purple-100 dark:border-purple-800">
+                                    <!-- Role / Level -->
+                                    <td v-if="activeTab === 'users'" class="p-4">
+                                        <div v-if="item.roles && item.roles.length > 0" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs text-nowrap font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border border-purple-100 dark:border-purple-800">
                                             <span class="material-symbols-outlined text-[14px]">shield_person</span>
-                                            {{ user.roles[0].name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
+                                            {{ item.roles[0].name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
                                         </div>
                                         <div v-else class="text-xs text-slate-500 px-2 py-1">No Role</div>
                                     </td>
+                                    <!-- Office / Affiliation -->
                                     <td class="p-4">
-                                        <div v-if="user?.college">{{ user.college.name }} ({{ user.college.code }})</div>
+                                        <div v-if="item?.college" class="text-xs font-medium">
+                                            {{ item.college.code }} <span class="text-slate-400 font-normal hidden md:inline"> - {{ item.college.name }}</span>
+                                        </div>
                                         <div v-else class="text-slate-400 text-xs italic">Unassigned</div>
                                     </td>
-                                    <td class="p-4 flex flex-col items-start gap-1">
-                                        <span v-if="user?.role_status === 'approved' && user?.is_active" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-green-50 text-green-700 dark:bg-green-900/20 dark:text-green-300 border border-green-100 dark:border-green-800">
-                                            <span class="size-1.5 rounded-full bg-green-500"></span> Active
-                                        </span>
-                                        <span v-else-if="user?.role_status === 'approved' && !user?.is_active" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
-                                            <span class="size-1.5 rounded-full bg-slate-400"></span> Inactive
-                                        </span>
-                                        <span v-if="user?.role_status === 'pending'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-100 dark:border-amber-800">
-                                            <span class="material-symbols-outlined text-[14px]">hourglass_top</span> Pending
-                                        </span>
-                                        <span v-else-if="user?.role_status === 'rejected'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 dark:bg-red-900/20 dark:text-red-400 border border-red-100 dark:border-red-800">
-                                            <span class="material-symbols-outlined text-[14px]">cancel</span> Rejected
-                                        </span>
+                                    <!-- Status -->
+                                    <td class="p-4">
+                                        <div class="flex items-center">
+                                            <span v-if="item?.role_status === 'approved' && item?.is_active" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300 border border-emerald-100 dark:border-emerald-800">
+                                                <span class="size-1.5 rounded-full bg-emerald-500"></span> Active
+                                            </span>
+                                            <span v-else-if="item?.role_status === 'approved' && !item?.is_active" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">
+                                                <span class="size-1.5 rounded-full bg-slate-400"></span> Inactive
+                                            </span>
+                                            <span v-else-if="item?.role_status === 'pending'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-100 dark:border-amber-800 shadow-sm">
+                                                <span class="material-symbols-outlined text-[14px]">bolt</span> Pending
+                                            </span>
+                                            <span v-else-if="item?.role_status === 'rejected'" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-rose-50 text-rose-700 dark:bg-rose-900/20 dark:text-rose-300 border border-rose-100 dark:border-rose-800">
+                                                <span class="material-symbols-outlined text-[14px]">cancel</span> Rejected
+                                            </span>
+                                        </div>
                                     </td>
-                                    <td class="p-4 text-slate-500 dark:text-slate-400">
-                                        {{ user?.updated_at ? new Date(user.updated_at).toLocaleDateString() : 'N/A' }}
+                                    <!-- Date Column -->
+                                    <td class="p-4">
+                                        <div v-if="activeTab === 'users'" class="text-xs text-slate-500 font-medium">
+                                            {{ item?.updated_at ? new Date(item.updated_at).toLocaleDateString() : 'N/A' }}
+                                        </div>
+                                        <div v-else class="flex flex-col gap-0.5">
+                                            <div class="text-xs font-bold" :class="new Date(item.expires_at) < new Date() ? 'text-rose-500' : 'text-slate-700 dark:text-slate-200'">
+                                                {{ item.expires_at_human }}
+                                            </div>
+                                            <div v-if="new Date(item.expires_at) < new Date()" class="text-[10px] text-rose-400 uppercase font-black">Expired</div>
+                                        </div>
                                     </td>
+                                    <!-- Actions -->
                                     <td class="p-4 text-right">
-                                        <div v-if="user.role_status === 'pending'" class="flex items-center justify-end gap-1">
+                                        <div v-if="item.role_status === 'pending' && activeTab === 'users'" class="flex items-center justify-end gap-1">
                                             <button 
-                                                @click="handleApprove(user)"
-                                                class="flex items-center gap-1 px-2 py-1 rounded bg-green-600 hover:bg-green-700 text-white text-xs font-medium transition-colors shadow-sm active:scale-95"
+                                                @click="handleApprove(item)"
+                                                class="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md shadow-emerald-500/20 active:scale-95"
                                             >
-                                                <span class="material-symbols-outlined text-[14px]">check</span> Approve
+                                                <span class="material-symbols-outlined text-[16px]">how_to_reg</span> Approve
                                             </button>
                                             <button 
-                                                @click="handleReject(user)"
-                                                class="p-1 rounded text-slate-400 hover:text-red-500 hover:bg-white dark:hover:bg-slate-800 transition-colors active:scale-95" 
+                                                @click="handleReject(item)"
+                                                class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all active:scale-95" 
                                                 title="Reject"
                                             >
-                                                <span class="material-symbols-outlined text-[20px]">close</span>
+                                                <span class="material-symbols-outlined text-[20px]">person_remove</span>
                                             </button>
                                         </div>
-                                        <div v-else class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <button @click="editUser(user)" class="p-1.5 rounded text-slate-400 hover:text-primary hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors" title="Edit User">
-                                                <span class="material-symbols-outlined text-[20px]">edit</span>
+                                        <div v-else class="flex items-center justify-end gap-1 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <button @click="editUser(item)" class="p-2 rounded-lg text-slate-400 hover:text-primary hover:bg-primary/10 transition-all" title="Edit">
+                                                <span class="material-symbols-outlined text-[20px]">edit_square</span>
                                             </button>
-                                            <button class="p-1.5 rounded text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Delete User">
+                                            <button class="p-2 rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all" title="Delete">
                                                 <span class="material-symbols-outlined text-[20px]">delete</span>
                                             </button>
                                         </div>
@@ -377,6 +419,7 @@
             :roles="roles"
             :colleges="colleges"
             :programs="programs"
+            :events="events"
             @close="closeCreateUserModal"
         />
         <EditUserModal 
@@ -385,6 +428,7 @@
             :roles="roles"
             :colleges="colleges"
             :programs="programs"
+            :events="events"
             @close="closeEditModal"
             @updated="onUserUpdated"
         />

@@ -6,12 +6,15 @@ use App\Models\Area;
 use App\Models\User;
 use Inertia\Inertia;
 use App\Models\College;
-use App\Models\Notification;
 use App\Models\Program;
+use App\Models\Accreditor;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Models\AccreditationEvent;
 use App\Notifications\EventCreatedNotification;
+use App\Notifications\FileSharedToEventNotification;
 use App\Notifications\AllAreasCompleteNotification;
+use App\Notifications\FileRemovedFromEventNotification;
 
 class AccreditationEventController extends Controller
 {
@@ -23,23 +26,38 @@ class AccreditationEventController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $user = auth()->user();
+        $user = auth('web')->user() ?? auth('accreditor')->user();
+
+        if ($user instanceof Accreditor) {
+            return redirect()->route('accreditor.dashboard');
+        }
+
+        $tab = $request->query('tab', 'active');
         $query = AccreditationEvent::with(['college', 'program', 'creator']);
 
-        if ($user->hasRole('college_officer')) {
-            $query->where('college_id', $user->college_id);
-        } elseif ($user->hasRole('taskforce')) {
-             $query->where('college_id', $user->college_id)
-                   ->where('program_id', $user->program_id);
+        if ($user && method_exists($user, 'hasRole')) {
+            if ($user->hasRole('college_officer')) {
+                $query->where('college_id', $user->college_id);
+            } elseif ($user->hasRole('taskforce')) {
+                 $query->where('college_id', $user->college_id)
+                       ->where('program_id', $user->program_id);
+            }
+        }
+
+        if ($tab === 'active') {
+            $query->where('status', 'active');
+        } else {
+            $query->where('status', '!=', 'active');
         }
 
         return Inertia::render('Events/Index', [
             'events' => $query->latest()->paginate(10),
             'colleges' => College::all(),
             'programs' => Program::all(),
-            'roles' => method_exists($user, 'getRoleNames') ? $user->getRoleNames() : [],
+            'activeTab' => $tab,
+            'roles' => $user && method_exists($user, 'getRoleNames') ? $user->getRoleNames() : [],
         ]);
     }
 
@@ -116,6 +134,24 @@ class AccreditationEventController extends Controller
             ->causedBy(auth()->user())
             ->log("Updated accreditation event: {$accreditationEvent->title}");
 
+        // Notify Stakeholders
+        $user = auth()->user();
+        $recipients = User::role(['admin', 'ido_staff', 'college_officer', 'taskforce'])
+            ->where(function($q) use ($accreditationEvent, $user) {
+                $q->where('id', $accreditationEvent->created_by)
+                  ->orWhere(function($sub) use ($accreditationEvent) {
+                      $sub->where('college_id', $accreditationEvent->college_id)
+                          ->whereHas('roles', fn($r) => $r->whereIn('name', ['college_officer', 'taskforce']));
+                  });
+            })
+            ->where('id', '!=', $user->id)
+            ->distinct()
+            ->get();
+
+        foreach ($recipients as $recipient) {
+            $recipient->notify(new \App\Notifications\AccreditationEventUpdatedNotification($accreditationEvent, $user->name));
+        }
+
         return back()->with('message', 'Accreditation event updated successfully.');
     }
 
@@ -156,6 +192,12 @@ class AccreditationEventController extends Controller
             ->distinct('accreditation_event_files.area_id')
             ->count('accreditation_event_files.area_id');
 
+        // Check if all areas are now complete
+        $totalAreas = Area::count();
+        $filledAreasCount = $event->files()
+            ->distinct('accreditation_event_files.area_id')
+            ->count('accreditation_event_files.area_id');
+
         if ($filledAreasCount >= $totalAreas) {
             // Only notify if we haven't sent a completion notification for this event yet
             $alreadyNotified = Notification::where('notifiable_id', auth()->id())
@@ -187,6 +229,99 @@ class AccreditationEventController extends Controller
             }
         }
 
+        // Notify Stakeholders about the shared file
+        $file = \App\Models\File::find($request->file_id);
+        $area = Area::find($request->area_id);
+        $user = auth()->user();
+
+        $recipients = User::role(['admin', 'ido_staff', 'college_officer', 'taskforce'])
+            ->where(function($q) use ($event, $user) {
+                $q->where('id', $event->created_by)
+                  ->orWhere(function($sub) use ($event) {
+                      $sub->where('college_id', $event->college_id)
+                          ->whereHas('roles', fn($r) => $r->whereIn('name', ['college_officer', 'taskforce']));
+                  });
+            })
+            ->where('id', '!=', $user->id)
+            ->distinct()
+            ->get();
+
+        foreach ($recipients as $recipient) {
+            $recipient->notify(new FileSharedToEventNotification($event, $file, $area, $user->name ?? 'A user'));
+        }
+
         return response()->json(['message' => 'File shared to virtual drive successfully.']);
+    }
+
+    /**
+     * Remove a file from the accreditation event virtual drive.
+     */
+    public function unshareFile(Request $request, AccreditationEvent $event, Area $area)
+    {
+        $request->validate([
+            'file_id' => 'required|exists:files,id',
+        ]);
+
+        $file = \App\Models\File::findOrFail($request->file_id);
+        $user = auth()->user() ?? auth('accreditor')->user();
+
+        // Permissions: Only uploader or IDO Staff/Admin/College Officer
+        $isUploader = $file->uploaded_by === $user->id;
+        $hasHigherRole = $user instanceof \App\Models\User && $user->hasRole(['admin', 'ido_staff', 'college_officer']);
+
+        if (!$isUploader && !$hasHigherRole) {
+            return response()->json(['message' => 'Unauthorized to remove this file from the event.'], 403);
+        }
+
+        $event->files()->wherePivot('area_id', $area->id)->detach($file->id);
+
+        activity()
+            ->useLog('events')
+            ->performedOn($event)
+            ->causedBy($user)
+            ->log("Removed file '{$file->title}' from {$area->code} in event: {$event->title}");
+
+        // Notify Stakeholders
+        $recipients = User::role(['admin', 'ido_staff', 'college_officer', 'taskforce'])
+            ->where(function($q) use ($event, $user) {
+                $q->where('id', $event->created_by)
+                  ->orWhere(function($sub) use ($event) {
+                      $sub->where('college_id', $event->college_id)
+                          ->whereHas('roles', fn($r) => $r->whereIn('name', ['college_officer', 'taskforce']));
+                  });
+            })
+            ->where('id', '!=', $user->id)
+            ->distinct()
+            ->get();
+
+        foreach ($recipients as $recipient) {
+            $recipient->notify(new FileRemovedFromEventNotification($event, $file, $area, $user->name));
+        }
+
+        return response()->json(['message' => 'File removed from event successfully.']);
+    }
+
+    /**
+     * Share a file to the accreditation event virtual drive.
+     */
+    public function accreditorDashboard(Request $request)
+    {
+        $user = auth('accreditor')->user();
+        if (!$user) return redirect()->route('accreditor.auth');
+
+        $tab = $request->query('tab', 'active');
+        $query = $user->events()->with(['college', 'program']);
+
+        if ($tab === 'active') {
+            $query->where('accreditation_events.expires_at', '>', now());
+        } else {
+            $query->where('accreditation_events.expires_at', '<=', now());
+        }
+
+        return Inertia::render('Accreditor/Dashboard', [
+            'events' => $query->latest()->paginate(12),
+            'activeTab' => $tab,
+            'accreditor' => $user
+        ]);
     }
 }

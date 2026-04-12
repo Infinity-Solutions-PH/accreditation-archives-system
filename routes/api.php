@@ -1,14 +1,11 @@
 <?php
 
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\FileController;
-use App\Http\Controllers\UserController;
 use App\Http\Middleware\CheckRoleStatus;
-use App\Http\Controllers\UserManagementController;
-use App\Http\Controllers\EventAccreditorController;
-use App\Http\Controllers\AccreditorAccountController;
 use App\Http\Controllers\FileShareController;
+use App\Http\Controllers\EventAccreditorController;
+use App\Http\Controllers\AccreditationEventController;
 
 Route::middleware(['auth:sanctum', CheckRoleStatus::class])->group(function() {
     Route::post('/files/temp', [FileController::class, 'temp'])->name('api.files.temp');
@@ -17,16 +14,11 @@ Route::middleware(['auth:sanctum', CheckRoleStatus::class])->group(function() {
     Route::post('/files/update-metadata', [FileController::class, 'updateMetadata'])->name('api.files.update_metadata');
     Route::post('/files/abort', [FileController::class, 'abort'])->name('api.files.abort');
 
-    Route::post('/user-management/store', [UserController::class, 'store'])->name('api.user-management.store');
-    Route::put('/user-management/{user}/role-status', [UserManagementController::class, 'updateRoleStatus'])->name('api.user-management.role-status');
-
     Route::get('/events/{event}/accreditors', [EventAccreditorController::class, 'index'])->name('events.accreditors.index');
     Route::post('/events/{event}/accreditors', [EventAccreditorController::class, 'store'])->name('events.accreditors.store');
     Route::delete('/accreditors/{accreditor}', [EventAccreditorController::class, 'destroy'])->name('events.accreditors.destroy');
 
-    Route::post('/accreditors', [AccreditorAccountController::class, 'store'])->name('api.accreditors.store');
-
-    Route::post('/events/share', [\App\Http\Controllers\AccreditationEventController::class, 'shareToFile'])->name('events.share');
+    Route::post('/events/share', [AccreditationEventController::class, 'shareToFile'])->name('events.share');
     Route::get('/users/search-shareable', [FileShareController::class, 'searchShareableUsers'])->name('api.users.search_shareable');
     Route::post('/files/share-to-user', [FileShareController::class, 'shareToUser'])->name('api.files.share_to_user');
 });

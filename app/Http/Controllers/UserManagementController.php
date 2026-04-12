@@ -6,10 +6,13 @@ use App\Models\User;
 use Inertia\Inertia;
 use App\Models\College;
 use App\Models\Program;
+use App\Models\Accreditor;
 use Illuminate\Http\Request;
+use App\Models\AccreditationEvent;
 use Spatie\Permission\Models\Role;
 use App\Http\Resources\UserResource;
 use Illuminate\Support\Facades\Auth;
+use App\Http\Resources\AccreditorResource;
 
 class UserManagementController extends Controller
 {
@@ -26,66 +29,94 @@ class UserManagementController extends Controller
             abort(403, 'Unauthorized access to User Management.');
         }
 
-        $query = User::with(['googleInfo', 'roles', 'college', 'program']);
+        $tab = $request->input('tab', 'users');
+
+        // 1. Calculate Statistics (Fixed - not affected by filters)
+        $statQuery = User::query();
+        $accreditorStatQuery = Accreditor::query();
 
         if ($currentUser->hasRole('college_officer') && !$currentUser->hasRole(['admin', 'ido_staff'])) {
-            $query->where('college_id', $currentUser->college_id);
+            $statQuery->where('college_id', $currentUser->college_id);
+            $accreditorStatQuery->where('college_id', $currentUser->college_id);
         }
 
-        // Apply Filters
-        $query->when($request->search, function ($q, $search) {
-            $q->where(function ($sub) use ($search) {
-                $sub->where('name', 'like', "%{$search}%")
-                    ->orWhere('email', 'like', "%{$search}%")
-                    ->orWhereHas('college', fn($c) => $c->where('name', 'like', "%{$search}%"));
-            });
-        });
+        $userStats = [
+            'active' => (clone $statQuery)->where('is_active', true)->where('role_status', 'approved')->count(),
+            'pending' => (clone $statQuery)->where('role_status', 'pending')->count(),
+            'officers' => (clone $statQuery)->whereHas('roles', fn($q) => $q->where('name', 'college_officer'))->count(),
+            'accreditors' => $accreditorStatQuery->count(),
+        ];
 
-        $query->when($request->role && $request->role !== 'All Roles', function ($q, $role) {
-            $roleSlug = strtolower(str_replace(' ', '_', $role));
-            $q->whereHas('roles', fn($r) => $r->where('name', $roleSlug));
-        });
-
-        $query->when($request->status && $request->status !== 'All Status', function ($q, $status) {
-            switch ($status) {
-                case 'Active':
-                    $q->where('is_active', true)->where('role_status', 'approved');
-                    break;
-                case 'Pending':
-                    $q->where('role_status', 'pending');
-                    break;
-                case 'Inactive':
-                    $q->where(fn($sub) => $sub->where('is_active', false)->orWhereIn('role_status', ['pending', 'rejected']));
-                    break;
-                case 'Rejected':
-                    $q->where('role_status', 'rejected');
-                    break;
+        // 2. Fetch Listing Data based on Tab
+        if ($tab === 'accreditors') {
+            $query = Accreditor::with(['college', 'program', 'creator', 'events']);
+            
+            if ($currentUser->hasRole('college_officer') && !$currentUser->hasRole(['admin', 'ido_staff'])) {
+                $query->where('college_id', $currentUser->college_id);
             }
-        });
 
-        $activeUsers = (clone $query)->where('is_active', true)->where('role_status', 'approved')->count();
-        $inactiveUsers = (clone $query)->where('is_active', false)->count();
-        $pendingUsers = (clone $query)->where('role_status', 'pending')->count();
-        $officerUsers = (clone $query)->whereHas('roles', fn($q) => $q->where('name', 'college_officer'))->count();
+            // Apply Filters to Accreditors
+            $query->when($request->search, function ($q, $search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhereHas('college', fn($c) => $c->where('name', 'like', "%{$search}%"));
+                });
+            });
 
-        $users = $query->latest()->paginate(20)->withQueryString();
+            $query->when($request->status && $request->status !== 'All Status', function ($q, $status) {
+                switch ($status) {
+                    case 'Active': $q->where('is_active', true)->where('role_status', 'approved'); break;
+                    case 'Pending': $q->where('role_status', 'pending'); break;
+                    case 'Inactive': $q->where('is_active', false); break;
+                    case 'Rejected': $q->where('role_status', 'rejected'); break;
+                }
+            });
+
+            $data = $query->latest()->paginate(20)->withQueryString();
+            $resources = AccreditorResource::collection($data);
+        } else {
+            $query = User::with(['googleInfo', 'roles', 'college', 'program']);
+
+            if ($currentUser->hasRole('college_officer') && !$currentUser->hasRole(['admin', 'ido_staff'])) {
+                $query->where('college_id', $currentUser->college_id);
+            }
+
+            // Apply Filters to Users
+            $query->when($request->search, function ($q, $search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('name', 'like', "%{$search}%")
+                        ->orWhere('email', 'like', "%{$search}%")
+                        ->orWhereHas('college', fn($c) => $c->where('name', 'like', "%{$search}%"));
+                });
+            });
+
+            $query->when($request->role && $request->role !== 'All Roles', function ($q, $role) {
+                $roleSlug = str_replace(' ', '_', strtolower($role));
+                $q->whereHas('roles', fn($r) => $r->where('name', $roleSlug));
+            });
+
+            $query->when($request->status && $request->status !== 'All Status', function ($q, $status) {
+                switch ($status) {
+                    case 'Active': $q->where('is_active', true)->where('role_status', 'approved'); break;
+                    case 'Pending': $q->where('role_status', 'pending'); break;
+                    case 'Inactive': $q->where('is_active', false); break;
+                    case 'Rejected': $q->where('role_status', 'rejected'); break;
+                }
+            });
+
+            $data = $query->latest()->paginate(20)->withQueryString();
+            $resources = UserResource::collection($data);
+        }
         
-        $roles = Role::all();
-        $colleges = College::all();
-        $programs = Program::all();
-
         return Inertia::render('UserManagement/Index', [
-            'filters' => $request->only(['search', 'role', 'status']),
-            'userStats' => [
-                'active' => $activeUsers,
-                'inactive' => $inactiveUsers,
-                'pending' => $pendingUsers,
-                'officers' => $officerUsers,
-            ],
-            'users' => $users->through(fn($user) => UserResource::make($user)->resolve()),
-            'roles' => $roles,
-            'colleges' => $colleges,
-            'programs' => $programs
+            'filters' => $request->only(['search', 'role', 'status', 'tab']),
+            'userStats' => $userStats,
+            'users' => $resources, // This will be the paginated resource collection
+            'roles' => Role::all(),
+            'colleges' => College::all(),
+            'programs' => Program::all(),
+            'events' => AccreditationEvent::all()
         ]);
     }
     public function updateRoleStatus(Request $request, User $user)
@@ -142,6 +173,6 @@ class UserManagementController extends Controller
             ->causedBy(auth()->user())
             ->log("Updated user status/role for: {$user->email}. New Status: {$request->role_status}, Role: " . ($request->role ?? 'N/A'));
 
-        return response()->json(['message' => 'User updated successfully']);
+        return back()->with('message', 'User updated successfully');
     }
 }

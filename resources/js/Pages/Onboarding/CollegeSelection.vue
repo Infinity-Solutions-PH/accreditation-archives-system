@@ -7,12 +7,23 @@
     });
 
     const props = defineProps({
-        colleges: Array
+        colleges: Array,
+        programs: Array
     });
 
     const form = useForm({
         college_id: '',
+        program_id: '',
     });
+
+    const filteredPrograms = computed(() => {
+        if (!form.college_id) return [];
+        return props.programs.filter(p => p.college_id === parseInt(form.college_id));
+    });
+
+    const onCollegeChange = () => {
+        form.program_id = '';
+    }
 
     const submit = () => {
         form.post(route('onboarding.college.store'));
@@ -62,10 +73,26 @@
                         <div class="space-y-2">
                             <label class="text-[#0d121b] dark:text-gray-200 text-sm font-medium leading-normal" for="college_id">Academic College</label>
                             <div class="relative">
-                                <select v-model="form.college_id" required class="flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-primary h-12 px-4 text-base font-normal leading-normal transition-all appearance-none cursor-pointer" id="college_id">
+                                <select v-model="form.college_id" @change="onCollegeChange" required class="flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-primary h-12 px-4 text-base font-normal leading-normal transition-all appearance-none cursor-pointer" id="college_id">
                                     <option value="" disabled selected>Select your college</option>
                                     <option v-for="college in colleges" :key="college.id" :value="college.id">
                                         {{ college.code }} - {{ college.name }}
+                                    </option>
+                                </select>
+                                <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">
+                                    <span class="material-symbols-outlined text-[20px]">expand_more</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Program Dropdown -->
+                        <div v-if="form.college_id" class="space-y-2 animate-in fade-in slide-in-from-top-2 duration-300">
+                            <label class="text-[#0d121b] dark:text-gray-200 text-sm font-medium leading-normal" for="program_id">Academic Program</label>
+                            <div class="relative">
+                                <select v-model="form.program_id" class="flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-primary h-12 px-4 text-base font-normal leading-normal transition-all appearance-none cursor-pointer" id="program_id">
+                                    <option value="">Select your program (Optional)</option>
+                                    <option v-for="program in filteredPrograms" :key="program.id" :value="program.id">
+                                        {{ program.name }}
                                     </option>
                                 </select>
                                 <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none text-slate-400">

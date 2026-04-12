@@ -1,11 +1,14 @@
 <script setup>
+    import { Link } from '@inertiajs/vue3';
     import AppLayout from '@shared/Layouts/App.vue';
 
     defineOptions({
         layout: AppLayout
     });
+
     const props = defineProps({
-        areas: Object
+        areas: Array,
+        event: Object
     });
 </script>
 
@@ -15,13 +18,13 @@
         <nav aria-label="Breadcrumb" class="flex mb-6">
             <ol class="flex items-center space-x-2">
                 <li>
-                    <a class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm font-medium" href="#">Home</a>
+                    <Link :href="$page.props.auth.is_accreditor ? route('accreditor.dashboard') : route('events.index')" class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm font-medium">Events</Link>
                 </li>
                 <li>
                     <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
                 </li>
                 <li>
-                    <span class="text-slate-400 dark:text-slate-600 text-sm">Areas</span>
+                    <span class="text-slate-900 dark:text-white text-sm font-semibold">{{ event.title }}</span>
                 </li>
                 <!-- <li>
                     <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
@@ -33,7 +36,7 @@
         </nav>
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
             <div class="flex flex-col gap-2 max-w-2xl">
-                <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">AACCUP Areas</h1>
+                <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{{ event.title }}</h1>
                 <p class="text-slate-600 dark:text-slate-400 text-base">
                     Manage and track accreditation documents. Access AACCUP areas and monitor compliance standards.
                 </p>
@@ -82,7 +85,7 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6 mb-8" id="folder-container">
             <div v-for="area in areas" :key="area.id"
                 class="group cursor-pointer bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg transition-all">
-                <Link :href="route('areas.slug', area.slug)">
+                <Link :href="route('areas.slug', { event: event.slug, area: area.slug })">
                     <div class="flex items-start justify-between mb-4">
                         <div class="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-500 rounded-lg group-hover:bg-primary group-hover:text-white transition-colors">
                             <span class="material-symbols-outlined text-[32px] fill-[1]">folder</span>
