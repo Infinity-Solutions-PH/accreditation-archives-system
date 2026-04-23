@@ -229,12 +229,12 @@
                                 My Profile
                             </Link>
                             
-                            <Link :href="route('settings')" 
+                            <!-- <Link :href="route('settings')" 
                                   @click="isUserDropdownOpen = false"
                                   class="flex items-center gap-3 px-4 py-2.5 text-sm text-text-main-light dark:text-white hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group">
                                 <span class="material-symbols-outlined text-[20px] text-text-muted-light group-hover:text-primary">settings</span>
                                 Settings
-                            </Link>
+                            </Link> -->
 
                             <div class="h-px bg-gray-100 dark:bg-gray-800 my-1"></div>
 

@@ -285,32 +285,32 @@
             </div>
             <!-- Activity Log Feed -->
             <div class="flex flex-col rounded-xl bg-surface-light dark:bg-surface-dark border border-[#cfd7e7] dark:border-gray-700 shadow-sm overflow-hidden flex-1">
-            <div class="p-5 border-b border-[#cfd7e7] dark:border-gray-700">
-            <h3 class="text-text-main-light dark:text-white text-base font-bold">Recent Activity</h3>
-            </div>
-            <div class="p-5 overflow-y-auto">
-                <div class="relative pl-4 border-l-2 border-[#e7ebf3] dark:border-gray-700 flex flex-col gap-6">
-                    <div v-if="recentActivity.length === 0" class="text-xs text-text-muted-light italic">No recent activity recorded.</div>
-                    <div v-for="activity in recentActivity" :key="activity.id" class="relative group">
-                        <div class="absolute -left-[21px] top-1 bg-primary rounded-full size-2.5 outline outline-4 outline-white dark:outline-surface-dark group-hover:scale-125 transition-transform"></div>
-                        <div class="flex flex-col gap-1.5">
-                            <div class="flex items-center gap-2">
-                                <span class="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-bold px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800 uppercase tracking-tighter">
-                                    {{ getLogNameLabel(activity.log_name) }}
-                                </span>
-                                <p class="text-xs text-text-muted-light dark:text-text-muted-dark font-medium">{{ activity.created_at_human }}</p>
+                <div class="p-5 border-b border-[#cfd7e7] dark:border-gray-700">
+                    <h3 class="text-text-main-light dark:text-white text-base font-bold">Recent Activity</h3>
+                </div>
+                <div class="p-5 overflow-y-auto">
+                    <div class="relative pl-4 border-l-2 border-[#e7ebf3] dark:border-gray-700 flex flex-col gap-6">
+                        <div v-if="recentActivity.length === 0" class="text-xs text-text-muted-light italic">No recent activity recorded.</div>
+                        <div v-for="activity in recentActivity" :key="activity.id" class="relative group">
+                            <div class="absolute -left-[21px] top-1 bg-primary rounded-full size-2.5 outline outline-4 outline-white dark:outline-surface-dark group-hover:scale-125 transition-transform"></div>
+                            <div class="flex flex-col gap-1.5">
+                                <div class="flex items-center gap-2">
+                                    <span class="bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-[10px] font-bold px-1.5 py-0.5 rounded border border-amber-200 dark:border-amber-800 uppercase tracking-tighter">
+                                        {{ getLogNameLabel(activity.log_name) }}
+                                    </span>
+                                    <p class="text-xs text-text-muted-light dark:text-text-muted-dark font-medium">{{ activity.created_at_human }}</p>
+                                </div>
+                                <p class="text-sm text-text-main-light dark:text-white leading-relaxed">
+                                    <span class="font-bold border-b border-dotted border-gray-400 dark:border-gray-600">{{ activity.causer_name }}</span> 
+                                    <span class="ml-1 text-[#4c669a] dark:text-gray-300 font-medium">{{ activity.description }}</span>
+                                </p>
                             </div>
-                            <p class="text-sm text-text-main-light dark:text-white leading-relaxed">
-                                <span class="font-bold border-b border-dotted border-gray-400 dark:border-gray-600">{{ activity.causer_name }}</span> 
-                                <span class="ml-1 text-[#4c669a] dark:text-gray-300 font-medium">{{ activity.description }}</span>
-                            </p>
                         </div>
                     </div>
                 </div>
-            </div>
-            <div class="p-3 border-t border-[#cfd7e7] dark:border-gray-700 text-center">
-                <Link :href="route('activity-logs')" class="text-xs font-bold text-primary hover:underline">View All Activities</Link>
-            </div>
+                <div class="p-3 border-t border-[#cfd7e7] dark:border-gray-700 text-center">
+                    <Link :href="route('activity-logs')" class="text-xs font-bold text-primary hover:underline">View All Activities</Link>
+                </div>
             </div>
             </div>
             </div>

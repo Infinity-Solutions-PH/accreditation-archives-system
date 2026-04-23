@@ -41,7 +41,7 @@
                     Manage and track accreditation documents. Access AACCUP areas and monitor compliance standards.
                 </p>
             </div>
-            <div class="flex items-center gap-3 shrink-0">
+            <!-- <div class="flex items-center gap-3 shrink-0">
                 <button class="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-surface-dark border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm">
                     <span class="material-symbols-outlined text-[20px]">table_view</span>
                     Export to Excel
@@ -50,7 +50,7 @@
                     <span class="material-symbols-outlined text-[20px]">upload_file</span>
                     Upload File
                 </button>
-            </div>
+            </div> -->
         </div>
         <div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
             <div class="flex flex-col lg:flex-row gap-4 items-center justify-between">
