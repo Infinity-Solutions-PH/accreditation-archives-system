@@ -25,7 +25,7 @@ class StoreUserRequest extends FormRequest
             'name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:users,email'],
             'role' => ['required', 'string', 'in:admin,college_officer,ido_staff,taskforce'],
-            'college_id' => ['required', 'exists:colleges,id'],
+            'college_id' => ['required_unless:role,ido_staff', 'nullable', 'exists:colleges,id'],
             'program_id' => ['nullable', 'exists:programs,id'],
             'send_email' => ['boolean']
         ];

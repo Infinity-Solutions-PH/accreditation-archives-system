@@ -68,6 +68,14 @@
         if (!form.college_id) return [];
         return props.programs.filter(p => p.college_id === parseInt(form.college_id));
     });
+
+    import { watch } from 'vue';
+    watch(() => form.role, (newRole) => {
+        if (newRole === 'ido_staff') {
+            form.college_id = '';
+            form.program_id = '';
+        }
+    });
 </script>
 
 <template>
@@ -177,7 +185,7 @@
                             </select>
                         </div>
                         
-                        <div>
+                        <div v-if="form.role !== 'ido_staff'">
                             <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 font-bold uppercase tracking-tight text-[11px]">College / Unit</label>
                             <select class="w-full px-4 py-1.5 h-11 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all dark:text-white cursor-pointer" v-model="form.college_id">
                                 <option value="">No College Assigned</option>
@@ -185,7 +193,7 @@
                             </select>
                         </div>
                         
-                        <div v-if="form.college_id" class="pt-1">
+                        <div v-if="form.college_id && form.role !== 'ido_staff'" class="pt-1">
                             <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 font-bold uppercase tracking-tight text-[11px]">Program</label>
                             <select class="w-full px-4 py-1.5 h-11 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all dark:text-white cursor-pointer" v-model="form.program_id">
                                 <option value="">No Program Assigned</option>

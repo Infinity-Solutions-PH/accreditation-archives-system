@@ -56,6 +56,13 @@
         form.program_id = '';
     };
 
+    watch(() => form.role, (newRole) => {
+        if (newRole === 'ido_staff') {
+            form.college_id = '';
+            form.program_id = '';
+        }
+    });
+
     // Auto-fill expiration logic for Accreditor
     watch(() => accreditorForm.selected_events, (newEvents) => {
         if (newEvents.length === 0) return;
@@ -192,7 +199,7 @@
                         <p v-if="form.errors.role" class="mt-1 text-xs text-red-500">{{ form.errors.role }}</p>
                     </div>
 
-                    <div>
+                    <div v-if="form.role !== 'ido_staff'">
                         <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">College / Unit</label>
                         <select 
                             v-model="form.college_id"
@@ -207,7 +214,7 @@
                         <p v-if="form.errors.college_id" class="mt-1 text-xs text-red-500">{{ form.errors.college_id }}</p>
                     </div>
 
-                    <div v-if="form.college_id" class="pt-1">
+                    <div v-if="form.college_id && form.role !== 'ido_staff'" class="pt-1">
                         <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">Program</label>
                         <select 
                             v-model="form.program_id"
