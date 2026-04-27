@@ -122,7 +122,7 @@ class AccreditationEventController extends Controller
         $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
-            'status' => 'required|in:draft,active,archived',
+            'status' => 'required|in:draft,active,archived,completed,cancelled',
             'expires_at' => 'required|date',
         ]);
 

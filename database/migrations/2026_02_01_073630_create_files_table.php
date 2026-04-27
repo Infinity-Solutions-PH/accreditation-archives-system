@@ -1,8 +1,8 @@
 <?php
 
-use Illuminate\Database\Migrations\Migration;
-use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Database\Migrations\Migration;
 
 return new class extends Migration
 {
@@ -24,7 +24,7 @@ return new class extends Migration
             $table->string('path')->nullable();
             $table->string('original_filename')->nullable();
             $table->string('extension', 10)->nullable();
-            $table->unsignedBigInteger('size');
+            $table->unsignedBigInteger('size')->nullable();
             $table->string('tmp_id')->nullable();
             $table->enum('status', ['uploading','completed'])->default('uploading');
             $table->timestamps();
