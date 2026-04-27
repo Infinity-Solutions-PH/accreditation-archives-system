@@ -42,7 +42,7 @@ watch(() => props.show, (isVisible) => {
 
 const submit = () => {
     if (props.event) {
-        form.put(route('events.update', props.event.id), {
+        form.put(route('events.update', props.event.slug), {
             onSuccess: () => {
                 emit('success');
                 emit('close');
