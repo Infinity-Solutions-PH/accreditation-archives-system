@@ -16,9 +16,6 @@ class UserController extends Controller
     {
         $user = $this->userService->create($request->validated());
 
-        return response()->json([
-            'message' => 'User created successfully',
-            'user' => $user
-        ], Response::HTTP_CREATED);
+        return back()->with('message', 'User created successfully.');
     }
 }
