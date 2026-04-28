@@ -7,7 +7,7 @@ use App\Http\Controllers\FileShareController;
 use App\Http\Controllers\EventAccreditorController;
 use App\Http\Controllers\AccreditationEventController;
 
-Route::middleware(['auth:sanctum', CheckRoleStatus::class])->group(function() {
+Route::middleware(['auth:web,accreditor', CheckRoleStatus::class])->group(function() {
     Route::post('/files/temp', [FileController::class, 'temp'])->name('api.files.temp');
     Route::post('/files/upload-chunk', [FileController::class, 'uploadChunk'])->name('api.files.upload_chunk');
     Route::post('/files/complete', [FileController::class, 'complete'])->name('api.files.complete');
