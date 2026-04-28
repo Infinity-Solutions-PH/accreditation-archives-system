@@ -42,10 +42,10 @@ class OnboardingController extends Controller
             return redirect('/auth');
         }
 
-        // Notify IDO Staff and relevant College Officer
-        $recipients = User::role(['ido_staff', 'college_officer'])
+        // Notify Admin, IDO Staff and relevant College Officer
+        $recipients = User::role(['admin', 'ido_staff', 'college_officer'])
             ->where(function($q) use ($user) {
-                $q->whereHas('roles', fn($r) => $r->where('name', 'ido_staff'))
+                $q->whereHas('roles', fn($r) => $r->whereIn('name', ['admin', 'ido_staff']))
                   ->orWhere(function($sub) use ($user) {
                       $sub->whereHas('roles', fn($r) => $r->where('name', 'college_officer'))
                           ->where('college_id', $user->college_id);

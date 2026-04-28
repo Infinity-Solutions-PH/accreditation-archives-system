@@ -57,25 +57,30 @@
         confirmingAction.value = null;
     };
 
-    const executeAction = async () => {
+    const executeAction = () => {
         if (!confirmingAction.value || isProcessingAction.value) return;
         
         const { user, type } = confirmingAction.value;
         const status = type === 'approve' ? 'approved' : 'rejected';
         
         isProcessingAction.value = true;
-        try {
-            await api.put(`/user-management/${user.id}/role-status`, {
-                role_status: status,
-                is_active: type === 'approve'
-            });
-            confirmingAction.value = null;
-            router.reload({ only: ['counts', 'pendingUsers', 'recentActivity'] });
-        } catch (error) {
-            console.error('Failed to update user status:', error);
-        } finally {
-            isProcessingAction.value = false;
-        }
+        
+        router.put(`/user-management/${user.id}/role-status`, {
+            role_status: status,
+            is_active: type === 'approve'
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                confirmingAction.value = null;
+                router.reload({ only: ['counts', 'pendingUsers', 'recentActivity'] });
+            },
+            onError: (errors) => {
+                console.error('Failed to update user status:', errors);
+            },
+            onFinish: () => {
+                isProcessingAction.value = false;
+            }
+        });
     };
     const getLogNameLabel = (name) => {
         if (!name || name === 'default') return 'System Event';

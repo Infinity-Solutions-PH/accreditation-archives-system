@@ -83,24 +83,29 @@
         confirmingAction.value = null;
     };
 
-    const executeAction = async () => {
+    const executeAction = () => {
         if (!confirmingAction.value || isProcessingAction.value) return;
         
         const { user, type } = confirmingAction.value;
         const status = type === 'approve' ? 'approved' : 'rejected';
         
         isProcessingAction.value = true;
-        try {
-            await api.put(route('user-management.role-status', user.id), {
-                role_status: status,
-                is_active: type === 'approve'
-            });
-            onUserUpdated();
-        } catch (error) {
-            console.error('Failed to update user status:', error);
-        } finally {
-            isProcessingAction.value = false;
-        }
+        
+        router.put(route('user-management.role-status', user.id), {
+            role_status: status,
+            is_active: type === 'approve'
+        }, {
+            preserveScroll: true,
+            onSuccess: () => {
+                onUserUpdated();
+            },
+            onError: (errors) => {
+                console.error('Failed to update user status:', errors);
+            },
+            onFinish: () => {
+                isProcessingAction.value = false;
+            }
+        });
     };
 
     const searchQuery = ref(props.filters.search || '');

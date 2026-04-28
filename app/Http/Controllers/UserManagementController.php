@@ -132,13 +132,21 @@ class UserManagementController extends Controller
         /** @var \App\Models\User $currentUser */
         $currentUser = auth()->user();
 
-        // If College Officer, they can only approve for their own college
-        if ($currentUser->hasRole('college_officer')) {
+        // Ensure user has at least one of the required roles
+        if (!$currentUser->hasRole(['admin', 'ido_staff', 'college_officer'])) {
+            return response()->json(['message' => 'Unauthorized'], 403);
+        }
+
+        // If user is ONLY a college officer (not admin or ido_staff)
+        if ($currentUser->hasRole('college_officer') && !$currentUser->hasRole(['admin', 'ido_staff'])) {
             if ($user->college_id !== $currentUser->college_id) {
                 return response()->json(['message' => 'Unauthorized college user'], 403);
             }
-        } else if (!$currentUser->hasRole('admin') && !$currentUser->hasRole('ido_staff')) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            
+            // Prevent college officer from assigning admin or ido_staff roles
+            if ($request->has('role') && in_array($request->role, ['admin', 'ido_staff'])) {
+                return response()->json(['message' => 'Unauthorized to assign this role'], 403);
+            }
         }
 
         if ($request->role === 'college_officer' && $request->role_status === 'approved') {
