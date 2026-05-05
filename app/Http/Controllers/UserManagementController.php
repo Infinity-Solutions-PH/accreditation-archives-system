@@ -103,8 +103,8 @@ class UserManagementController extends Controller
                 });
             });
 
-            $query->when($request->role && $request->role !== 'All Roles', function ($q, $role) {
-                $roleSlug = str_replace(' ', '_', strtolower($role));
+            $query->when($request->role && $request->role !== 'All Roles', function ($q) use ($request) {
+                $roleSlug = str_replace(' ', '_', strtolower($request->role));
                 $q->whereHas('roles', fn($r) => $r->where('name', $roleSlug));
             });
 
