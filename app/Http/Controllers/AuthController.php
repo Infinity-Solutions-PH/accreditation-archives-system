@@ -36,9 +36,23 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
+        if (\App\Models\User::onlyTrashed()->where('email', $credentials['email'])->exists()) {
+            return back()->withErrors([
+                'email' => 'Your account has been deleted. Please contact the administrator.',
+            ]);
+        }
+
         if (auth()->attempt($credentials)) {
-            $request->session()->regenerate();
             $user = auth()->user();
+
+            if (!$user->is_active) {
+                auth()->logout();
+                return back()->withErrors([
+                    'email' => 'Your account is inactive or deleted. Please contact the administrator.',
+                ]);
+            }
+
+            $request->session()->regenerate();
 
             activity()
                 ->useLog('authentication')

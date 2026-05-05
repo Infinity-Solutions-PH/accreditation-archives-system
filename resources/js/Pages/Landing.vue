@@ -95,7 +95,7 @@
             <!-- PageHeading -->
             <div class="flex flex-wrap justify-between items-end gap-3">
                 <div class="flex flex-col gap-1">
-                    <h1 class="text-text-main-light dark:text-white tracking-tight text-[28px] md:text-[32px] font-bold leading-tight">Welcome back, Admin</h1>
+                    <h1 class="text-text-main-light dark:text-white tracking-tight text-[28px] md:text-[32px] font-bold leading-tight">Welcome back, {{ $page.props.auth?.roles?.includes('ido_staff') ? $page.props.auth.user.name : 'Admin' }}</h1>
                     <p class="text-text-muted-light dark:text-text-muted-dark text-sm font-normal leading-normal">Here is what needs your attention today regarding the accreditation archives.</p>
                 </div>
                 <div class="flex gap-3">

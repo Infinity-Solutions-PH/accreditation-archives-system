@@ -45,12 +45,18 @@ class UserManagementController extends Controller
             'pending' => (clone $statQuery)->where('role_status', 'pending')->count(),
             'officers' => (clone $statQuery)->whereHas('roles', fn($q) => $q->where('name', 'college_officer'))->count(),
             'accreditors' => $accreditorStatQuery->count(),
+            'deleted_users' => (clone $statQuery)->onlyTrashed()->count(),
+            'deleted_accreditors' => (clone $accreditorStatQuery)->onlyTrashed()->count(),
         ];
 
         // 2. Fetch Listing Data based on Tab
-        if ($tab === 'accreditors') {
+        if ($tab === 'accreditors' || $tab === 'deleted_accreditors') {
             $query = Accreditor::with(['college', 'program', 'creator', 'events']);
             
+            if ($tab === 'deleted_accreditors') {
+                $query->onlyTrashed();
+            }
+
             if ($currentUser->hasRole('college_officer') && !$currentUser->hasRole(['admin', 'ido_staff'])) {
                 $query->where('college_id', $currentUser->college_id);
             }
@@ -64,19 +70,25 @@ class UserManagementController extends Controller
                 });
             });
 
-            $query->when($request->status && $request->status !== 'All Status', function ($q, $status) {
-                switch ($status) {
-                    case 'Active': $q->where('is_active', true)->where('role_status', 'approved'); break;
-                    case 'Pending': $q->where('role_status', 'pending'); break;
-                    case 'Inactive': $q->where('is_active', false); break;
-                    case 'Rejected': $q->where('role_status', 'rejected'); break;
-                }
-            });
+            if ($tab !== 'deleted_accreditors') {
+                $query->when($request->status && $request->status !== 'All Status', function ($q) use ($request) {
+                    switch (strtolower($request->status)) {
+                        case 'active': $q->where('is_active', true)->where('role_status', 'approved'); break;
+                        case 'pending': $q->where('role_status', 'pending'); break;
+                        case 'inactive': $q->where('is_active', false); break;
+                        case 'rejected': $q->where('role_status', 'rejected'); break;
+                    }
+                });
+            }
 
             $data = $query->latest()->paginate(20)->withQueryString();
             $resources = AccreditorResource::collection($data);
         } else {
             $query = User::with(['googleInfo', 'roles', 'college', 'program']);
+
+            if ($tab === 'deleted_users') {
+                $query->onlyTrashed();
+            }
 
             if ($currentUser->hasRole('college_officer') && !$currentUser->hasRole(['admin', 'ido_staff'])) {
                 $query->where('college_id', $currentUser->college_id);
@@ -96,14 +108,16 @@ class UserManagementController extends Controller
                 $q->whereHas('roles', fn($r) => $r->where('name', $roleSlug));
             });
 
-            $query->when($request->status && $request->status !== 'All Status', function ($q, $status) {
-                switch ($status) {
-                    case 'Active': $q->where('is_active', true)->where('role_status', 'approved'); break;
-                    case 'Pending': $q->where('role_status', 'pending'); break;
-                    case 'Inactive': $q->where('is_active', false); break;
-                    case 'Rejected': $q->where('role_status', 'rejected'); break;
-                }
-            });
+            if ($tab !== 'deleted_users') {
+                $query->when($request->status && $request->status !== 'All Status', function ($q) use ($request) {
+                    switch (strtolower($request->status)) {
+                        case 'active': $q->where('is_active', true)->where('role_status', 'approved'); break;
+                        case 'pending': $q->where('role_status', 'pending'); break;
+                        case 'inactive': $q->where('is_active', false); break;
+                        case 'rejected': $q->where('role_status', 'rejected'); break;
+                    }
+                });
+            }
 
             $data = $query->latest()->paginate(20)->withQueryString();
             $resources = UserResource::collection($data);
@@ -119,6 +133,7 @@ class UserManagementController extends Controller
             'events' => AccreditationEvent::all()
         ]);
     }
+
     public function updateRoleStatus(Request $request, User $user)
     {
         $request->validate([
@@ -182,5 +197,59 @@ class UserManagementController extends Controller
             ->log("Updated user status/role for: {$user->email}. New Status: {$request->role_status}, Role: " . ($request->role ?? 'N/A'));
 
         return back()->with('message', 'User updated successfully');
+    }
+
+    public function destroy(User $user)
+    {
+        $user->delete();
+
+        activity()
+            ->useLog('user_management')
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->log("Soft deleted user: {$user->email}");
+
+        return back()->with('message', 'User deleted successfully');
+    }
+
+    public function restore($id)
+    {
+        $user = User::withTrashed()->findOrFail($id);
+        $user->restore();
+
+        activity()
+            ->useLog('user_management')
+            ->performedOn($user)
+            ->causedBy(auth()->user())
+            ->log("Restored user: {$user->email}");
+
+        return back()->with('message', 'User restored successfully');
+    }
+
+    public function destroyAccreditor(Accreditor $accreditor)
+    {
+        $accreditor->delete();
+
+        activity()
+            ->useLog('user_management')
+            ->performedOn($accreditor)
+            ->causedBy(auth()->user())
+            ->log("Soft deleted accreditor: {$accreditor->email}");
+
+        return back()->with('message', 'Accreditor deleted successfully');
+    }
+
+    public function restoreAccreditor($id)
+    {
+        $accreditor = Accreditor::withTrashed()->findOrFail($id);
+        $accreditor->restore();
+
+        activity()
+            ->useLog('user_management')
+            ->performedOn($accreditor)
+            ->causedBy(auth()->user())
+            ->log("Restored accreditor: {$accreditor->email}");
+
+        return back()->with('message', 'Accreditor restored successfully');
     }
 }

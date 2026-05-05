@@ -111,10 +111,14 @@ Route::middleware(['auth', CheckRoleStatus::class])->group(function() {
     Route::get('/user-management', [UserManagementController::class, 'index'])->name('user-management');
     Route::post('/user-management', [UserController::class, 'store'])->name('user-management.store');
     Route::put('/user-management/{user}/role-status', [UserManagementController::class, 'updateRoleStatus'])->name('user-management.role-status');
+    Route::delete('/user-management/{user}', [UserManagementController::class, 'destroy'])->name('user-management.destroy');
+    Route::post('/user-management/{id}/restore', [UserManagementController::class, 'restore'])->name('user-management.restore');
 
     Route::post('/accreditors', [AccreditorAccountController::class, 'store'])->name('accreditors.store');
     Route::get('/accreditors/search', [AccreditorAccountController::class, 'search'])->name('accreditors.search');
     Route::put('/accreditors/{accreditor}', [AccreditorAccountController::class, 'update'])->name('accreditors.update');
+    Route::delete('/accreditors/{accreditor}', [UserManagementController::class, 'destroyAccreditor'])->name('accreditors.destroy');
+    Route::post('/accreditors/{id}/restore', [UserManagementController::class, 'restoreAccreditor'])->name('accreditors.restore');
 
     Route::middleware(['role:admin'])->group(function() {
         Route::get('/activity-logs', [ActivityLogController::class, 'index'])->name('activity-logs');

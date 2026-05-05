@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Accreditor;
 
 use Inertia\Inertia;
+use App\Models\Accreditor;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Auth;
@@ -26,8 +27,21 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
+        if (Accreditor::onlyTrashed()->where('email', $credentials['email'])->exists()) {
+            return back()->withErrors([
+                'email' => 'Your account has been deleted. Please contact the administrator.',
+            ]);
+        }
+
         if (Auth::guard('accreditor')->attempt($credentials)) {
             $user = Auth::guard('accreditor')->user();
+
+            if (!$user->is_active) {
+                Auth::guard('accreditor')->logout();
+                return back()->withErrors([
+                    'email' => 'Your account is inactive. Please contact the administrator.',
+                ]);
+            }
             
             if ($user->expires_at && $user->expires_at->isPast()) {
                 Auth::guard('accreditor')->logout();

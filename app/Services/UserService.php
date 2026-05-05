@@ -4,8 +4,10 @@ namespace App\Services;
 
 use App\Models\User;
 use Illuminate\Support\Str;
+use App\Mail\WelcomeUserMail;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 
 class UserService
 {
@@ -31,7 +33,7 @@ class UserService
 
         // Optional: send password to user via email if requested
         if (!empty($data['send_email'])) {
-            // Mail::to($user->email)->send(new WelcomeUserMail($user, $password));
+            Mail::to($user->email)->queue(new WelcomeUserMail($user, $password));
             // For now, let's log this action
             Log::info("Welcome email requested for user: {$user->email} with password: {$password}");
         }

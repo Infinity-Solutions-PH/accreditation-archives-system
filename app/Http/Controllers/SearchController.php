@@ -50,7 +50,7 @@ class SearchController extends Controller
         
         $events = $eventsQuery->where('title', 'like', "%$q%")
             ->limit(5)
-            ->get(['id', 'title', 'expires_at']);
+            ->get(['id', 'title', 'slug', 'expires_at']);
 
         // 3. Users: Highly contextual visibility
         $users = [];

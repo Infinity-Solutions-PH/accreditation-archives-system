@@ -1,6 +1,7 @@
 <script setup>
     import AuthLayout from '@shared/Layouts/Auth.vue';
     import { useForm, Head } from '@inertiajs/vue3';
+    import { computed } from 'vue';
 
     defineOptions({
         layout: AuthLayout
