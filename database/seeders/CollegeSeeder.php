@@ -12,7 +12,7 @@ class CollegeSeeder extends Seeder
      */
     public function run(): void
     {
-        DB::table('colleges')->insert([
+        $colleges = [
             [
                 'code' => 'CAS',
                 'name' => 'College of Arts and Sciences',
@@ -46,9 +46,20 @@ class CollegeSeeder extends Seeder
                 'name' => 'College of Sports, Physical Education and Recreation',
             ],
             [
-                'code' => 'CVM',
+                'code' => 'CVMBS',
                 'name' => 'College of Veterinary Medicine and Biomedical Sciences',
             ],
-        ]);
+            [
+                'code' => 'GSOLC',
+                'name' => 'Graduate School and Open Learning College',
+            ],
+        ];
+
+        foreach ($colleges as $college) {
+            DB::table('colleges')->updateOrInsert(
+                ['code' => $college['code']],
+                ['name' => $college['name'], 'updated_at' => now(), 'created_at' => now()]
+            );
+        }
     }
 }
