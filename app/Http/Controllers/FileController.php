@@ -411,6 +411,64 @@ class FileController extends Controller
         return back()->with('message', 'File deleted successfully.');
     }
 
+    /**
+     * Export a CSV report of files
+     */
+    public function exportReport()
+    {
+        $user = auth()->user();
+        
+        if (!$user->hasRole(['admin', 'ido_staff', 'college_officer'])) {
+            abort(403, 'You do not have permission to generate this report.');
+        }
+
+        $query = File::with(['uploadedBy', 'college', 'program']);
+
+        // If college officer, restrict to their college
+        if ($user->hasRole('college_officer') && !$user->hasRole(['admin', 'ido_staff'])) {
+            $query->where('college_id', $user->college_id);
+        }
+
+        $files = $query->orderBy('created_at', 'desc')->get();
+
+        $headers = [
+            "Content-type"        => "text/csv",
+            "Content-Disposition" => "attachment; filename=files_report.csv",
+            "Pragma"              => "no-cache",
+            "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+            "Expires"             => "0"
+        ];
+
+        $callback = function() use($files) {
+            $file = fopen('php://output', 'w');
+            
+            // Output BOM for UTF-8 CSV compatibility in Excel
+            fputs($file, "\xEF\xBB\xBF");
+            
+            fputcsv($file, ['File Name', 'Owner', 'Date Uploaded', 'College', 'Program']);
+
+            foreach ($files as $f) {
+                fputcsv($file, [
+                    $f->title ?? $f->original_filename,
+                    $f->uploadedBy ? $f->uploadedBy->name : 'Unknown',
+                    $f->created_at ? $f->created_at->format('Y-m-d H:i:s') : '',
+                    $f->college ? $f->college->name : 'N/A',
+                    $f->program ? $f->program->name : 'N/A',
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        // Log the action
+        activity()
+            ->useLog('file_management')
+            ->causedBy($user)
+            ->log("Generated files CSV report");
+
+        return response()->stream($callback, 200, $headers);
+    }
+
     private function authorizeEdit(File $file)
     {
         $user = auth()->user();

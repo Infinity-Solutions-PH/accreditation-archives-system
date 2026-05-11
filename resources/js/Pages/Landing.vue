@@ -99,10 +99,13 @@
                     <p class="text-text-muted-light dark:text-text-muted-dark text-sm font-normal leading-normal">Here is what needs your attention today regarding the accreditation archives.</p>
                 </div>
                 <div class="flex gap-3">
-                    <button class="flex items-center gap-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-text-main-light dark:text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm">
+                    <a 
+                        v-if="$page.props.auth?.roles?.some(r => ['admin', 'ido_staff', 'college_officer'].includes(r))"
+                        :href="route('files.export-report')"
+                        class="flex items-center gap-2 bg-white dark:bg-surface-dark border border-gray-200 dark:border-gray-700 text-text-main-light dark:text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors shadow-sm inline-flex">
                         <span class="material-symbols-outlined text-[18px]">download</span>
                         Generate Report
-                    </button>
+                    </a>
                     <button
                         @click="openUploadModal"
                         class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20">

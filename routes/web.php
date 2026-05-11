@@ -94,6 +94,7 @@ Route::middleware(['auth:web,accreditor', CheckRoleStatus::class])->group(functi
     
     Route::get('/files/view/{file}', [FileController::class, 'view'])->name('files.view');
     Route::get('/files/download/{file}', [FileController::class, 'download'])->name('files.download');
+    Route::get('/files/export-report', [FileController::class, 'exportReport'])->name('files.export-report');
 
     Route::get('/videos/{file:id}', [VideoController::class, 'watch'])->name('videos.watch');
     Route::get('/videos/stream/{file:id}', [VideoStreamController::class, 'stream'])->name('videos.stream');
