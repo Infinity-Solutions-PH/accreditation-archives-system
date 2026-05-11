@@ -145,7 +145,7 @@ const submitUpdate = () => {
                     </div>
                 </div>
                 <!-- Recent Activity Card -->
-                <div class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-4">
+                <!-- <div class="bg-white dark:bg-surface-dark p-6 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm flex items-start gap-4">
                     <div class="bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-xl text-indigo-600">
                         <span class="material-symbols-outlined text-[24px]">history</span>
                     </div>
@@ -154,7 +154,7 @@ const submitUpdate = () => {
                         <p class="text-sm text-text-muted-light dark:text-text-muted-dark">View your recent document uploads and system interactions.</p>
                         <a href="#" class="text-primary text-xs font-bold hover:underline mt-2">View Activity History</a>
                     </div>
-                </div>
+                </div> -->
             </div>
         </div>
 
