@@ -197,7 +197,8 @@ class LandingController extends Controller
         $query->when($search, function($q, $search) {
             $q->where(function($sub) use ($search) {
                 $sub->where('title', 'like', "%{$search}%")
-                    ->orWhere('original_filename', 'like', "%{$search}%");
+                    ->orWhere('original_filename', 'like', "%{$search}%")
+                    ->orWhere('remarks', 'like', "%{$search}%");
             });
         });
 
