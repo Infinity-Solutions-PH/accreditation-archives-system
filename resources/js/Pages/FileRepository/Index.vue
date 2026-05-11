@@ -418,8 +418,8 @@
         <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden lg:table-cell" scope="col">
             {{ currentType === 'shared' ? 'Shared By' : 'Uploaded By' }}
         </th>
-        <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">
-            {{ currentType === 'shared' ? 'Date Shared' : 'Expiry Date' }}
+        <th v-if="currentType === 'shared'" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">
+            Date Shared
         </th>
         <th v-if="currentType !== 'shared'" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Status</th>
         <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right" scope="col">Actions</th>
@@ -466,8 +466,7 @@
                 <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-slate-400">person</span> Shared direct</span>
             </td>
 
-            <td v-if="currentType !== 'shared'" class="p-4 text-sm text-slate-600 dark:text-slate-400">Dec 31, 2024</td>
-            <td v-else class="p-4 text-sm text-slate-600 dark:text-slate-400">
+            <td v-if="currentType === 'shared'" class="p-4 text-sm text-slate-600 dark:text-slate-400">
                 {{ new Date(file.pivot?.created_at || file.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) }}
             </td>
 
