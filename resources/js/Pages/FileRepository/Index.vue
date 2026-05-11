@@ -522,7 +522,7 @@
                     </button>
 
                     <button 
-                        v-if="$page.props.auth.roles?.includes('admin') || $page.props.auth.roles?.includes('ido_staff') || file.uploaded_by === $page.props.auth.user.id"
+                        v-if="$page.props.auth.roles?.includes('admin') || $page.props.auth.roles?.includes('ido_staff') || $page.props.auth.roles?.includes('college_officer') || file.uploaded_by === $page.props.auth.user.id"
                         @click.stop="handleDeleteFile(file)"
                         class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                         title="Delete File Permanently"

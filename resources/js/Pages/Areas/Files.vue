@@ -399,7 +399,7 @@
 
                     <!-- Delete Permanently -->
                     <button 
-                        v-if="auth.roles.includes('admin') || auth.roles.includes('ido_staff') || file.uploaded_by_id === auth.user.id"
+                        v-if="auth.roles.includes('admin') || auth.roles.includes('ido_staff') || auth.roles.includes('college_officer') || file.uploaded_by_id === auth.user.id"
                         @click.stop="handleDeleteFile(file)"
                         class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors tooltip"
                         title="Delete File Permanently"
