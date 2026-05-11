@@ -1,5 +1,5 @@
 <script setup>
-    import { ref, computed, watch, onMounted } from 'vue';
+    import { ref, computed, watch } from 'vue';
     import { useForm, usePage } from '@inertiajs/vue3';
 
     const props = defineProps({
@@ -13,12 +13,22 @@
     
     const activeTab = ref('normal'); // 'normal' or 'accreditor'
 
+    const page = usePage();
+    const currentUserRoles = computed(() => page.props.auth?.roles || []);
+    const currentUserCollegeId = computed(() => page.props.auth?.user?.college_id);
+
+    const isCollegeOfficerOnly = computed(() => {
+        return currentUserRoles.value.includes('college_officer') && 
+               !currentUserRoles.value.includes('admin') && 
+               !currentUserRoles.value.includes('ido_staff');
+    });
+
     // Form for Normal User
     const form = useForm({
         name: '',
         email: '',
-        role: '',
-        college_id: '',
+        role: isCollegeOfficerOnly.value ? 'taskforce' : '',
+        college_id: isCollegeOfficerOnly.value ? (currentUserCollegeId.value || '') : '',
         program_id: '',
         send_email: true
     });
@@ -63,16 +73,6 @@
         }
     });
 
-    const page = usePage();
-    const currentUserRoles = computed(() => page.props.auth?.roles || []);
-    const currentUserCollegeId = computed(() => page.props.auth?.user?.college_id);
-
-    const isCollegeOfficerOnly = computed(() => {
-        return currentUserRoles.value.includes('college_officer') && 
-               !currentUserRoles.value.includes('admin') && 
-               !currentUserRoles.value.includes('ido_staff');
-    });
-
     const availableRoles = computed(() => {
         if (currentUserRoles.value.includes('admin')) {
             return props.roles;
@@ -82,15 +82,6 @@
             return props.roles.filter(r => r.name === 'taskforce');
         }
         return props.roles;
-    });
-
-    onMounted(() => {
-        if (isCollegeOfficerOnly.value) {
-            form.role = 'taskforce';
-            if (currentUserCollegeId.value) {
-                form.college_id = currentUserCollegeId.value;
-            }
-        }
     });
 
     // Auto-fill expiration logic for Accreditor

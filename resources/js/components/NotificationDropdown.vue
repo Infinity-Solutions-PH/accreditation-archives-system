@@ -35,16 +35,21 @@ const closeDropdown = (e) => {
     }
 };
 
-const markAsRead = async (id) => {
-    try {
-        await router.post(route('notifications.mark-as-read', id), {}, {
-            preserveScroll: true,
-            onSuccess: () => {
-                fetchNotifications();
-            }
+const handleNotificationClick = (notif) => {
+    if (!notif.read_at) {
+        // Optimistically mark as read
+        notif.read_at = new Date().toISOString();
+        unreadCount.value = Math.max(0, unreadCount.value - 1);
+        
+        // Background request so it doesn't cancel Inertia navigation
+        axios.post(route('notifications.mark-as-read', notif.id)).catch(err => {
+            console.error('Error marking notification as read:', err);
         });
-    } catch (error) {
-        console.error('Error marking notification as read:', error);
+    }
+
+    if (notif.data.url) {
+        isOpen.value = false;
+        router.visit(notif.data.url);
     }
 };
 
@@ -129,7 +134,7 @@ const formatTime = (time) => {
                     <div v-for="notif in notifications" :key="notif.id" 
                          class="group relative flex gap-4 p-5 hover:bg-slate-50 dark:hover:bg-gray-800/40 transition-all cursor-pointer border-l-4"
                          :class="notif.read_at ? 'border-transparent' : 'border-primary bg-blue-50/10 dark:bg-primary/5'"
-                         @click="markAsRead(notif.id)"
+                         @click="handleNotificationClick(notif)"
                     >
                         <div class="size-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
                              :class="{
@@ -150,12 +155,11 @@ const formatTime = (time) => {
                             </div>
                             <p class="text-[13px] leading-snug text-slate-600 dark:text-slate-400 line-clamp-2">{{ notif.data.message }}</p>
                             
-                            <Link v-if="notif.data.url" 
-                                  :href="notif.data.url"
+                            <span v-if="notif.data.url" 
                                   class="mt-2 text-[11px] font-bold text-primary flex items-center gap-1.5 hover:gap-2 transition-all opacity-0 group-hover:opacity-100"
                             >
                                 View Details <span class="material-symbols-outlined text-[14px]">arrow_forward</span>
-                            </Link>
+                            </span>
                         </div>
 
                         <!-- Read dot -->
