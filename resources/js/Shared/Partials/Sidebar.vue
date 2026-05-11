@@ -43,6 +43,10 @@
                             <template #icon>history</template>
                             <template #label>Activity Logs</template>
                         </SidebarLink>
+                        <SidebarLink :href="route('settings')" v-if="page.props.auth?.roles?.includes('admin')">
+                            <template #icon>settings</template>
+                            <template #label>Settings</template>
+                        </SidebarLink>
                     </div>
 
                     <!-- Repository Section -->
