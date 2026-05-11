@@ -1,6 +1,6 @@
 <script setup>
-    import { ref, computed, watch } from 'vue';
-    import { useForm } from '@inertiajs/vue3';
+    import { ref, computed, watch, onMounted } from 'vue';
+    import { useForm, usePage } from '@inertiajs/vue3';
 
     const props = defineProps({
         roles: Array,
@@ -60,6 +60,36 @@
         if (newRole === 'ido_staff' || newRole === 'admin') {
             form.college_id = '';
             form.program_id = '';
+        }
+    });
+
+    const page = usePage();
+    const currentUserRoles = computed(() => page.props.auth?.roles || []);
+    const currentUserCollegeId = computed(() => page.props.auth?.user?.college_id);
+
+    const isCollegeOfficerOnly = computed(() => {
+        return currentUserRoles.value.includes('college_officer') && 
+               !currentUserRoles.value.includes('admin') && 
+               !currentUserRoles.value.includes('ido_staff');
+    });
+
+    const availableRoles = computed(() => {
+        if (currentUserRoles.value.includes('admin')) {
+            return props.roles;
+        } else if (currentUserRoles.value.includes('ido_staff')) {
+            return props.roles.filter(r => r.name !== 'admin');
+        } else if (currentUserRoles.value.includes('college_officer')) {
+            return props.roles.filter(r => r.name === 'taskforce');
+        }
+        return props.roles;
+    });
+
+    onMounted(() => {
+        if (isCollegeOfficerOnly.value) {
+            form.role = 'taskforce';
+            if (currentUserCollegeId.value) {
+                form.college_id = currentUserCollegeId.value;
+            }
         }
     });
 
@@ -189,10 +219,11 @@
                         <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5">System Role</label>
                         <select 
                             v-model="form.role"
-                            class="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white cursor-pointer"
+                            :disabled="isCollegeOfficerOnly"
+                            class="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             <option value="" disabled>Select a role...</option>
-                            <option v-for="role in roles" :key="role.id" :value="role.name">
+                            <option v-for="role in availableRoles" :key="role.id" :value="role.name">
                                 {{ role.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
                             </option>
                         </select>
@@ -204,7 +235,8 @@
                         <select 
                             v-model="form.college_id"
                             @change="onCollegeChange"
-                            class="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white cursor-pointer"
+                            :disabled="isCollegeOfficerOnly"
+                            class="w-full px-4 py-2.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                         >
                             <option value="" disabled>Select college...</option>
                             <option v-for="college in colleges" :key="college.id" :value="college.id">
