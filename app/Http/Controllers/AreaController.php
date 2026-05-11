@@ -68,7 +68,7 @@ class AreaController extends Controller
             ->when($search, function($query) use ($search) {
                 $query->where(function($q) use ($search) {
                     $q->where('title', 'like', "%{$search}%")
-                      ->orWhere('remarks', 'like', "%{$search}%")
+                      ->orWhere('description', 'like', "%{$search}%")
                       ->orWhereHas('uploadedBy', function($u) use ($search) {
                           $u->where('name', 'like', "%{$search}%");
                       });
