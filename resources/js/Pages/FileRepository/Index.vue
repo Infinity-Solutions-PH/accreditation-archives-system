@@ -6,6 +6,7 @@
     import FileViewerModal from '@/components/FileViewerModal.vue';
     import FileShareModal from '@/Components/FileShareModal.vue';
     import FileEditModal from '@/Components/FileEditModal.vue';
+    import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 
     const props = defineProps({
         files: Object,
@@ -80,6 +81,32 @@
 
     const handleFileUpdated = () => {
         router.reload({ preserveScroll: true });
+    };
+
+    const isDeleteModalOpen = ref(false);
+    const fileToDelete = ref(null);
+    const isDeleting = ref(false);
+
+    const handleDeleteFile = (file) => {
+        fileToDelete.value = file;
+        isDeleteModalOpen.value = true;
+    };
+
+    const confirmDelete = () => {
+        if (!fileToDelete.value) return;
+        
+        isDeleting.value = true;
+        router.delete(route('files.destroy', fileToDelete.value.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isDeleteModalOpen.value = false;
+                fileToDelete.value = null;
+                if (window.toast) window.toast('File deleted successfully.', 'success');
+            },
+            onFinish: () => {
+                isDeleting.value = false;
+            }
+        });
     };
 
     const isLoading = ref(false);
@@ -344,6 +371,15 @@
                                         >
                                             <span class="material-symbols-outlined text-[20px]">edit</span>
                                         </button>
+
+                                        <button 
+                                            v-if="$page.props.auth.roles?.includes('admin') || $page.props.auth.roles?.includes('ido_staff') || file.uploaded_by === $page.props.auth.user.id"
+                                            @click.stop="handleDeleteFile(file)"
+                                            class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                            title="Delete File Permanently"
+                                        >
+                                            <span class="material-symbols-outlined text-[20px]">delete_forever</span>
+                                        </button>
                                     </div>
                                 </td>
                             </tr>
@@ -485,6 +521,15 @@
                     >
                         <span class="material-symbols-outlined text-[20px]">edit</span>
                     </button>
+
+                    <button 
+                        v-if="$page.props.auth.roles?.includes('admin') || $page.props.auth.roles?.includes('ido_staff') || file.uploaded_by === $page.props.auth.user.id"
+                        @click.stop="handleDeleteFile(file)"
+                        class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Delete File Permanently"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">delete_forever</span>
+                    </button>
                 </div>
             </td>
         </tr>
@@ -537,6 +582,16 @@
             :file="activeFile"
             @close="isEditModalOpen = false"
             @updated="handleFileUpdated"
+        />
+        <ConfirmationModal 
+            :show="isDeleteModalOpen"
+            title="Delete File"
+            :message="`Are you sure you want to permanently delete '${fileToDelete?.title}'? This action cannot be undone.`"
+            confirmText="Delete Permanently"
+            confirmButtonClass="bg-red-600 hover:bg-red-700"
+            :isProcessing="isDeleting"
+            @close="isDeleteModalOpen = false"
+            @confirm="confirmDelete"
         />
     </main>
 </template>

@@ -73,6 +73,7 @@ Route::middleware(['auth:web,accreditor', CheckRoleStatus::class])->group(functi
         Route::get('/files/search-users', [FileController::class, 'searchUsers'])->name('files.search-users');
         Route::post('/files/requests/{accessRequest}/approve', [FileController::class, 'approveAccess'])->name('files.approve-access');
         Route::post('/files/{file}/update', [FileController::class, 'updateFile'])->name('files.update');
+        Route::delete('/files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
 
         Route::post('/events/unshare/{event}/{area}', [AccreditationEventController::class, 'unshareFile'])->name('events.unshare');
     });

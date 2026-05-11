@@ -14,6 +14,7 @@ use App\Http\Requests\CreateTempFileRequest;
 use Illuminate\Support\Facades\Notification;
 use App\Notifications\FilePermissionApprovedNotification;
 use App\Notifications\FilePermissionRequestedNotification;
+use App\Notifications\FileDeletedNotification;
 
 class FileController extends Controller
 {
@@ -356,6 +357,58 @@ class FileController extends Controller
         $users = $query->take(10)->get();
 
         return response()->json($users);
+    }
+
+    /**
+     * Delete a file and its relationships
+     */
+    public function destroy(File $file)
+    {
+        // 1. Authorize (owner or admin/ido_staff)
+        $user = auth()->user();
+        $isOwner = $file->uploaded_by === $user->id;
+        $isAdminOrStaff = $user->hasRole(['admin', 'ido_staff']);
+        
+        if (!$isOwner && !$isAdminOrStaff) {
+            abort(403, 'You do not have permission to delete this file.');
+        }
+
+        // 2. Identify associated events and notify stakeholders
+        $events = $file->accreditationEvents()->with('college')->get();
+        
+        if ($events->isNotEmpty()) {
+            $recipients = collect();
+            foreach ($events as $event) {
+                if ($event->college_id) {
+                    $stakeholders = User::role(['taskforce', 'college_officer'])
+                        ->where('college_id', $event->college_id)
+                        ->get();
+                    $recipients = $recipients->concat($stakeholders);
+                }
+            }
+            
+            $recipients = $recipients->unique('id');
+            if ($recipients->isNotEmpty()) {
+                Notification::send($recipients, new FileDeletedNotification($file->title, $user->name));
+            }
+        }
+
+        // 3. Log the action
+        activity()
+            ->useLog('file_management')
+            ->performedOn($file)
+            ->causedBy($user)
+            ->log("File '{$file->title}' deleted by " . ($isOwner ? 'owner' : 'admin/staff'));
+
+        // 4. Clean up relationships
+        $file->accreditationEvents()->detach();
+        $file->sharedWithUsers()->detach();
+        $file->accessRequests()->delete();
+
+        // 5. Delete file (storage deletion is handled in File model's deleting event)
+        $file->delete();
+
+        return back()->with('message', 'File deleted successfully.');
     }
 
     private function authorizeEdit(File $file)

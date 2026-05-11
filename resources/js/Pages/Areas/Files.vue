@@ -5,6 +5,7 @@
     import AppLayout from '@shared/Layouts/App.vue';
     import FileShareModal from '@/Components/FileShareModal.vue';
     import FileEditModal from '@/Components/FileEditModal.vue';
+    import ConfirmationModal from '@/Components/ConfirmationModal.vue';
 
     import UploadModal from '@/components/UploadModal.vue';
     import FileViewerModal from '@/components/FileViewerModal.vue';
@@ -50,6 +51,32 @@
             file_id: file.id
         }, {
             preserveScroll: true
+        });
+    };
+
+    const isDeleteModalOpen = ref(false);
+    const fileToDelete = ref(null);
+    const isDeleting = ref(false);
+
+    const handleDeleteFile = (file) => {
+        fileToDelete.value = file;
+        isDeleteModalOpen.value = true;
+    };
+
+    const confirmDelete = () => {
+        if (!fileToDelete.value) return;
+
+        isDeleting.value = true;
+        router.delete(route('files.destroy', fileToDelete.value.id), {
+            preserveScroll: true,
+            onSuccess: () => {
+                isDeleteModalOpen.value = false;
+                fileToDelete.value = null;
+                if (window.toast) window.toast('File deleted successfully.', 'success');
+            },
+            onFinish: () => {
+                isDeleting.value = false;
+            }
         });
     };
 
@@ -213,6 +240,16 @@
             @close="isEditModalOpen = false"
             @updated="handleFileUpdated"
         />
+        <ConfirmationModal 
+            :show="isDeleteModalOpen"
+            title="Delete File"
+            :message="`Are you sure you want to permanently delete '${fileToDelete?.title}'? This action cannot be undone.`"
+            confirmText="Delete Permanently"
+            confirmButtonClass="bg-red-600 hover:bg-red-700"
+            :isProcessing="isDeleting"
+            @close="isDeleteModalOpen = false"
+            @confirm="confirmDelete"
+        />
 
         <!-- Text Search -->
         <div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
@@ -358,6 +395,16 @@
                         title="Remove from Area"
                     >
                         <span class="material-symbols-outlined text-[20px]">folder_off</span>
+                    </button>
+
+                    <!-- Delete Permanently -->
+                    <button 
+                        v-if="auth.roles.includes('admin') || auth.roles.includes('ido_staff') || file.uploaded_by_id === auth.user.id"
+                        @click.stop="handleDeleteFile(file)"
+                        class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors tooltip"
+                        title="Delete File Permanently"
+                    >
+                        <span class="material-symbols-outlined text-[20px]">delete_forever</span>
                     </button>
                 </div>
             </td>
