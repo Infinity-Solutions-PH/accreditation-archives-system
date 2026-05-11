@@ -35,7 +35,7 @@ const submit = () => {
         <div class="max-w-4xl mx-auto flex flex-col gap-8">
             <!-- Header section -->
             <div class="flex flex-col gap-2">
-                <h1 class="text-3xl font-bold text-text-main-light dark:text-white">System Configuration</h1>
+                <h1 class="text-3xl font-bold text-text-main-light dark:text-white">System Settings</h1>
                 <p class="text-text-muted-light dark:text-text-muted-dark">Manage global system behaviors and security policies.</p>
             </div>
 
@@ -60,7 +60,7 @@ const submit = () => {
                 <div v-if="activeTab === 'authentication'" class="bg-white dark:bg-surface-dark rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm overflow-hidden">
                     <div class="p-6 border-b border-gray-100 dark:border-gray-800">
                         <h2 class="text-lg font-bold">Email Domain Restrictions</h2>
-                        <p class="text-sm text-gray-500">Control which email domains are allowed to register for internal staff accounts via Google.</p>
+                        <p class="text-sm text-gray-500">Control which email domains are allowed to log in or register for accounts.</p>
                     </div>
 
                     <form @submit.prevent="submit" class="p-6 space-y-8">
@@ -68,7 +68,7 @@ const submit = () => {
                         <div class="flex items-start justify-between gap-4 p-4 rounded-xl bg-gray-50 dark:bg-background-dark border border-gray-100 dark:border-gray-800">
                             <div class="flex flex-col gap-1">
                                 <label class="font-bold text-sm">Strict Domain Enforcement</label>
-                                <p class="text-xs text-gray-500 max-w-md">When enabled, only emails matching the whitelisted domains below will be allowed to register. Existing users and Accreditors are exempt.</p>
+                                <p class="text-xs text-gray-500 max-w-md">When enabled, only emails matching the whitelisted domains below will be allowed to log in or register. Accreditors are exempt.</p>
                             </div>
                             <button 
                                 type="button"
@@ -116,7 +116,7 @@ const submit = () => {
                     <div class="flex flex-col gap-1">
                         <h4 class="text-sm font-bold text-indigo-900 dark:text-indigo-200">About Domain Restrictions</h4>
                         <p class="text-xs text-indigo-700 dark:text-indigo-300 leading-relaxed">
-                            These settings strictly apply to **new registrations** via Google. Accreditors are granted a special exemption to ensure they can access the system regardless of their institutional email provider. Existing users who have already been approved will not be affected even if their domain is not on the list.
+                            These settings strictly apply to **all logins and registrations** via Google and Basic Authentication. Accreditors are granted a special exemption to ensure they can access the system regardless of their institutional email provider. If enabled, users without an authorized domain will be blocked from logging in.
                         </p>
                     </div>
                 </div>

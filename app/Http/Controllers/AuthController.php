@@ -2,7 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Inertia\Inertia;
+use App\Models\Setting;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\AccreditationEvent;
 
@@ -36,10 +39,30 @@ class AuthController extends Controller
             'password' => ['required'],
         ]);
 
-        if (\App\Models\User::onlyTrashed()->where('email', $credentials['email'])->exists()) {
+        if (User::onlyTrashed()->where('email', $credentials['email'])->exists()) {
             return back()->withErrors([
                 'email' => 'Your account has been deleted. Please contact the administrator.',
             ]);
+        }
+
+        $strictDomains = (bool) Setting::get('auth_strict_domains', true);
+        if ($strictDomains) {
+            $whitelistedDomainsString = Setting::get('auth_whitelisted_domains', 'cvsu.edu.ph');
+            $whitelistedDomains = array_map('trim', explode(',', $whitelistedDomainsString));
+            
+            $isDomainValid = false;
+            foreach ($whitelistedDomains as $whitelistedDomain) {
+                if (Str::endsWith($credentials['email'], '@' . $whitelistedDomain)) {
+                    $isDomainValid = true;
+                    break;
+                }
+            }
+
+            if (!$isDomainValid) {
+                return back()->withErrors([
+                    'email' => 'Only @cvsu.edu.ph accounts are allowed.',
+                ]);
+            }
         }
 
         if (auth()->attempt($credentials)) {

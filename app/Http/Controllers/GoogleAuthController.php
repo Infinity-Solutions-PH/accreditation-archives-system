@@ -57,10 +57,9 @@ class GoogleAuthController extends Controller
                 }
             }
 
-            // If it's a new regular user and domain check is strict, it must pass
-            // Existing users are allowed regardless of domain (they were manually added)
-            if (!$user && $strictDomains && !$isDomainValid) {
-                return redirect('/auth')->withErrors(['email' => 'Your email domain is not authorized for staff registration.']);
+            // Apply domain restriction to all users
+            if ($strictDomains && !$isDomainValid) {
+                return redirect('/auth')->withErrors(['email' => 'Only @cvsu.edu.ph accounts are allowed.']);
             }
         }
 
