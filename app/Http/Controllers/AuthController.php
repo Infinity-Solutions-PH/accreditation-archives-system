@@ -24,14 +24,6 @@ class AuthController extends Controller
         return Inertia::render('Auth/Index');
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
     public function store(Request $request)
     {
         $credentials = $request->validate([
@@ -41,7 +33,7 @@ class AuthController extends Controller
 
         if (User::onlyTrashed()->where('email', $credentials['email'])->exists()) {
             return back()->withErrors([
-                'email' => 'Your account has been deleted. Please contact the administrator.',
+                'email' => 'Please contact the administrator.',
             ]);
         }
 
@@ -71,7 +63,7 @@ class AuthController extends Controller
             if (!$user->is_active) {
                 auth()->logout();
                 return back()->withErrors([
-                    'email' => 'Your account is inactive or deleted. Please contact the administrator.',
+                    'email' => 'Your account is inactive. Please contact the administrator.',
                 ]);
             }
 
@@ -112,37 +104,5 @@ class AuthController extends Controller
         return back()->withErrors([
             'email' => 'The provided credentials do not match our records.',
         ]);
-    }
-
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
     }
 }

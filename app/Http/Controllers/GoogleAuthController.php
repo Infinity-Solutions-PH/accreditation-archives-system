@@ -40,8 +40,18 @@ class GoogleAuthController extends Controller
 
         // Find existing google user info
         $googleInfo = GoogleUserInfo::where('google_id', $googleId)->first();
-        $user = User::where('email', $email)->first();
-        $accreditor = Accreditor::where('email', $email)->first();
+        $user = User::withTrashed()->where('email', $email)->first();
+        $accreditor = Accreditor::withTrashed()->where('email', $email)->first();
+
+        // Check for deleted users (generic message)
+        if (($user && $user->trashed()) || ($accreditor && $accreditor->trashed())) {
+            return redirect()->route('auth')->withErrors(['email' => 'Please contact the administrator.']);
+        }
+
+        // Check for inactive users
+        if (($user && !$user->is_active) || ($accreditor && !$accreditor->is_active)) {
+            return redirect()->route('auth')->withErrors(['email' => 'Your account is inactive. Please contact the administrator.']);
+        }
 
         // Enforce domain check
         if (!$accreditor) {

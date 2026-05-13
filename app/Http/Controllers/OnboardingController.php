@@ -2,12 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Inertia\Inertia;
 use App\Models\College;
-use App\Models\User;
-use App\Notifications\UserOnboardingNotification;
+use App\Models\Program;
 use App\Services\OnboardingService;
 use App\Http\Requests\StoreCollegeRequest;
+use App\Notifications\UserOnboardingNotification;
 
 class OnboardingController extends Controller
 {
@@ -27,7 +28,7 @@ class OnboardingController extends Controller
         
         return Inertia::render('Onboarding/CollegeSelection', [
             'colleges' => College::orderBy('name')->get(),
-            'programs' => \App\Models\Program::orderBy('name')->get()
+            'programs' => Program::orderBy('name')->get()
         ]);
     }
 

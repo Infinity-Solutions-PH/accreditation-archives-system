@@ -29,7 +29,7 @@ class AuthController extends Controller
 
         if (Accreditor::onlyTrashed()->where('email', $credentials['email'])->exists()) {
             return back()->withErrors([
-                'email' => 'Your account has been deleted. Please contact the administrator.',
+                'email' => 'Please contact the administrator.',
             ]);
         }
 
