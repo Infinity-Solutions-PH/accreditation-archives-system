@@ -9,7 +9,7 @@
     const props = defineProps({
         counts: Object,
         pendingUsers: Array,
-        expiringFiles: Array,
+        expiringEvents: Array,
         recentActivity: Array
     });
 
@@ -148,7 +148,7 @@
                         <span class="material-symbols-outlined text-red-500 bg-red-50 dark:bg-red-900/20 p-1.5 rounded-lg">timer</span>
                     </div>
                     <p class="text-text-main-light dark:text-white tracking-tight text-3xl font-bold leading-tight">{{ counts.expiringSoon }}</p>
-                    <span class="text-xs text-red-600 font-medium">Documents expiring &lt; 30 days</span>
+                    <span class="text-xs text-red-600 font-medium">Events expiring &lt; 30 days</span>
                 </div>
             </div>
             <!-- Dashboard Main Grid -->
@@ -262,27 +262,27 @@
             </div>
             <!-- Right Column (Side) -->
             <div class="flex flex-col gap-6">
-            <!-- Expiring Documents Widget -->
+            <!-- Expiring Events Widget -->
             <div class="flex flex-col rounded-xl bg-surface-light dark:bg-surface-dark border border-[#cfd7e7] dark:border-gray-700 shadow-sm overflow-hidden h-fit">
             <div class="p-5 border-b border-[#cfd7e7] dark:border-gray-700">
             <div class="flex items-center gap-2 mb-1">
             <span class="material-symbols-outlined text-red-500 text-[20px]">warning</span>
-            <h3 class="text-text-main-light dark:text-white text-base font-bold">Expiring Documents</h3>
+            <h3 class="text-text-main-light dark:text-white text-base font-bold">Expiring Events</h3>
             </div>
-            <p class="text-xs text-text-muted-light dark:text-text-muted-dark">Files needing renewal within 30 days</p>
+            <p class="text-xs text-text-muted-light dark:text-text-muted-dark">Events reaching expiration within 30 days</p>
             </div>
             <div class="flex flex-col divide-y divide-[#e7ebf3] dark:divide-gray-700 max-h-[300px] overflow-y-auto">
-                <div v-if="expiringFiles.length === 0" class="p-8 text-center text-text-muted-light dark:text-text-muted-dark text-xs italic">
-                    No documents expiring soon.
+                <div v-if="expiringEvents.length === 0" class="p-8 text-center text-text-muted-light dark:text-text-muted-dark text-xs italic">
+                    No events expiring soon.
                 </div>
-                <div v-for="file in expiringFiles" :key="file.id" class="p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <div v-for="event in expiringEvents" :key="event.id" class="p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
                     <div class="bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 p-2 rounded shrink-0">
-                        <span class="material-symbols-outlined text-[20px]">description</span>
+                        <span class="material-symbols-outlined text-[20px]">calendar_month</span>
                     </div>
                     <div class="flex-1 min-w-0">
-                        <p class="text-sm font-bold text-text-main-light dark:text-white truncate">{{ file.title }}</p>
-                        <p class="text-xs" :class="new Date(file.expiration) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) ? 'text-red-600' : 'text-orange-600'">
-                            Expires {{ new Date(file.expiration).toLocaleDateString() }}
+                        <p class="text-sm font-bold text-text-main-light dark:text-white truncate">{{ event.title }}</p>
+                        <p class="text-xs" :class="new Date(event.expires_at) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) ? 'text-red-600' : 'text-orange-600'">
+                            Expires {{ new Date(event.expires_at).toLocaleDateString() }}
                         </p>
                     </div>
                 </div>

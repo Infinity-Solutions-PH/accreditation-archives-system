@@ -24,8 +24,8 @@ class LandingController extends Controller
         $totalDocuments = File::count();
         $activeUsers = User::where('is_active', true)->where('role_status', 'approved')->count();
         $pendingApprovals = User::where('role_status', 'pending')->count();
-        $expiringSoon = File::whereNotNull('expiration')
-            ->where('expiration', '<=', now()->addDays(30))
+        $expiringSoon = AccreditationEvent::whereNotNull('expires_at')
+            ->where('expires_at', '<=', now()->addDays(30))
             ->count();
 
         $pendingUsers = User::with(['college', 'roles', 'googleInfo'])
@@ -34,9 +34,9 @@ class LandingController extends Controller
             ->limit(3)
             ->get();
 
-        $expiringFiles = File::whereNotNull('expiration')
-            ->where('expiration', '<=', now()->addDays(30))
-            ->orderBy('expiration', 'asc')
+        $expiringEvents = AccreditationEvent::whereNotNull('expires_at')
+            ->where('expires_at', '<=', now()->addDays(30))
+            ->orderBy('expires_at', 'asc')
             ->limit(5)
             ->get();
 
@@ -72,7 +72,7 @@ class LandingController extends Controller
                 'expiringSoon' => $expiringSoon,
             ],
             'pendingUsers' => $isAdministrative ? $pendingUsers : [],
-            'expiringFiles' => $expiringFiles,
+            'expiringEvents' => $expiringEvents,
             'recentActivity' => $recentActivity,
         ]);
     }
