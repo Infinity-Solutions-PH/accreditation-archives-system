@@ -8,9 +8,11 @@ use App\Models\Accreditor;
 use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class File extends Model
 {
+    use HasFactory;
     protected  $fillable = [
         'title',
         'description',

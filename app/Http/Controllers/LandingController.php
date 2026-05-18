@@ -21,12 +21,31 @@ class LandingController extends Controller
     }
 
     public function index() {
-        $totalDocuments = File::count();
+        /** @var \App\Models\User $user */
+        $user = auth()->user();
+
+        if ($user->hasRole('taskforce')) {
+            return redirect()->route('file-archives', ['type' => 'personal']);
+        }
+
+        $totalDocumentsQuery = File::query();
+        $expiringSoonQuery = AccreditationEvent::whereNotNull('expires_at')
+            ->where('expires_at', '<=', now()->addDays(30));
+        $expiringEventsQuery = AccreditationEvent::whereNotNull('expires_at')
+            ->where('expires_at', '<=', now()->addDays(30))
+            ->orderBy('expires_at', 'asc')
+            ->limit(5);
+
+        if ($user->hasRole('college_officer')) {
+            $totalDocumentsQuery->where('college_id', $user->college_id);
+            $expiringSoonQuery->where('college_id', $user->college_id);
+            $expiringEventsQuery->where('college_id', $user->college_id);
+        }
+
+        $totalDocuments = $totalDocumentsQuery->count();
         $activeUsers = User::where('is_active', true)->where('role_status', 'approved')->count();
         $pendingApprovals = User::where('role_status', 'pending')->count();
-        $expiringSoon = AccreditationEvent::whereNotNull('expires_at')
-            ->where('expires_at', '<=', now()->addDays(30))
-            ->count();
+        $expiringSoon = $expiringSoonQuery->count();
 
         $pendingUsers = User::with(['college', 'roles', 'googleInfo'])
             ->where('role_status', 'pending')
@@ -34,11 +53,7 @@ class LandingController extends Controller
             ->limit(3)
             ->get();
 
-        $expiringEvents = AccreditationEvent::whereNotNull('expires_at')
-            ->where('expires_at', '<=', now()->addDays(30))
-            ->orderBy('expires_at', 'asc')
-            ->limit(5)
-            ->get();
+        $expiringEvents = $expiringEventsQuery->get();
 
         $recentActivity = Activity::with('causer')
             ->latest()
@@ -54,13 +69,6 @@ class LandingController extends Controller
                     'properties' => $activity->properties,
                 ];
             });
-
-        /** @var \App\Models\User $user */
-        $user = auth()->user();
-
-        if ($user->hasRole('taskforce')) {
-            return redirect()->route('file-archives', ['type' => 'personal']);
-        }
 
         $isAdministrative = $user->hasRole(['admin', 'ido_staff', 'college_officer']);
 
@@ -220,9 +228,44 @@ class LandingController extends Controller
             });
         }
 
+        // Sorting: Apply user-selected sort field and sort order
+        $sortField = $request->get('sort_field', 'created_at');
+        $sortOrder = $request->get('sort_order', 'desc');
+
+        if (!in_array($sortField, ['title', 'created_at', 'college', 'program'])) {
+            $sortField = 'created_at';
+        }
+        if (!in_array($sortOrder, ['asc', 'desc'])) {
+            $sortOrder = 'desc';
+        }
+
+        if ($sortField === 'college') {
+            $query->leftJoin('colleges', 'files.college_id', '=', 'colleges.id')
+                  ->select('files.*')
+                  ->orderBy('colleges.code', $sortOrder);
+        } elseif ($sortField === 'program') {
+            $query->leftJoin('programs', 'files.program_id', '=', 'programs.id')
+                  ->select('files.*')
+                  ->orderBy('programs.code', $sortOrder);
+        } elseif ($sortField === 'title') {
+            $query->orderBy('files.title', $sortOrder);
+        } else {
+            $query->orderBy('files.created_at', $sortOrder);
+        }
+
         // Finalize results and render
         if ($type === 'event' && $eventId) {
             $event = AccreditationEvent::findOrFail($eventId);
+            if ($user->hasRole('college_officer')) {
+                if ($event->college_id !== $user->college_id) {
+                    abort(403, 'Unauthorized.');
+                }
+            } elseif ($user->hasRole('taskforce')) {
+                if ($event->college_id !== $user->college_id || $event->program_id !== $user->program_id) {
+                    abort(403, 'Unauthorized.');
+                }
+            }
+
             $files = $query->get()->map(function($file) use ($event) {
                 $attachedFile = $event->files()->where('file_id', $file->id)->first();
                 $file->assigned_area_id = $attachedFile && $attachedFile->pivot ? $attachedFile->pivot->area_id : null;
@@ -230,9 +273,16 @@ class LandingController extends Controller
             });
             $paginatedFiles = ['data' => $files];
         } else {
-            $paginatedFiles = $query->orderBy('created_at', 'desc')
-                ->paginate(10)
+            $paginatedFiles = $query->paginate(10)
                 ->withQueryString();
+        }
+
+        $activeEventsQuery = AccreditationEvent::where('status', 'active');
+        if ($user->hasRole('college_officer')) {
+            $activeEventsQuery->where('college_id', $user->college_id);
+        } elseif ($user->hasRole('taskforce')) {
+            $activeEventsQuery->where('college_id', $user->college_id)
+                              ->where('program_id', $user->program_id);
         }
 
         return Inertia::render('FileRepository/Index', [
@@ -240,10 +290,10 @@ class LandingController extends Controller
             'colleges' => College::orderBy('name')->get(),
             'programs' => Program::orderBy('name')->get(),
             'areas' => Area::orderBy('order_no')->get(),
-            'activeEvents' => AccreditationEvent::where('status', 'active')->get(),
+            'activeEvents' => $activeEventsQuery->get(),
             'currentType' => $type,
             'currentEvent' => $eventId ? AccreditationEvent::find($eventId) : null,
-            'filters' => $request->only(['search', 'status', 'program_id', 'college_id'])
+            'filters' => $request->only(['search', 'status', 'program_id', 'college_id', 'sort_field', 'sort_order'])
         ]);
     }
 

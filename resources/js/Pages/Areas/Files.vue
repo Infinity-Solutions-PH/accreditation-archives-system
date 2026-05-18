@@ -24,14 +24,43 @@
     const page = usePage();
     const auth = page.props.auth;
     const search = ref(props.filters.search || '');
+    const sort_field = ref(props.filters.sort_field || 'created_at');
+    const sort_order = ref(props.filters.sort_order || 'desc');
 
-    watch(search, (value) => {
-        router.get(route('areas.slug', { event: props.event.slug, area: props.area.slug }), { search: value }, {
+    const applyFilters = () => {
+        router.get(route('areas.slug', { event: props.event.slug, area: props.area.slug }), {
+            search: search.value,
+            sort_field: sort_field.value,
+            sort_order: sort_order.value
+        }, {
             preserveState: true,
             replace: true,
             preserveScroll: true
         });
+    };
+
+    let searchTimeout = null;
+    watch(search, () => {
+        if (searchTimeout) clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(applyFilters, 500);
     });
+
+    const toggleSort = (field) => {
+        if (sort_field.value === field) {
+            sort_order.value = sort_order.value === 'asc' ? 'desc' : 'asc';
+        } else {
+            sort_field.value = field;
+            sort_order.value = field === 'created_at' ? 'desc' : 'asc';
+        }
+        applyFilters();
+    };
+
+    const getSortIcon = (field) => {
+        if (sort_field.value !== field) {
+            return 'swap_vert';
+        }
+        return sort_order.value === 'asc' ? 'arrow_upward' : 'arrow_downward';
+    };
 
     const canRemove = (file) => {
         if (auth.is_accreditor) return false;
@@ -293,17 +322,54 @@
         <th class="p-4 w-12 text-center" scope="col">
         <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
         </th>
-        <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">File Name</th>
-        <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell" scope="col">
-            {{ (auth.roles.includes('taskforce') || auth.roles.includes('coordinator')) ? 'Program' : 'College / Program' }}
+        
+        <!-- Name Column -->
+        <th @click="toggleSort('title')" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" scope="col">
+            <div class="flex items-center gap-1 select-none">
+                <span>File Name</span>
+                <span class="material-symbols-outlined text-[16px] text-slate-400">
+                    {{ getSortIcon('title') }}
+                </span>
+            </div>
         </th>
+
+        <!-- Date Uploaded Column -->
+        <th @click="toggleSort('created_at')" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" scope="col">
+            <div class="flex items-center gap-1 select-none">
+                <span>Date Uploaded</span>
+                <span class="material-symbols-outlined text-[16px] text-slate-400">
+                    {{ getSortIcon('created_at') }}
+                </span>
+            </div>
+        </th>
+
+        <!-- College Column -->
+        <th @click="toggleSort('college')" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors hidden md:table-cell" scope="col">
+            <div class="flex items-center gap-1 select-none">
+                <span>College</span>
+                <span class="material-symbols-outlined text-[16px] text-slate-400">
+                    {{ getSortIcon('college') }}
+                </span>
+            </div>
+        </th>
+
+        <!-- Program Column -->
+        <th @click="toggleSort('program')" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors hidden md:table-cell" scope="col">
+            <div class="flex items-center gap-1 select-none">
+                <span>Program</span>
+                <span class="material-symbols-outlined text-[16px] text-slate-400">
+                    {{ getSortIcon('program') }}
+                </span>
+            </div>
+        </th>
+
         <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden lg:table-cell" scope="col">Uploaded By</th>
         <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right" scope="col">Actions</th>
         </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
         <tr v-if="files.data.length === 0">
-            <td colspan="6" class="p-12 text-center text-slate-500 dark:text-slate-400 italic">
+            <td colspan="7" class="p-12 text-center text-slate-500 dark:text-slate-400 italic">
                 <div class="flex flex-col items-center gap-2">
                     <span class="material-symbols-outlined text-[48px] opacity-20">folder_off</span>
                     <span>No files available in this area for this event.</span>
@@ -322,12 +388,18 @@
                     </div>
                     <div class="flex flex-col">
                         <span class="font-medium text-slate-900 dark:text-slate-200 text-sm">{{ file.title }}</span>
-                        <span class="text-xs text-slate-500">{{ file.size_human }} • {{ file.created_at !== file.updated_at ? `Updated ${file.updated_at_timeago}` : `Created ${file.created_at_timeago}` }}</span>
+                        <span class="text-xs text-slate-500">{{ file.size_human }} • {{ file.extension.toUpperCase() }}</span>
                     </div>
                 </div>
             </td>
+            <td class="p-4 text-sm text-slate-600 dark:text-slate-400">
+                {{ file.created_at_clean }}
+            </td>
             <td class="p-4 hidden md:table-cell text-sm text-slate-600 dark:text-slate-400">
-                {{ (auth.roles.includes('taskforce') || auth.roles.includes('coordinator')) ? (file.program?.code || 'N/A') : `${file.college?.code || 'Global'} - ${file.program?.code || 'General'}` }}
+                {{ file.college?.code || 'N/A' }}
+            </td>
+            <td class="p-4 hidden md:table-cell text-sm text-slate-600 dark:text-slate-400">
+                {{ file.program?.code || 'N/A' }}
             </td>
             <td class="p-4 hidden lg:table-cell">
                 <div class="flex items-center gap-2">

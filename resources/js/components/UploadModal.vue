@@ -21,6 +21,12 @@
         return (props.programs || []).filter(p => p.college_id === metadata.college_id);
     });
 
+    const collegePrograms = computed(() => {
+        const collegeId = page.props.auth?.user?.college_id;
+        if (!collegeId) return props.programs || [];
+        return (props.programs || []).filter(p => p.college_id === collegeId);
+    });
+
     const file = ref(null);
     const fileError = ref('');
     const uploading = ref(false);
@@ -32,7 +38,15 @@
         title: `Untitled-Document-${new Date().toISOString().split('T')[0]}`,
         description: '',
         tmp_id: null,
-        is_general: props.isGeneral 
+        is_general: props.isGeneral,
+        program_id: null,
+        college_id: page.props.auth?.user?.college_id || null
+    });
+
+    watch(() => metadata.is_general, (newVal) => {
+        if (newVal) {
+            metadata.program_id = null;
+        }
     });
 
     const MAX_SIZE = 2 * 1024 * 1024
@@ -84,7 +98,9 @@
                     metadata: { 
                         title: metadata.title, 
                         description: metadata.description,
-                        is_general: metadata.is_general
+                        is_general: metadata.is_general,
+                        program_id: metadata.program_id,
+                        college_id: metadata.college_id
                     },
                     filename: file.value.name
                 },
@@ -160,7 +176,9 @@
                 metadata: {
                     title: metadata.title,
                     description: metadata.description,
-                    is_general: metadata.is_general
+                    is_general: metadata.is_general,
+                    program_id: metadata.program_id,
+                    college_id: metadata.college_id
                 }
             }, {
                 headers: { 
@@ -257,6 +275,53 @@
                                 type="text"
                                 value="Untitled-Document"/>
                         </div>
+
+                        <!-- Destination Choice for College Officers -->
+                        <div v-if="$page.props.auth?.roles?.includes('college_officer')" class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-text-main-light dark:text-white mb-1.5">Upload Destination</label>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label 
+                                    class="border rounded-lg p-3 flex items-center gap-2.5 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                                    :class="metadata.is_general ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-gray-200 dark:border-gray-700'">
+                                    <input 
+                                        type="radio" 
+                                        :value="true" 
+                                        v-model="metadata.is_general" 
+                                        class="text-primary focus:ring-primary h-4 w-4" />
+                                    <div>
+                                        <p class="text-sm font-semibold">General Files</p>
+                                        <p class="text-xs text-gray-500">Accessible by whole college</p>
+                                    </div>
+                                </label>
+                                <label 
+                                    class="border rounded-lg p-3 flex items-center gap-2.5 cursor-pointer transition-all hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                                    :class="!metadata.is_general ? 'border-primary bg-primary/5 dark:bg-primary/10' : 'border-gray-200 dark:border-gray-700'">
+                                    <input 
+                                        type="radio" 
+                                        :value="false" 
+                                        v-model="metadata.is_general" 
+                                        class="text-primary focus:ring-primary h-4 w-4" />
+                                    <div>
+                                        <p class="text-sm font-semibold">Specific Program</p>
+                                        <p class="text-xs text-gray-500">Assign to a program</p>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown to select program, only shown if is_general is false and user is college officer -->
+                        <div v-if="$page.props.auth?.roles?.includes('college_officer') && !metadata.is_general" class="md:col-span-2">
+                            <label class="block text-sm font-semibold text-text-main-light dark:text-white mb-1.5">Select Program</label>
+                            <select
+                                v-model="metadata.program_id"
+                                class="w-full px-3.5 py-2.5 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all dark:text-white">
+                                <option :value="null" disabled>-- Choose a Program --</option>
+                                <option v-for="prog in collegePrograms" :key="prog.id" :value="prog.id">
+                                    {{ prog.code }} - {{ prog.name }}
+                                </option>
+                            </select>
+                        </div>
+
                         <div class="md:col-span-2">
                             <label class="block text-sm font-semibold text-text-main-light dark:text-white mb-1.5">Remarks / Description</label>
                             <textarea

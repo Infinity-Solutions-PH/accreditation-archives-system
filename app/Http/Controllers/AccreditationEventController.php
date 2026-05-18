@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Area;
+use App\Models\File;
 use App\Models\User;
 use Inertia\Inertia;
 use App\Models\College;
@@ -12,8 +13,8 @@ use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Models\AccreditationEvent;
 use App\Notifications\EventCreatedNotification;
-use App\Notifications\FileSharedToEventNotification;
 use App\Notifications\AllAreasCompleteNotification;
+use App\Notifications\FileSharedToEventNotification;
 use App\Notifications\FileRemovedFromEventNotification;
 
 class AccreditationEventController extends Controller
@@ -168,6 +169,17 @@ class AccreditationEventController extends Controller
 
         $event = AccreditationEvent::findOrFail($request->accreditation_event_id);
         
+        $user = auth()->user();
+        if ($user->hasRole('college_officer')) {
+            if ($event->college_id !== $user->college_id) {
+                return response()->json(['message' => 'Unauthorized action.'], 403);
+            }
+        } elseif ($user->hasRole('taskforce')) {
+            if ($event->college_id !== $user->college_id || $event->program_id !== $user->program_id) {
+                return response()->json(['message' => 'Unauthorized action.'], 403);
+            }
+        }
+        
         // Check if file is already shared to this event
         if ($event->files()->where('file_id', $request->file_id)->exists()) {
             return response()->json(['message' => 'File already shared to this event.'], 422);
@@ -230,7 +242,7 @@ class AccreditationEventController extends Controller
         }
 
         // Notify Stakeholders about the shared file
-        $file = \App\Models\File::find($request->file_id);
+        $file = File::find($request->file_id);
         $area = Area::find($request->area_id);
         $user = auth()->user();
 
@@ -262,12 +274,31 @@ class AccreditationEventController extends Controller
             'file_id' => 'required|exists:files,id',
         ]);
 
-        $file = \App\Models\File::findOrFail($request->file_id);
         $user = auth()->user() ?? auth('accreditor')->user();
+
+        if ($user instanceof Accreditor) {
+            if (!$user->events()->where('accreditation_events.id', $event->id)->exists()) {
+                return response()->json(['message' => 'Unauthorized action.'], 403);
+            }
+        } elseif ($user instanceof User) {
+            if ($user->hasRole('college_officer')) {
+                if ($event->college_id !== $user->college_id) {
+                    return response()->json(['message' => 'Unauthorized action.'], 403);
+                }
+            } elseif ($user->hasRole('taskforce')) {
+                if ($event->college_id !== $user->college_id || $event->program_id !== $user->program_id) {
+                    return response()->json(['message' => 'Unauthorized action.'], 403);
+                }
+            }
+        } else {
+            return response()->json(['message' => 'Unauthorized action.'], 403);
+        }
+
+        $file = File::findOrFail($request->file_id);
 
         // Permissions: Only uploader or IDO Staff/Admin/College Officer
         $isUploader = $file->uploaded_by === $user->id;
-        $hasHigherRole = $user instanceof \App\Models\User && $user->hasRole(['admin', 'ido_staff', 'college_officer']);
+        $hasHigherRole = $user instanceof User && $user->hasRole(['admin', 'ido_staff', 'college_officer']);
 
         if (!$isUploader && !$hasHigherRole) {
             return response()->json(['message' => 'Unauthorized to remove this file from the event.'], 403);
