@@ -235,7 +235,7 @@
                             v-model="searchQuery"
                             type="text" 
                             class="w-full pl-11 pr-4 py-3 bg-gray-50 dark:bg-gray-900 border border-gray-300 dark:border-gray-600 rounded-lg text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all dark:text-white"
-                            placeholder="Search by name or email (e.g. IDO Staff)..." />
+                            placeholder="Search by name or email (e.g. Quality Assurance Officer Support Staff)..." />
                     </div>
 
                     <!-- Alerts -->

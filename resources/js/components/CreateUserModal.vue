@@ -2,6 +2,17 @@
     import { ref, computed, watch } from 'vue';
     import { useForm, usePage } from '@inertiajs/vue3';
 
+    const getRoleLabel = (roleName) => {
+        if (!roleName) return '';
+        const labels = {
+            'admin': 'Admin',
+            'ido_staff': 'Quality Assurance Officer Support Staff',
+            'college_officer': 'Quality Assurance Coordinator',
+            'taskforce': 'Accreditation Task Force Member'
+        };
+        return labels[roleName.toLowerCase()] || roleName;
+    };
+
     const props = defineProps({
         roles: Array,
         colleges: Array,
@@ -216,7 +227,7 @@
                         >
                             <option value="" disabled>Select a role...</option>
                             <option v-for="role in availableRoles" :key="role.id" :value="role.name">
-                                {{ role.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
+                                {{ getRoleLabel(role.name) }}
                             </option>
                         </select>
                         <p v-if="form.errors.role" class="mt-1 text-xs text-red-500">{{ form.errors.role }}</p>

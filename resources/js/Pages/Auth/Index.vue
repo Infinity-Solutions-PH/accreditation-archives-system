@@ -69,7 +69,7 @@
                                 </svg> -->
                                 <img src="https://library.cvsu.edu.ph/landing/storage/images/CvSU-logo-64x64.webp">
                             </div>
-                            <h2 class="text-xl font-bold tracking-tight">CvSU Accreditation Archives</h2>
+                            <h2 class="text-xl font-bold tracking-tight">CvSU Archives</h2>
                         </div>
                         <h1 class="text-3xl font-bold tracking-tight text-[#0d121b] dark:text-white">Welcome back</h1>
                         <p class="text-slate-500 dark:text-slate-400">Please enter your details to access the archives.</p>
@@ -143,7 +143,7 @@
                             If you are an external accreditor visiting for a scheduled evaluation, please use the temporary portal.
                         </p>
                         <Link class="mt-1 text-sm font-semibold text-primary hover:text-primary-hover flex items-center gap-1 group" :href="route('accreditor.auth')">
-                            Access Temporary Portal 
+                            Access Temporary Portal
                             <span class="material-symbols-outlined text-sm transition-transform group-hover:translate-x-1">arrow_forward</span>
                         </Link>
                     </div>

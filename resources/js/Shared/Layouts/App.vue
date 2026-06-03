@@ -178,7 +178,7 @@
                                         </div>
                                         <div class="flex-1 min-w-0">
                                             <p class="text-sm font-bold text-slate-700 dark:text-slate-200 truncate">{{ user.name }}</p>
-                                            <p class="text-[11px] text-slate-400 italic truncate">{{ user.college?.name || 'IDO Staff' }}</p>
+                                            <p class="text-[11px] text-slate-400 italic truncate">{{ user.college?.name || 'Quality Assurance Officer Support Staff' }}</p>
                                         </div>
                                         <span class="material-symbols-outlined text-[18px] opacity-0 group-hover:opacity-100 transition-all text-primary translate-x-2 group-hover:translate-x-0">chevron_right</span>
                                     </Link>

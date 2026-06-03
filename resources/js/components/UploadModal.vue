@@ -38,13 +38,6 @@
     const MAX_SIZE = 2 * 1024 * 1024
     const ALLOWED_TYPES = [
         'application/pdf',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-
-        'image/png',
-        'image/jpeg',
-        'image/jpg',
-
         'video/mp4'
     ];
 
@@ -54,8 +47,9 @@
         const selected = e.target.files[0];
         if (!selected) return;
 
-        if (!ALLOWED_TYPES.includes(selected.type)) {
-            fileError.value = 'File type is invalid.';
+        const fileExt = selected.name.split('.').pop().toLowerCase();
+        if (fileExt !== 'pdf' && fileExt !== 'mp4') {
+            fileError.value = 'File format is not supported. (Supported files: PDF or MP4)';
             return;
         }
 

@@ -62,7 +62,7 @@
                             <div class="size-10 rounded-lg bg-accreditor/10 flex items-center justify-center text-accreditor">
                                 <span class="material-symbols-outlined text-2xl">shield_person</span>
                             </div>
-                            <h2 class="text-xl font-bold tracking-tight">CvSU Accreditation Archives</h2>
+                            <h2 class="text-xl font-bold tracking-tight">CvSU Archives</h2>
                         </div>
                         <h1 class="text-3xl font-bold tracking-tight text-[#0d121b] dark:text-white">Accreditor Login</h1>
                         <p class="text-slate-500 dark:text-slate-400">Enter your assigned credentials provided by the system administrator.</p>

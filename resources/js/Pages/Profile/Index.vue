@@ -3,6 +3,17 @@ import { ref } from 'vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import AppLayout from '@shared/Layouts/App.vue';
 
+const getRoleLabel = (roleName) => {
+    if (!roleName) return '';
+    const labels = {
+        'admin': 'Admin',
+        'ido_staff': 'Quality Assurance Officer Support Staff',
+        'college_officer': 'Quality Assurance Coordinator',
+        'taskforce': 'Accreditation Task Force Member'
+    };
+    return labels[roleName.toLowerCase()] || roleName;
+};
+
 const props = defineProps({
     user: Object
 });
@@ -101,7 +112,7 @@ const submitUpdate = () => {
                                 <div class="flex flex-wrap gap-2 mt-1">
                                     <span v-for="role in user.roles" :key="role.id" 
                                           class="px-2 py-1 rounded bg-primary/10 text-primary text-[10px] font-bold uppercase tracking-wider">
-                                        {{ role.name.replace('_', ' ') }}
+                                        {{ getRoleLabel(role.name) }}
                                     </span>
                                 </div>
                             </div>

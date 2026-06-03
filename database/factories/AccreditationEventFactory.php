@@ -17,7 +17,7 @@ class AccreditationEventFactory extends Factory
             'description' => $this->faker->paragraph,
             'college_id' => 1,
             'program_id' => 1,
-            'level' => 'Level III',
+            'level' => 'Level II',
             'expires_at' => now()->addDays(30),
             'status' => 'active',
             'created_by' => 1,

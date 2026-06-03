@@ -1,6 +1,17 @@
 <script setup>
     import { ref } from 'vue';
     import { router } from '@inertiajs/vue3';
+
+    const getRoleLabel = (roleName) => {
+        if (!roleName) return '';
+        const labels = {
+            'admin': 'Admin',
+            'ido_staff': 'Quality Assurance Officer Support Staff',
+            'college_officer': 'Quality Assurance Coordinator',
+            'taskforce': 'Accreditation Task Force Member'
+        };
+        return labels[roleName.toLowerCase()] || roleName;
+    };
     import AppLayout from '@shared/Layouts/App.vue';
     import UploadModal from '@/components/UploadModal.vue';
     import ConfirmationModal from '@/components/ConfirmationModal.vue';
@@ -241,7 +252,7 @@
                         <td class="px-6 py-4 text-text-muted-light dark:text-text-muted-dark text-xs truncate max-w-[150px]">{{ user.college?.name || 'Unassigned' }}</td>
                         <td class="px-6 py-4">
                             <span v-if="user.roles?.[0]" class="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 text-[10px] font-bold uppercase tracking-wider">
-                                {{ user.roles[0].name.replace('_', ' ') }}
+                                {{ getRoleLabel(user.roles[0].name) }}
                             </span>
                             <span v-else class="text-xs text-text-muted-light italic">None</span>
                         </td>
