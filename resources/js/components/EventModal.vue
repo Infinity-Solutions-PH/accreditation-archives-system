@@ -113,8 +113,6 @@ const submit = () => {
                             <option value="Candidate Status">Candidate Status</option>
                             <option value="Level I">Level I</option>
                             <option value="Level II">Level II</option>
-                            <option value="Level III">Level III</option>
-                            <option value="Level IV">Level IV</option>
                         </select>
                     </div>
                     <div class="space-y-1.5">

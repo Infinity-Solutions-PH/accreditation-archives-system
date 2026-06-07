@@ -5,6 +5,17 @@
 
     import AppLayout from '@shared/Layouts/App.vue';
 
+    const getRoleLabel = (roleName) => {
+        if (!roleName) return '';
+        const labels = {
+            'admin': 'Admin',
+            'ido_staff': 'Quality Assurance Officer Support Staff',
+            'college_officer': 'Quality Assurance Coordinator',
+            'taskforce': 'Accreditation Task Force Member'
+        };
+        return labels[roleName.toLowerCase()] || roleName;
+    };
+
     import CreateUserModal from '@/components/CreateUserModal.vue';
     import EditUserModal from '@/components/EditUserModal.vue';
     import ConfirmationModal from '@/components/ConfirmationModal.vue';
@@ -292,10 +303,10 @@
                             <div v-if="activeTab === 'users'" class="w-full sm:w-auto min-w-[180px]">
                                 <label class="block text-xs font-bold text-[#4c669a] uppercase tracking-wider mb-2">User Role</label>
                                 <select v-model="roleFilter" :disabled="isLoading" class="w-full h-11 rounded-xl border border-[#e7ebf3] dark:border-gray-700 bg-[#f8f9fc] dark:bg-gray-800/50 px-4 text-sm font-medium text-[#0d121b] dark:text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                                    <option>All Roles</option>
-                                    <option>IDO Staff</option>
-                                    <option>College Officer</option>
-                                    <option>Taskforce</option>
+                                    <option value="All Roles">All Roles</option>
+                                    <option value="ido_staff">Quality Assurance Officer Support Staff</option>
+                                    <option value="college_officer">Quality Assurance Coordinator</option>
+                                    <option value="taskforce">Accreditation Task Force Member</option>
                                 </select>
                             </div>
 
@@ -373,7 +384,7 @@
                                     <td v-if="activeTab.includes('users')" class="p-4">
                                         <div v-if="item.roles && item.roles.length > 0" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs text-nowrap font-medium bg-purple-50 text-purple-700 dark:bg-purple-900/20 dark:text-purple-300 border border-purple-100 dark:border-purple-800">
                                             <span class="material-symbols-outlined text-[14px]">shield_person</span>
-                                            {{ item.roles[0].name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}
+                                            {{ getRoleLabel(item.roles[0].name) }}
                                         </div>
                                         <div v-else class="text-xs text-slate-500 px-2 py-1">No Role</div>
                                     </td>

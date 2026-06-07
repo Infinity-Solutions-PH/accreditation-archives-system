@@ -310,7 +310,7 @@
         <!-- Footer -->
         <footer class="mt-8 border-t border-[#e7ebf3] dark:border-[#2a3447] py-6 px-4">
         <div class="flex flex-col md:flex-row justify-between items-center gap-4 text-[#4c669a] text-sm">
-        <p>© 2024 CvSU Accreditation Archives System. All rights reserved.</p>
+        <p>© 2024 CvSU Archives System. All rights reserved.</p>
         <div class="flex gap-4">
         <a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
         <a class="hover:text-primary transition-colors" href="#">Terms of Service</a>

@@ -3,6 +3,18 @@
     import { usePage } from '@inertiajs/vue3';
 
     const page = usePage();
+
+    const getRoleLabel = (roleName) => {
+        if (!roleName) return '';
+        const labels = {
+            'admin': 'Admin',
+            'ido_staff': 'Quality Assurance Officer Support Staff',
+            'college_officer': 'Quality Assurance Coordinator',
+            'taskforce': 'Accreditation Task Force Member',
+            'user': 'User'
+        };
+        return labels[roleName.toLowerCase()] || roleName;
+    };
 </script>
 
 <template>
@@ -13,11 +25,11 @@
                 <div class="flex items-center gap-3 px-2">
                     <div class="bg-center bg-no-repeat bg-cover rounded-full size-10 shadow-sm shrink-0" data-alt="University Logo Abstract" style='background-image: url("https://library.cvsu.edu.ph/landing/storage/images/CvSU-logo-64x64.webp");'></div>
                     <div class="flex flex-col min-w-0">
-                        <h1 class="text-text-main-light dark:text-text-main-dark text-sm font-bold leading-tight truncate">Accreditation System</h1>
+                        <h1 class="text-text-main-light dark:text-text-main-dark text-sm font-bold leading-tight truncate">Archives System</h1>
                         <p class="text-[10px] text-slate-500 dark:text-slate-400 font-medium truncate">
-                            Logged in as 
+                            Logged in as
                             <span class="text-primary font-bold">
-                                {{ page.props.auth?.is_accreditor ? 'Accreditor' : (page.props.auth?.roles?.[0]?.replace('_', ' ') || 'User') }}
+                                {{ page.props.auth?.is_accreditor ? 'Accreditor' : getRoleLabel(page.props.auth?.roles?.[0] || 'User') }}
                             </span>
                         </p>
                     </div>

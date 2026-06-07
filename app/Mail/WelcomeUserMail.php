@@ -6,8 +6,8 @@ use App\Models\User;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Mail\Mailables\Envelope;
 use Illuminate\Contracts\Queue\ShouldQueue;
 
 class WelcomeUserMail extends Mailable implements ShouldQueue
@@ -28,7 +28,7 @@ class WelcomeUserMail extends Mailable implements ShouldQueue
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Welcome to CvSU Accreditation Archives System',
+            subject: 'Welcome to CvSU Archives System',
         );
     }
 

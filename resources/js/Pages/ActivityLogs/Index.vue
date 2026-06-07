@@ -1,6 +1,17 @@
 <script setup>
     import AppLayout from '@shared/Layouts/App.vue';
     import { Link, router } from '@inertiajs/vue3';
+
+    const getRoleLabel = (roleName) => {
+        if (!roleName) return '';
+        const labels = {
+            'admin': 'Admin',
+            'ido_staff': 'Quality Assurance Officer Support Staff',
+            'college_officer': 'Quality Assurance Coordinator',
+            'taskforce': 'Accreditation Task Force Member'
+        };
+        return labels[roleName.toLowerCase()] || roleName;
+    };
     import { ref, watch } from 'vue';
     import { useDebounceFn } from '@vueuse/core';
 
@@ -102,7 +113,7 @@
                                 <label class="block text-xs font-bold text-[#4c669a] uppercase tracking-wider mb-2">User Role</label>
                                 <select v-model="role" :disabled="isLoading" class="w-full h-11 rounded-xl border border-[#e7ebf3] dark:border-gray-700 bg-[#f8f9fc] dark:bg-gray-800/50 px-4 text-sm font-medium text-[#0d121b] dark:text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                     <option value="">All Roles</option>
-                                    <option v-for="r in roles" :key="r.id" :value="r.name">{{ r.name.charAt(0).toUpperCase() + r.name.slice(1).replace('_', ' ') }}</option>
+                                    <option v-for="r in roles" :key="r.id" :value="r.name">{{ getRoleLabel(r.name) }}</option>
                                 </select>
                             </div>
 
@@ -163,7 +174,7 @@
                                         </td>
                                         <td class="px-6 py-4 whitespace-nowrap">
                                             <span v-if="log.causer?.roles?.[0]" class="inline-flex items-center rounded-lg bg-indigo-50 dark:bg-indigo-900/20 px-2.5 py-1 text-xs font-bold text-indigo-700 dark:text-indigo-300 ring-1 ring-inset ring-indigo-700/10 uppercase tracking-tighter">
-                                                {{ log.causer.roles[0].name.replace('_', ' ') }}
+                                                {{ getRoleLabel(log.causer.roles[0].name) }}
                                             </span>
                                             <span v-else class="text-xs text-gray-400 italic">N/A</span>
                                         </td>

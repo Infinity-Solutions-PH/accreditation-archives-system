@@ -3,6 +3,17 @@
     import { useForm } from '@inertiajs/vue3';
     import api from '@/axios.js';
 
+    const getRoleLabel = (roleName) => {
+        if (!roleName) return '';
+        const labels = {
+            'admin': 'Admin',
+            'ido_staff': 'Quality Assurance Officer Support Staff',
+            'college_officer': 'Quality Assurance Coordinator',
+            'taskforce': 'Accreditation Task Force Member'
+        };
+        return labels[roleName.toLowerCase()] || roleName;
+    };
+
     const props = defineProps({
         user: Object,
         roles: Array,
@@ -181,7 +192,7 @@
                             <label class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 font-bold uppercase tracking-tight text-[11px]">System Role</label>
                             <select class="w-full px-4 py-1.5 h-11 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-sm font-medium focus:ring-2 focus:ring-primary/20 transition-all dark:text-white cursor-pointer" v-model="form.role">
                                 <option value="">No Role</option>
-                                <option v-for="r in roles" :key="r.id" :value="r.name">{{ r.name.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) }}</option>
+                                <option v-for="r in roles" :key="r.id" :value="r.name">{{ getRoleLabel(r.name) }}</option>
                             </select>
                         </div>
                         

@@ -3,9 +3,9 @@
 namespace App\Notifications;
 
 use Illuminate\Bus\Queueable;
+use Illuminate\Notifications\Notification;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Notifications\Notification;
 
 class AccreditorInviteNotification extends Notification
 {
@@ -37,9 +37,9 @@ class AccreditorInviteNotification extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)
-            ->subject('Invitation to CvSU Accreditation Archives')
+            ->subject('Invitation to CvSU Archives')
             ->greeting('Hello, ' . $notifiable->name . '!')
-            ->line('You have been invited to join the CvSU Accreditation Archives system as an Accreditor.')
+            ->line('You have been invited to join the CvSU Archives system as an Accreditor.')
             ->line('You can access the system using the following credentials:')
             ->line('**Email:** ' . $notifiable->email)
             ->line('**Password:** ' . $this->password)

@@ -48,7 +48,17 @@ class CreateTempFileRequest extends FormRequest
             'metadata.description' => 'nullable|string|max:1000',
             'metadata.area_id' => ['nullable', 'exists:areas,id'],
             'metadata.is_general' => ['nullable', 'boolean'],
-            'filename' => 'required|string|max:255',
+            'filename' => [
+                'required',
+                'string',
+                'max:255',
+                function ($attribute, $value, $fail) {
+                    $ext = strtolower(pathinfo($value, PATHINFO_EXTENSION));
+                    if (!in_array($ext, ['pdf', 'mp4'])) {
+                        $fail('File format is not supported. (Supported files: PDF or MP4)');
+                    }
+                }
+            ],
         ];
 
         if ($user) {

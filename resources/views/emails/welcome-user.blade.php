@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Welcome to CvSU Accreditation Archives</title>
+    <title>Welcome to CvSU Archives Archives</title>
     <style>
         body {
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
@@ -108,14 +108,14 @@
         <table class="main">
             <tr>
                 <td class="header">
-                    <h1>CvSU Accreditation Archives</h1>
+                    <h1>CvSU Archives</h1>
                 </td>
             </tr>
             <tr>
                 <td class="content">
                     <h2>Hello, {{ $user->name }}!</h2>
-                    <p>Your account has been successfully created in the CvSU Accreditation Archives System. You can now log in using the credentials provided below.</p>
-                    
+                    <p>Your account has been successfully created in the CvSU Archives System. You can now log in using the credentials provided below.</p>
+
                     <div class="credentials">
                         <div class="credential-item">
                             <span class="label">Email Address</span>

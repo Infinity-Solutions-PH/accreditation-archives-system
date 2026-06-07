@@ -30,7 +30,19 @@ const uploadProgress = ref(0);
 const isUploading = ref(false);
 
 const handleFileSelect = (e) => {
-    replacementFile.value = e.target.files[0];
+    const selected = e.target.files[0];
+    if (!selected) {
+        replacementFile.value = null;
+        return;
+    }
+    const fileExt = selected.name.split('.').pop().toLowerCase();
+    if (fileExt !== 'pdf' && fileExt !== 'mp4') {
+        alert('File format is not supported. (Supported files: PDF or MP4)');
+        e.target.value = ''; // Reset input
+        replacementFile.value = null;
+        return;
+    }
+    replacementFile.value = selected;
 };
 
 const startReplacement = async () => {

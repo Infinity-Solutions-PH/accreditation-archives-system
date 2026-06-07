@@ -20,7 +20,7 @@ class AccreditorFactory extends Factory
             'expires_at' => now()->addDays(30),
             'college_id' => 1,
             'program_id' => 1,
-            'level' => 'Level III',
+            'level' => 'Level II',
             'created_by' => 1,
         ];
     }
