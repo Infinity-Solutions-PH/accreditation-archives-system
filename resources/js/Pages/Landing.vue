@@ -1,10 +1,9 @@
 <script setup>
     import { ref } from 'vue';
-    import { router } from '@inertiajs/vue3';
+    import { router, Link } from '@inertiajs/vue3';
     import AppLayout from '@shared/Layouts/App.vue';
     import UploadModal from '@/components/UploadModal.vue';
     import ConfirmationModal from '@/components/ConfirmationModal.vue';
-    import api from '@/axios.js';
 
     const props = defineProps({
         counts: Object,
@@ -107,6 +106,7 @@
                         Generate Report
                     </a>
                     <button
+                        v-if="!$page.props.auth?.roles?.includes('college_officer')"
                         @click="openUploadModal"
                         class="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-md shadow-blue-500/20">
                         <span class="material-symbols-outlined text-[18px]">upload_file</span>
@@ -288,7 +288,7 @@
                 </div>
             </div>
             <div class="p-3 border-t border-[#cfd7e7] dark:border-gray-700 text-center">
-                <a class="text-xs font-bold text-primary hover:underline" href="#">View Repository</a>
+                <Link class="text-xs font-bold text-primary hover:underline" :href="route('events.index')">View Repository</Link>
             </div>
             </div>
             <!-- Activity Log Feed -->

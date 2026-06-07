@@ -12,7 +12,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        DB::statement("ALTER TABLE accreditation_events MODIFY status ENUM('draft', 'active', 'archived', 'completed', 'cancelled') NOT NULL DEFAULT 'active'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE accreditation_events MODIFY status ENUM('draft', 'active', 'archived', 'completed', 'cancelled') NOT NULL DEFAULT 'active'");
+        }
     }
 
     /**
@@ -20,6 +22,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("ALTER TABLE accreditation_events MODIFY status ENUM('draft', 'active', 'archived') NOT NULL DEFAULT 'active'");
+        if (DB::getDriverName() !== 'sqlite') {
+            DB::statement("ALTER TABLE accreditation_events MODIFY status ENUM('draft', 'active', 'archived') NOT NULL DEFAULT 'active'");
+        }
     }
 };

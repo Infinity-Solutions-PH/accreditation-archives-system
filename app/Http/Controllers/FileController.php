@@ -66,15 +66,52 @@ class FileController extends Controller
     public function updateMetadata(Request $request)
     {
         $this->checkActive();
-        $request->validate([
+
+        $user = auth()->user();
+        if ($user) {
+            $metadata = $request->input('metadata', []);
+            if (!isset($metadata['college_id']) && $user->college_id) {
+                $metadata['college_id'] = $user->college_id;
+            }
+            if (!isset($metadata['program_id']) && $user->program_id) {
+                $metadata['program_id'] = $user->program_id;
+            }
+            $request->merge([
+                'metadata' => $metadata,
+            ]);
+        }
+
+        $rules = [
             'tmp_id' => 'required|string|exists:files,tmp_id',
             'metadata.title' => 'nullable|string|max:255',
             'metadata.description' => 'nullable|string|max:1000',
-            'metadata.college_id' => ['nullable', 'exists:colleges,id'],
-            'metadata.program_id' => ['nullable', 'exists:programs,id'],
             'metadata.area_id' => ['nullable', 'exists:areas,id'],
             'metadata.level' => ['nullable', 'int'],
             'metadata.is_general' => ['nullable', 'boolean']
+        ];
+
+        if ($user) {
+            if ($user->hasRole('taskforce')) {
+                $rules['metadata.college_id'] = ['required', 'exists:colleges,id'];
+                $rules['metadata.program_id'] = ['required', 'exists:programs,id'];
+            } elseif ($user->hasRole('college_officer')) {
+                $rules['metadata.college_id'] = ['required', 'exists:colleges,id'];
+                $isGeneral = $request->has('metadata.is_general') 
+                    ? filter_var($request->input('metadata.is_general'), FILTER_VALIDATE_BOOLEAN) 
+                    : true;
+                $rules['metadata.program_id'] = [$isGeneral ? 'nullable' : 'required', 'exists:programs,id'];
+            } else {
+                $rules['metadata.college_id'] = ['nullable', 'exists:colleges,id'];
+                $rules['metadata.program_id'] = ['nullable', 'exists:programs,id'];
+            }
+        } else {
+            $rules['metadata.college_id'] = ['nullable', 'exists:colleges,id'];
+            $rules['metadata.program_id'] = ['nullable', 'exists:programs,id'];
+        }
+
+        $request->validate($rules, [
+            'metadata.college_id.required' => 'A college must be assigned to your account to upload files.',
+            'metadata.program_id.required' => 'A program must be assigned to your account to upload files.',
         ]);
 
         $file = File::where('tmp_id', $request->tmp_id)->firstOrFail();
@@ -294,9 +331,11 @@ class FileController extends Controller
             // Full access
         } elseif ($user->hasRole('coordinator') || $user->hasRole('college_officer')) {
             $query->where('college_id', $user->college_id);
+        } elseif ($user->hasRole('taskforce')) {
+            $query->where('college_id', $user->college_id)
+                  ->where('program_id', $user->program_id);
         } else {
-            // Taskforce
-            $query->where('program_id', $user->program_id);
+            $query->whereRaw('1 = 0');
         }
 
         if ($request->search) {
@@ -367,10 +406,16 @@ class FileController extends Controller
         // 1. Authorize (owner or admin/ido_staff)
         $user = auth()->user();
         $isOwner = $file->uploaded_by === $user->id;
-        $isAdminOrStaff = $user->hasRole(['admin', 'ido_staff']);
         
-        if (!$isOwner && !$isAdminOrStaff) {
-            abort(403, 'You do not have permission to delete this file.');
+        if ($file->is_general) {
+            if (!$isOwner) {
+                abort(403, 'Only the owner of a general file can delete it.');
+            }
+        } else {
+            $isAdminOrStaff = $user->hasRole(['admin', 'ido_staff']);
+            if (!$isOwner && !$isAdminOrStaff) {
+                abort(403, 'You do not have permission to delete this file.');
+            }
         }
 
         // 2. Identify associated events and notify stakeholders
@@ -445,7 +490,7 @@ class FileController extends Controller
             // Output BOM for UTF-8 CSV compatibility in Excel
             fputs($file, "\xEF\xBB\xBF");
             
-            fputcsv($file, ['File Name', 'Owner', 'Date Uploaded', 'College', 'Program']);
+            fputcsv($file, ['File Name', 'Owner', 'Date Uploaded', 'College', 'Program', 'Description/Tags']);
 
             foreach ($files as $f) {
                 fputcsv($file, [
@@ -454,6 +499,7 @@ class FileController extends Controller
                     $f->created_at ? $f->created_at->format('Y-m-d H:i:s') : '',
                     $f->college ? $f->college->name : 'N/A',
                     $f->program ? $f->program->name : 'N/A',
+                    $f->description ?? '',
                 ]);
             }
 
