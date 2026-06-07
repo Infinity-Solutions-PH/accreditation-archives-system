@@ -111,12 +111,14 @@
 
     const isLoading = ref(false);
     
-    // Filtering Logic
+    // Filtering & Sorting Logic
     const filters = ref({
         search: props.filters?.search || '',
         status: props.filters?.status || 'All',
         college_id: props.filters?.college_id || 'All',
-        program_id: props.filters?.program_id || 'All'
+        program_id: props.filters?.program_id || 'All',
+        sort_field: props.filters?.sort_field || 'created_at',
+        sort_order: props.filters?.sort_order || 'desc'
     });
 
     const applyFilters = () => {
@@ -131,6 +133,23 @@
         });
     };
 
+    const toggleSort = (field) => {
+        if (filters.value.sort_field === field) {
+            filters.value.sort_order = filters.value.sort_order === 'asc' ? 'desc' : 'asc';
+        } else {
+            filters.value.sort_field = field;
+            filters.value.sort_order = field === 'created_at' ? 'desc' : 'asc';
+        }
+        applyFilters();
+    };
+
+    const getSortIcon = (field) => {
+        if (filters.value.sort_field !== field) {
+            return 'swap_vert';
+        }
+        return filters.value.sort_order === 'asc' ? 'arrow_upward' : 'arrow_downward';
+    };
+
     let searchTimeout = null;
     const handleSearch = () => {
         if (searchTimeout) clearTimeout(searchTimeout);
@@ -142,7 +161,9 @@
             search: '',
             status: 'All',
             college_id: 'All',
-            program_id: 'All'
+            program_id: 'All',
+            sort_field: 'created_at',
+            sort_order: 'desc'
         };
         applyFilters();
     };
@@ -405,133 +426,180 @@
             </div>
 
             <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse" :class="{'opacity-60 grayscale-[0.3]': isLoading}">
-        <thead>
-        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
-        <th class="p-4 w-12 text-center" scope="col">
-        <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
-        </th>
-        <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">File Name</th>
-        <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden md:table-cell" scope="col">
-            {{ currentType === 'shared' ? 'Original Uploader' : 'College / Program' }}
-        </th>
-        <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden lg:table-cell" scope="col">
-            {{ currentType === 'shared' ? 'Shared By' : 'Uploaded By' }}
-        </th>
-        <th v-if="currentType === 'shared'" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">
-            Date Shared
-        </th>
-        <th v-if="currentType !== 'shared'" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">Status</th>
-        <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right" scope="col">Actions</th>
-        </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-        <!-- Row 1: Active -->
-        <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" v-for="file in files.data" :key="file.id" @click="openFileViewerModal(file)">
-            <td class="p-4 text-center">
-                <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
-            </td>
-            <td class="p-4">
-                <div class="flex items-center gap-3">
-                    <div class="size-10 shrink-0 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center text-red-600 dark:text-red-400">
-                        <span class="material-symbols-outlined">{{ getFileIcon(file.extension) }}</span>
-                    </div>
-                    <div class="flex flex-col">
-                        <span class="font-medium text-slate-900 dark:text-slate-200 text-sm">{{ file.title }}</span>
-                        <span class="text-xs text-slate-500">{{ file.size_human }} • {{ file.created_at !== file.updated_at ? `Updated ${file.updated_at_timeago}` : `Created ${file.created_at_timeago}` }}</span>
-                    </div>
-                </div>
-            </td>
-            <td v-if="currentType !== 'shared'" class="p-4 hidden md:table-cell text-sm text-slate-600 dark:text-slate-400">
-                {{ `${file.college?.code || 'N/A'} - ${file.program?.code || 'N/A'}` }}
-            </td>
-            <td v-else class="p-4 hidden md:table-cell">
-                <div class="flex items-center gap-2">
-                    <div class="size-6 rounded-full bg-cover bg-center" data-alt="User avatar small"
-                        :style='{backgroundImage: `url(${file.uploaded_by?.google_info?.avatar || "https://lh3.googleusercontent.com/aida-public/AB6AXuAyd5GytrCn8kduh_Iuz0ySh5VVrmNP9pRGZMCPzCw5qgasNtIJeBvV38fJsICfT0uXATEWKrP1qSMUXTaiHEQ8QlR55UnM8zPob4lCVCQMVGRZVHaAITVT4hDYMsn2SBAQG1hJU1-yzIM_hWYfqnjVd9KLcTp60WDFeiZjIEai35-EjfEXHTVciP8uvi348D8T_7Q-o3H1SQbjAtaRU8emjmcB_i11XzlzHfEy61ZQtfoVyE55JOhPta5juvgvhscAr4N_QxvipB-R"})`}'>
-                    </div>
-                    <span class="text-sm text-slate-600 dark:text-slate-400">{{ file.uploaded_by?.name || 'Unknown' }}</span>
-                </div>
-            </td>
+                <table class="w-full text-left border-collapse" :class="{'opacity-60 grayscale-[0.3]': isLoading}">
+                    <thead>
+                        <tr class="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800">
+                            <th class="p-4 w-12 text-center" scope="col">
+                                <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+                            </th>
+                        
+                            <!-- Name Column -->
+                            <th @click="toggleSort('title')" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" scope="col">
+                                <div class="flex items-center gap-1 select-none">
+                                    <span>File Name</span>
+                                    <span class="material-symbols-outlined text-[16px] text-slate-400">
+                                        {{ getSortIcon('title') }}
+                                </span>
+                            </div>
+                        </th>
 
-            <td v-if="currentType !== 'shared'" class="p-4 hidden lg:table-cell">
-                <div class="flex items-center gap-2">
-                    <div class="size-6 rounded-full bg-cover bg-center" data-alt="User avatar small"
-                        :style='{backgroundImage: `url(${file.uploaded_by?.google_info?.avatar || "https://lh3.googleusercontent.com/aida-public/AB6AXuAyd5GytrCn8kduh_Iuz0ySh5VVrmNP9pRGZMCPzCw5qgasNtIJeBvV38fJsICfT0uXATEWKrP1qSMUXTaiHEQ8QlR55UnM8zPob4lCVCQMVGRZVHaAITVT4hDYMsn2SBAQG1hJU1-yzIM_hWYfqnjVd9KLcTp60WDFeiZjIEai35-EjfEXHTVciP8uvi348D8T_7Q-o3H1SQbjAtaRU8emjmcB_i11XzlzHfEy61ZQtfoVyE55JOhPta5juvgvhscAr4N_QxvipB-R"})`}'>
-                    </div>
-                    <span class="text-sm text-slate-600 dark:text-slate-400">{{ file.uploaded_by?.name || 'Unknown' }}</span>
-                </div>
-            </td>
-            <td v-else class="p-4 hidden lg:table-cell text-sm font-medium text-slate-700 dark:text-slate-300">
-                <span class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[16px] text-slate-400">person</span> Shared direct</span>
-            </td>
+                        <!-- Date Uploaded Column -->
+                        <th @click="toggleSort('created_at')" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" scope="col">
+                            <div class="flex items-center gap-1 select-none">
+                                <span>Date Uploaded</span>
+                                <span class="material-symbols-outlined text-[16px] text-slate-400">
+                                    {{ getSortIcon('created_at') }}
+                                </span>
+                            </div>
+                        </th>
 
-            <td v-if="currentType === 'shared'" class="p-4 text-sm text-slate-600 dark:text-slate-400">
-                {{ new Date(file.pivot?.created_at || file.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) }}
-            </td>
+                        <!-- College Column -->
+                        <th @click="toggleSort('college')" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors hidden md:table-cell" scope="col">
+                            <div class="flex items-center gap-1 select-none">
+                                <span>College</span>
+                                <span class="material-symbols-outlined text-[16px] text-slate-400">
+                                    {{ getSortIcon('college') }}
+                                </span>
+                            </div>
+                        </th>
 
-            <td v-if="currentType !== 'shared'" class="p-4">
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
-                <span class="size-1.5 rounded-full bg-emerald-500"></span>
-                    Active
-                </span>
-            </td>
-            <td class="p-4 text-right">
-                <div class="flex items-center justify-end gap-1">
-                    <button 
-                        @click.stop="openFileViewerModal(file)"
-                        class="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
-                        title="View Internally"
-                    >
-                        <span class="material-symbols-outlined text-[20px]">visibility</span>
-                    </button>
+                        <!-- Program Column -->
+                        <th @click="toggleSort('program')" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors hidden md:table-cell" scope="col">
+                            <div class="flex items-center gap-1 select-none">
+                                <span>Program</span>
+                                <span class="material-symbols-outlined text-[16px] text-slate-400">
+                                    {{ getSortIcon('program') }}
+                                </span>
+                            </div>
+                        </th>
 
-                    <button 
-                        @click.stop="copyPermanentLink(file)"
-                        class="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
-                        title="Copy Permanent Link"
-                    >
-                        <span class="material-symbols-outlined text-[20px]">link</span>
-                    </button>
+                        <!-- Uploaded/Shared By Column -->
+                        <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider hidden lg:table-cell" scope="col">
+                            {{ currentType === 'shared' ? 'Shared By' : 'Uploaded By' }}
+                        </th>
 
-                    <a 
-                        :href="route('files.download', file.id)"
-                        @click.stop
-                        class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                        title="Download"
-                    >
-                        <span class="material-symbols-outlined text-[20px]">download</span>
-                    </a>
+                        <!-- Status / Date Shared Column -->
+                        <th v-if="currentType === 'shared'" class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">
+                            Date Shared
+                        </th>
+                        <th v-else class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider" scope="col">
+                            Status
+                        </th>
 
-                    <button 
-                        v-if="currentType !== 'shared' && !$page.props.auth.is_accreditor"
-                        @click.stop="openShareModal(file)"
-                        class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
-                        title="Share & Permissions"
-                    >
-                        <span class="material-symbols-outlined text-[20px]">share</span>
-                    </button>
+                        <th class="p-4 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider text-right" scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                        <!-- Row 1: Active -->
+                        <tr class="group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer" v-for="file in files.data" :key="file.id" @click="openFileViewerModal(file)">
+                            <td class="p-4 text-center">
+                                <input class="rounded border-slate-300 text-primary focus:ring-primary h-4 w-4" type="checkbox"/>
+                            </td>
+                            
+                            <!-- File Name -->
+                            <td class="p-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="size-10 shrink-0 bg-red-100 dark:bg-red-900/30 rounded-lg flex items-center justify-center text-red-600 dark:text-red-400">
+                                        <span class="material-symbols-outlined">{{ getFileIcon(file.extension) }}</span>
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="font-medium text-slate-900 dark:text-slate-200 text-sm">{{ file.title }}</span>
+                                        <span class="text-xs text-slate-500">{{ file.size_human }} • {{ file.extension.toUpperCase() }}</span>
+                                    </div>
+                                </div>
+                            </td>
 
-                    <button 
-                        v-if="currentType !== 'shared' && ($page.props.auth.roles?.includes('admin') || file.uploaded_by === $page.props.auth.user.id)"
-                        @click.stop="openEditModal(file)"
-                        class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        title="Edit / Replace"
-                    >
-                        <span class="material-symbols-outlined text-[20px]">edit</span>
-                    </button>
+                            <!-- Date Uploaded -->
+                            <td class="p-4 text-sm text-slate-600 dark:text-slate-400">
+                                {{ file.created_at_clean }}
+                            </td>
 
-                    <button 
-                        v-if="$page.props.auth.roles?.includes('admin') || $page.props.auth.roles?.includes('ido_staff') || $page.props.auth.roles?.includes('college_officer') || file.uploaded_by === $page.props.auth.user.id"
-                        @click.stop="handleDeleteFile(file)"
-                        class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Delete File Permanently"
-                    >
-                        <span class="material-symbols-outlined text-[20px]">delete_forever</span>
-                    </button>
-                </div>
-            </td>
-        </tr>
+                            <!-- College -->
+                            <td class="p-4 hidden md:table-cell text-sm text-slate-600 dark:text-slate-400">
+                                {{ file.college?.code || 'N/A' }}
+                            </td>
+
+                            <!-- Program -->
+                            <td class="p-4 hidden md:table-cell text-sm text-slate-600 dark:text-slate-400">
+                                {{ file.program?.code || 'N/A' }}
+                            </td>
+
+                            <!-- Uploaded / Shared By -->
+                            <td class="p-4 hidden lg:table-cell">
+                                <div class="flex items-center gap-2">
+                                    <div class="size-6 rounded-full bg-cover bg-center" data-alt="User avatar small"
+                                        :style='{backgroundImage: `url(${file.uploaded_by?.google_info?.avatar || "https://lh3.googleusercontent.com/aida-public/AB6AXuAyd5GytrCn8kduh_Iuz0ySh5VVrmNP9pRGZMCPzCw5qgasNtIJeBvV38fJsICfT0uXATEWKrP1qSMUXTaiHEQ8QlR55UnM8zPob4lCVCQMVGRZVHaAITVT4hDYMsn2SBAQG1hJU1-yzIM_hWYfqnjVd9KLcTp60WDFeiZjIEai35-EjfEXHTVciP8uvi348D8T_7Q-o3H1SQbjAtaRU8emjmcB_i11XzlzHfEy61ZQtfoVyE55JOhPta5juvgvhscAr4N_QxvipB-R"})`}'>
+                                    </div>
+                                    <span class="text-sm text-slate-600 dark:text-slate-400">{{ file.uploaded_by?.name || 'Unknown' }}</span>
+                                </div>
+                            </td>
+
+                            <!-- Date Shared / Status -->
+                            <td v-if="currentType === 'shared'" class="p-4 text-sm text-slate-600 dark:text-slate-400">
+                                {{ new Date(file.pivot?.created_at || file.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' }) }}
+                            </td>
+                            <td v-else class="p-4">
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                    <span class="size-1.5 rounded-full bg-emerald-500"></span>
+                                    Active
+                                </span>
+                            </td>
+                            <td class="p-4 text-right">
+                                <div class="flex items-center justify-end gap-1">
+                                    <button 
+                                        @click.stop="openFileViewerModal(file)"
+                                        class="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                                        title="View Internally"
+                                    >
+                                        <span class="material-symbols-outlined text-[20px]">visibility</span>
+                                    </button>
+
+                                    <button 
+                                        @click.stop="copyPermanentLink(file)"
+                                        class="p-2 text-slate-400 hover:text-primary hover:bg-primary/5 rounded-lg transition-colors"
+                                        title="Copy Permanent Link"
+                                    >
+                                        <span class="material-symbols-outlined text-[20px]">link</span>
+                                    </button>
+
+                                    <a 
+                                        :href="route('files.download', file.id)"
+                                        @click.stop
+                                        class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                        title="Download"
+                                    >
+                                        <span class="material-symbols-outlined text-[20px]">download</span>
+                                    </a>
+
+                                    <button 
+                                        v-if="currentType !== 'shared' && !$page.props.auth.is_accreditor"
+                                        @click.stop="openShareModal(file)"
+                                        class="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-colors"
+                                        title="Share & Permissions"
+                                    >
+                                        <span class="material-symbols-outlined text-[20px]">share</span>
+                                    </button>
+
+                                    <button 
+                                        v-if="currentType !== 'shared' && ($page.props.auth.roles?.includes('admin') || file.uploaded_by === $page.props.auth.user.id)"
+                                        @click.stop="openEditModal(file)"
+                                        class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                        title="Edit / Replace"
+                                    >
+                                        <span class="material-symbols-outlined text-[20px]">edit</span>
+                                    </button>
+
+                                    <button 
+                                        v-if="currentType === 'general' ? (file.uploaded_by === $page.props.auth.user.id) : ($page.props.auth.roles?.includes('admin') || $page.props.auth.roles?.includes('ido_staff') || $page.props.auth.roles?.includes('college_officer') || file.uploaded_by === $page.props.auth.user.id)"
+                                        @click.stop="handleDeleteFile(file)"
+                                        class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                        title="Delete File Permanently"
+                                    >
+                                        <span class="material-symbols-outlined text-[20px]">delete_forever</span>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
                     </tbody>
                 </table>
             </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\File;
 use App\Models\User;
+use App\Models\Accreditor;
 use Illuminate\Http\Request;
 use App\Models\AccreditationEvent;
 use App\Http\Resources\UserResource;
@@ -25,8 +26,15 @@ class SearchController extends Controller
             ]);
         }
 
-        /** @var User $user */
-        $user = auth()->user();
+        $user = auth('web')->user() ?? auth('accreditor')->user();
+
+        if (!$user) {
+            return response()->json([
+                'files' => [],
+                'events' => [],
+                'users' => []
+            ]);
+        }
 
         // 1. Files: Leverages existing accessibility logic
         $files = File::accessibleBy($user)
@@ -40,12 +48,15 @@ class SearchController extends Controller
         // 2. Events: Filtered by college/program scope
         $eventsQuery = AccreditationEvent::query();
         
-        if ($user->hasRole('college_officer')) {
-            $eventsQuery->where('college_id', $user->college_id);
-        } elseif ($user->hasRole('taskforce')) {
-            $eventsQuery->where('program_id', $user->program_id);
-        } elseif ($user->hasRole('accreditor')) {
-            $eventsQuery->where('id', $user->accreditation_event_id);
+        if ($user instanceof Accreditor) {
+            $eventsQuery->whereIn('id', $user->events->pluck('id'));
+        } elseif ($user instanceof User) {
+            if ($user->hasRole('college_officer')) {
+                $eventsQuery->where('college_id', $user->college_id);
+            } elseif ($user->hasRole('taskforce')) {
+                $eventsQuery->where('college_id', $user->college_id)
+                            ->where('program_id', $user->program_id);
+            }
         }
         
         $events = $eventsQuery->where('title', 'like', "%$q%")
@@ -54,7 +65,7 @@ class SearchController extends Controller
 
         // 3. Users: Highly contextual visibility
         $users = [];
-        if ($user->hasRole(['admin', 'ido_staff', 'college_officer'])) {
+        if ($user instanceof User && $user->hasRole(['admin', 'ido_staff', 'college_officer'])) {
             $usersQuery = User::with(['googleInfo', 'roles', 'college']);
             
             // College officers only see their own college

@@ -7,6 +7,8 @@ use Inertia\Inertia;
 use App\Models\College;
 use App\Models\Program;
 use Illuminate\Http\Request;
+use App\Models\User;
+use App\Models\Accreditor;
 use App\Models\AccreditationEvent;
 
 class AreaController extends Controller
@@ -16,11 +18,40 @@ class AreaController extends Controller
         Inertia::setRootView('layouts/app');
     }
 
+    private function authorizeEventAccess(AccreditationEvent $event)
+    {
+        $user = auth('web')->user() ?? auth('accreditor')->user();
+
+        if (!$user) {
+            abort(403, 'Unauthorized.');
+        }
+
+        if ($user instanceof Accreditor) {
+            if (!$user->events()->where('accreditation_events.id', $event->id)->exists()) {
+                abort(403, 'Unauthorized.');
+            }
+        } elseif ($user instanceof User) {
+            if ($user->hasRole('college_officer')) {
+                if ($event->college_id !== $user->college_id) {
+                    abort(403, 'Unauthorized.');
+                }
+            } elseif ($user->hasRole('taskforce')) {
+                if ($event->college_id !== $user->college_id || $event->program_id !== $user->program_id) {
+                    abort(403, 'Unauthorized.');
+                }
+            }
+        } else {
+            abort(403, 'Unauthorized.');
+        }
+    }
+
     /**
      * Display a listing of areas for a specific event.
      */
     public function index(AccreditationEvent $event)
     {
+        $this->authorizeEventAccess($event);
+
         $areas = Area::orderBy('order_no')
             ->get()
             ->map(function($area) use ($event) {
@@ -58,24 +89,49 @@ class AreaController extends Controller
      */
     public function show(Request $request, AccreditationEvent $event, Area $area)
     {
+        $this->authorizeEventAccess($event);
+
         $user = auth()->user() ?? auth('accreditor')->user();
         $search = $request->query('search');
+        $sortField = $request->query('sort_field', 'created_at');
+        $sortOrder = $request->query('sort_order', 'desc');
+
+        if (!in_array($sortField, ['title', 'created_at', 'college', 'program'])) {
+            $sortField = 'created_at';
+        }
+        if (!in_array($sortOrder, ['asc', 'desc'])) {
+            $sortOrder = 'desc';
+        }
 
         // Fetch only files explicitly shared for THIS event and THIS area
-        $files = $event->files()
+        $filesQuery = $event->files()
             ->wherePivot('area_id', $area->id)
             ->accessibleBy($user)
             ->when($search, function($query) use ($search) {
                 $query->where(function($q) use ($search) {
-                    $q->where('title', 'like', "%{$search}%")
-                      ->orWhere('description', 'like', "%{$search}%")
+                    $q->where('files.title', 'like', "%{$search}%")
+                      ->orWhere('files.description', 'like', "%{$search}%")
                       ->orWhereHas('uploadedBy', function($u) use ($search) {
                           $u->where('name', 'like', "%{$search}%");
                       });
                 });
-            })
-            ->with(['college', 'program', 'uploadedBy.googleInfo'])
-            ->orderBy('accreditation_event_files.created_at', 'desc')
+            });
+
+        if ($sortField === 'college') {
+            $filesQuery->leftJoin('colleges', 'files.college_id', '=', 'colleges.id')
+                       ->select('files.*')
+                       ->orderBy('colleges.code', $sortOrder);
+        } elseif ($sortField === 'program') {
+            $filesQuery->leftJoin('programs', 'files.program_id', '=', 'programs.id')
+                       ->select('files.*')
+                       ->orderBy('programs.code', $sortOrder);
+        } elseif ($sortField === 'title') {
+            $filesQuery->orderBy('files.title', $sortOrder);
+        } else {
+            $filesQuery->orderBy('accreditation_event_files.created_at', $sortOrder);
+        }
+
+        $files = $filesQuery->with(['college', 'program', 'uploadedBy.googleInfo'])
             ->paginate(10)
             ->withQueryString();
 
@@ -83,7 +139,7 @@ class AreaController extends Controller
             'files' => $files,
             'area' => $area,
             'event' => $event->load(['college', 'program']),
-            'filters' => $request->only(['search']),
+            'filters' => $request->only(['search', 'sort_field', 'sort_order']),
             'colleges' => College::orderBy('name')->get(),
             'programs' => Program::orderBy('name')->get(),
             'areas' => Area::orderBy('order_no')->get(),

@@ -15,14 +15,14 @@ class FileFactory extends Factory
     public function definition(): array
     {
         return [
-            'file_name' => $this->faker->word . '.pdf',
-            'file_path' => 'files/' . Str::random(10) . '.pdf',
+            'original_filename' => $this->faker->word . '.pdf',
+            'path' => 'files/' . Str::random(10) . '.pdf',
             'title' => $this->faker->sentence(3),
             'extension' => 'pdf',
             'size' => rand(1000, 5000),
-            'is_active' => true,
+            'status' => 'completed',
             'is_general' => true,
-            'uploaded_by' => User::factory(),
+            'uploaded_by' => 1,
             'college_id' => 1,
             'program_id' => 1,
         ];
