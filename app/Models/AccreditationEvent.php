@@ -52,7 +52,7 @@ class AccreditationEvent extends Model
     public function files()
     {
         return $this->belongsToMany(File::class, 'accreditation_event_files')
-                    ->withPivot('area_id', 'shared_by')
+                    ->withPivot('area_id', 'shared_by', 'subfolder', 'parameter')
                     ->withTimestamps();
     }
 

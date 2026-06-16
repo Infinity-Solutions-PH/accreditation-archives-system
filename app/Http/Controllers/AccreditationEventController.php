@@ -165,10 +165,12 @@ class AccreditationEventController extends Controller
             'file_id' => 'required|exists:files,id',
             'accreditation_event_id' => 'required|exists:accreditation_events,id',
             'area_id' => 'required|exists:areas,id',
+            'subfolder' => 'nullable|string|max:255',
+            'parameter' => 'nullable|string|max:255',
         ]);
 
         $event = AccreditationEvent::findOrFail($request->accreditation_event_id);
-        
+
         $user = auth()->user();
         if ($user->hasRole('college_officer')) {
             if ($event->college_id !== $user->college_id) {
@@ -179,14 +181,23 @@ class AccreditationEventController extends Controller
                 return response()->json(['message' => 'Unauthorized action.'], 403);
             }
         }
-        
-        // Check if file is already shared to this event
-        if ($event->files()->where('file_id', $request->file_id)->exists()) {
-            return response()->json(['message' => 'File already shared to this event.'], 422);
+
+        // Check if file is already shared to this specific area, subfolder, and parameter
+        $exists = $event->files()
+            ->where('accreditation_event_files.file_id', $request->file_id)
+            ->wherePivot('area_id', $request->area_id)
+            ->wherePivot('subfolder', $request->subfolder)
+            ->wherePivot('parameter', $request->parameter)
+            ->exists();
+
+        if ($exists) {
+            return response()->json(['message' => 'File already shared to this folder/parameter in this event.'], 422);
         }
 
         $event->files()->attach($request->file_id, [
             'area_id' => $request->area_id,
+            'subfolder' => $request->subfolder,
+            'parameter' => $request->parameter,
             'shared_by' => auth()->id(),
             'created_at' => now(),
             'updated_at' => now(),
@@ -272,6 +283,8 @@ class AccreditationEventController extends Controller
     {
         $request->validate([
             'file_id' => 'required|exists:files,id',
+            'subfolder' => 'nullable|string|max:255',
+            'parameter' => 'nullable|string|max:255',
         ]);
 
         $user = auth()->user() ?? auth('accreditor')->user();
@@ -304,13 +317,17 @@ class AccreditationEventController extends Controller
             return response()->json(['message' => 'Unauthorized to remove this file from the event.'], 403);
         }
 
-        $event->files()->wherePivot('area_id', $area->id)->detach($file->id);
+        $event->files()
+            ->wherePivot('area_id', $area->id)
+            ->wherePivot('subfolder', $request->subfolder)
+            ->wherePivot('parameter', $request->parameter)
+            ->detach($file->id);
 
         activity()
             ->useLog('events')
             ->performedOn($event)
             ->causedBy($user)
-            ->log("Removed file '{$file->title}' from {$area->code} in event: {$event->title}");
+            ->log("Removed file '{$file->title}' from {$area->code} -> " . ($request->subfolder ?: 'root') . ($request->parameter ? " -> {$request->parameter}" : "") . " in event: {$event->title}");
 
         // Notify Stakeholders
         $recipients = User::role(['admin', 'ido_staff', 'college_officer', 'taskforce'])

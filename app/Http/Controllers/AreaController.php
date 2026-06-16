@@ -3,12 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\Area;
+use App\Models\User;
 use Inertia\Inertia;
 use App\Models\College;
 use App\Models\Program;
-use Illuminate\Http\Request;
-use App\Models\User;
 use App\Models\Accreditor;
+use Illuminate\Http\Request;
 use App\Models\AccreditationEvent;
 
 class AreaController extends Controller
@@ -95,6 +95,8 @@ class AreaController extends Controller
         $search = $request->query('search');
         $sortField = $request->query('sort_field', 'created_at');
         $sortOrder = $request->query('sort_order', 'desc');
+        $subfolder = $request->query('subfolder');
+        $parameter = $request->query('parameter');
 
         if (!in_array($sortField, ['title', 'created_at', 'college', 'program'])) {
             $sortField = 'created_at';
@@ -103,10 +105,38 @@ class AreaController extends Controller
             $sortOrder = 'desc';
         }
 
+        // Fetch file counts for foldering view (calculating based on accessible files)
+        $allSharedFiles = $event->files()
+            ->wherePivot('area_id', $area->id)
+            ->accessibleBy($user)
+            ->get(['files.id']);
+
+        $fileCounts = [];
+        foreach ($allSharedFiles as $f) {
+            $sub = $f->pivot->subfolder ?? '';
+            $param = $f->pivot->parameter ?? '';
+            $key = $sub . '||' . $param;
+            if (!isset($fileCounts[$key])) {
+                $fileCounts[$key] = [
+                    'subfolder' => $f->pivot->subfolder,
+                    'parameter' => $f->pivot->parameter,
+                    'count' => 0
+                ];
+            }
+            $fileCounts[$key]['count']++;
+        }
+        $fileCounts = array_values($fileCounts);
+
         // Fetch only files explicitly shared for THIS event and THIS area
         $filesQuery = $event->files()
             ->wherePivot('area_id', $area->id)
             ->accessibleBy($user)
+            ->when($subfolder, function($query) use ($subfolder) {
+                return $query->where('accreditation_event_files.subfolder', $subfolder);
+            })
+            ->when($parameter, function($query) use ($parameter) {
+                return $query->where('accreditation_event_files.parameter', $parameter);
+            })
             ->when($search, function($query) use ($search) {
                 $query->where(function($q) use ($search) {
                     $q->where('files.title', 'like', "%{$search}%")
@@ -116,6 +146,11 @@ class AreaController extends Controller
                       });
                 });
             });
+
+        // If not in a subfolder and not searching, return no files directly
+        if (empty($subfolder) && empty($search)) {
+            $filesQuery->whereRaw('1 = 0');
+        }
 
         if ($sortField === 'college') {
             $filesQuery->leftJoin('colleges', 'files.college_id', '=', 'colleges.id')
@@ -139,7 +174,8 @@ class AreaController extends Controller
             'files' => $files,
             'area' => $area,
             'event' => $event->load(['college', 'program']),
-            'filters' => $request->only(['search', 'sort_field', 'sort_order']),
+            'fileCounts' => $fileCounts,
+            'filters' => $request->only(['search', 'sort_field', 'sort_order', 'subfolder', 'parameter']),
             'colleges' => College::orderBy('name')->get(),
             'programs' => Program::orderBy('name')->get(),
             'areas' => Area::orderBy('order_no')->get(),
@@ -168,5 +204,13 @@ class AreaController extends Controller
     public function destroy(string $id)
     {
         //
+    }
+
+    /**
+     * Get all areas for API dropdowns.
+     */
+    public function all()
+    {
+        return response()->json(Area::orderBy('order_no')->get());
     }
 }

@@ -86,6 +86,9 @@ class FileController extends Controller
             'metadata.title' => 'nullable|string|max:255',
             'metadata.description' => 'nullable|string|max:1000',
             'metadata.area_id' => ['nullable', 'exists:areas,id'],
+            'metadata.accreditation_event_id' => ['nullable', 'exists:accreditation_events,id'],
+            'metadata.subfolder' => ['nullable', 'string', 'max:255'],
+            'metadata.parameter' => ['nullable', 'string', 'max:255'],
             'metadata.level' => ['nullable', 'int'],
             'metadata.is_general' => ['nullable', 'boolean']
         ];

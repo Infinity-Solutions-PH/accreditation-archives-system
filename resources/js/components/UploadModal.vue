@@ -8,6 +8,9 @@
 
     const props = defineProps({
         currentArea: Object,
+        currentSubfolder: String,
+        currentParameter: String,
+        accreditationEventId: [Number, String],
         colleges: Array,
         programs: Array,
         areas: Array,
@@ -40,7 +43,11 @@
         tmp_id: null,
         is_general: props.isGeneral,
         program_id: null,
-        college_id: page.props.auth?.user?.college_id || null
+        college_id: page.props.auth?.user?.college_id || null,
+        area_id: props.currentArea?.id || null,
+        accreditation_event_id: props.accreditationEventId || null,
+        subfolder: props.currentSubfolder || null,
+        parameter: props.currentParameter || null
     });
 
     watch(() => metadata.is_general, (newVal) => {
@@ -94,7 +101,11 @@
                         description: metadata.description,
                         is_general: metadata.is_general,
                         program_id: metadata.program_id,
-                        college_id: metadata.college_id
+                        college_id: metadata.college_id,
+                        area_id: metadata.area_id,
+                        accreditation_event_id: metadata.accreditation_event_id,
+                        subfolder: metadata.subfolder,
+                        parameter: metadata.parameter
                     },
                     filename: file.value.name
                 },
@@ -172,7 +183,11 @@
                     description: metadata.description,
                     is_general: metadata.is_general,
                     program_id: metadata.program_id,
-                    college_id: metadata.college_id
+                    college_id: metadata.college_id,
+                    area_id: metadata.area_id,
+                    accreditation_event_id: metadata.accreditation_event_id,
+                    subfolder: metadata.subfolder,
+                    parameter: metadata.parameter
                 }
             }, {
                 headers: { 

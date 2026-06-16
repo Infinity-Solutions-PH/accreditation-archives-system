@@ -1,6 +1,7 @@
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
+import { SUBFOLDERS, AREA_PARAMETERS } from '@/constants/foldering.js';
 
 const props = defineProps({
     file: Object,
@@ -14,12 +15,39 @@ const form = useForm({
     file_id: props.file?.id,
     accreditation_event_id: '',
     area_id: '',
+    subfolder: '',
+    parameter: '',
 });
 
 watch(() => props.file, (newFile) => {
     if (newFile) {
         form.file_id = newFile.id;
     }
+});
+
+watch(() => form.area_id, () => {
+    form.subfolder = '';
+    form.parameter = '';
+});
+
+watch(() => form.subfolder, () => {
+    form.parameter = '';
+});
+
+const selectedArea = computed(() => {
+    return props.areas?.find(a => a.id === form.area_id);
+});
+
+const currentAreaParameters = computed(() => {
+    if (!selectedArea.value) return [];
+    return AREA_PARAMETERS[selectedArea.value.order_no] || [];
+});
+
+const isSubmitDisabled = computed(() => {
+    if (form.processing) return true;
+    if (!form.accreditation_event_id || !form.area_id || !form.subfolder) return true;
+    if (form.subfolder === 'PARAMETER' && !form.parameter) return true;
+    return false;
 });
 
 const submit = () => {
@@ -85,13 +113,37 @@ const submit = () => {
                     </select>
                 </div>
 
+                <!-- Subfolder Selection -->
+                <div v-if="form.area_id" class="space-y-2 animate-in fade-in duration-200">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Target Subfolder</label>
+                    <select v-model="form.subfolder" required
+                        class="w-full px-4 py-2.5 rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:ring-primary focus:border-primary">
+                        <option value="" disabled>Select a subfolder</option>
+                        <option v-for="sub in SUBFOLDERS" :key="sub" :value="sub">
+                            {{ sub }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Parameter Selection -->
+                <div v-if="form.subfolder === 'PARAMETER' && currentAreaParameters.length > 0" class="space-y-2 animate-in fade-in duration-200">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Target Parameter</label>
+                    <select v-model="form.parameter" required
+                        class="w-full px-4 py-2.5 rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:ring-primary focus:border-primary">
+                        <option value="" disabled>Select a parameter</option>
+                        <option v-for="param in currentAreaParameters" :key="param" :value="param">
+                            {{ param }}
+                        </option>
+                    </select>
+                </div>
+
                 <!-- Footer Actions -->
                 <div class="flex gap-3 pt-2">
                     <button type="button" @click="$emit('close')"
                         class="flex-1 px-4 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
                         Cancel
                     </button>
-                    <button type="submit" :disabled="form.processing"
+                    <button type="submit" :disabled="isSubmitDisabled"
                         class="flex-1 px-4 py-2.5 rounded-lg bg-primary text-white font-semibold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-500/20 disabled:opacity-50">
                         {{ form.processing ? 'Sharing...' : 'Share Now' }}
                     </button>

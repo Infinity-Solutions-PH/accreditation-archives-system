@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AreaController;
 use App\Http\Controllers\FileController;
 use App\Http\Middleware\CheckRoleStatus;
 use App\Http\Controllers\FileShareController;
@@ -21,4 +22,5 @@ Route::middleware(['auth:web,accreditor', CheckRoleStatus::class])->group(functi
     Route::post('/events/share', [AccreditationEventController::class, 'shareToFile'])->name('events.share');
     Route::get('/users/search-shareable', [FileShareController::class, 'searchShareableUsers'])->name('api.users.search_shareable');
     Route::post('/files/share-to-user', [FileShareController::class, 'shareToUser'])->name('api.files.share_to_user');
+    Route::get('/areas', [AreaController::class, 'all'])->name('api.areas');
 });

@@ -1,7 +1,8 @@
 <script setup>
-import { ref, onMounted, watch } from 'vue';
+import { ref, onMounted, watch, computed } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
+import { SUBFOLDERS, AREA_PARAMETERS } from '@/constants/foldering.js';
 
 const props = defineProps({
     isOpen: Boolean,
@@ -23,6 +24,55 @@ const isSearchingEvents = ref(false);
 const searchUserQuery = ref('');
 const userResults = ref([]);
 const isSearchingUsers = ref(false);
+
+// Event Sharing Folder State
+const selectedEventForShare = ref(null);
+const areas = ref([]);
+const selectedAreaId = ref('');
+const selectedSubfolder = ref('');
+const selectedParameter = ref('');
+const isSharing = ref(false);
+
+const fetchAreas = async () => {
+    try {
+        const response = await axios.get(route('api.areas'));
+        areas.value = response.data;
+    } catch (e) {
+        console.error('Failed to fetch areas', e);
+    }
+};
+
+const resetEventShareSelection = () => {
+    selectedEventForShare.value = null;
+    selectedAreaId.value = '';
+    selectedSubfolder.value = '';
+    selectedParameter.value = '';
+};
+
+watch(selectedAreaId, () => {
+    selectedSubfolder.value = '';
+    selectedParameter.value = '';
+});
+
+watch(selectedSubfolder, () => {
+    selectedParameter.value = '';
+});
+
+const selectedArea = computed(() => {
+    return areas.value.find(a => a.id === selectedAreaId.value);
+});
+
+const currentAreaParameters = computed(() => {
+    if (!selectedArea.value) return [];
+    return AREA_PARAMETERS[selectedArea.value.order_no] || [];
+});
+
+const isEventShareSubmitDisabled = computed(() => {
+    if (isSharing.value) return true;
+    if (!selectedAreaId.value || !selectedSubfolder.value) return true;
+    if (selectedSubfolder.value === 'PARAMETER' && !selectedParameter.value) return true;
+    return false;
+});
 
 const fetchAccessData = async () => {
     isLoading.value = true;
@@ -86,20 +136,59 @@ watch(searchUserQuery, () => {
 });
 
 onMounted(() => {
-    if (props.isOpen) fetchAccessData();
+    if (props.isOpen) {
+        fetchAccessData();
+        fetchAreas();
+    }
 });
 
-const shareToEvent = async (eventId) => {
-    // Sharing to an event requires an area. For simplicity in this direct share modal,
-    // we might need to prompt for an area or pick a default.
-    // The user's request focuses on the search and display.
-    // I'll implement a simple share for now or trigger the secondary area selection.
-    window.toast('This will open Area selection for ' + eventId, 'info');
+watch(() => props.isOpen, (isOpen) => {
+    if (isOpen) {
+        fetchAccessData();
+        fetchAreas();
+        resetEventShareSelection();
+    }
+});
+
+const shareToEvent = (event) => {
+    if (!event.is_selectable) return;
+    selectedEventForShare.value = event;
+};
+
+const confirmShareToEvent = async () => {
+    if (isEventShareSubmitDisabled.value) return;
+
+    isSharing.value = true;
+    try {
+        await axios.post(route('events.share'), {
+            file_id: props.file.id,
+            accreditation_event_id: selectedEventForShare.value.id,
+            area_id: selectedAreaId.value,
+            subfolder: selectedSubfolder.value,
+            parameter: selectedParameter.value || null
+        });
+        
+        if (window.toast) {
+            window.toast('File shared to event virtual drive successfully!', 'success');
+        }
+        
+        fetchAccessData();
+        resetEventShareSelection();
+        searchEventQuery.value = '';
+        eventResults.value = [];
+    } catch (error) {
+        const message = error.response?.data?.message || 'Failed to share to event.';
+        if (window.toast) {
+            window.toast(message, 'error');
+        }
+    } finally {
+        isSharing.value = false;
+    }
 };
 
 const shareToUser = async (userId) => {
     try {
-        await axios.post(route('files.share-to-user'), {
+        await axios.post(route('api.files.share_to_user'), {
             file_id: props.file.id,
             user_id: userId
         });
@@ -190,8 +279,8 @@ const copyPermanentLink = () => {
                 
                 <!-- Events Tab -->
                 <div v-if="activeTab === 'events'" class="space-y-6">
-                    <!-- Search -->
-                    <div class="relative group">
+                    <!-- Search Event (Only show when NO event is currently selected for sharing folders) -->
+                    <div v-if="!selectedEventForShare" class="relative group">
                         <div class="absolute inset-y-0 left-4 flex items-center pointer-events-none text-slate-400">
                             <span v-if="!isSearchingEvents" class="material-symbols-outlined text-[22px]">search</span>
                             <span v-else class="material-symbols-outlined animate-spin text-[22px]">progress_activity</span>
@@ -203,7 +292,7 @@ const copyPermanentLink = () => {
                         />
                         <div v-if="searchEventQuery && eventResults.length > 0" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl z-10 overflow-hidden py-1">
                             <div v-for="event in eventResults" :key="event.id" 
-                                @click="shareToEvent(event.id)"
+                                @click="shareToEvent(event)"
                                 class="p-3 hover:bg-slate-50 dark:hover:bg-slate-900 cursor-pointer transition-colors"
                                 :class="!event.is_selectable ? 'opacity-50 grayscale' : ''"
                             >
@@ -216,6 +305,63 @@ const copyPermanentLink = () => {
                                     <span v-else class="text-[10px] text-primary font-bold">SELECTABLE</span>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Folder Selection Form (Show when an event is selected) -->
+                    <div v-else class="p-5 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-slate-100 dark:border-slate-800 space-y-4 animate-in fade-in duration-200">
+                        <div class="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-700">
+                            <div>
+                                <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Sharing Target Event</p>
+                                <p class="text-sm font-bold text-slate-900 dark:text-white">{{ selectedEventForShare.title }}</p>
+                            </div>
+                            <button @click="resetEventShareSelection" class="text-xs text-primary font-semibold hover:underline flex items-center gap-1">
+                                <span class="material-symbols-outlined text-[16px]">edit</span>
+                                Change Event
+                            </button>
+                        </div>
+
+                        <!-- Area selection -->
+                        <div class="space-y-1.5">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Target Area Folder</label>
+                            <select v-model="selectedAreaId" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary outline-none">
+                                <option value="" disabled>Select target area...</option>
+                                <option v-for="area in areas" :key="area.id" :value="area.id">
+                                    {{ area.code }} - {{ area.name }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Subfolder selection -->
+                        <div v-if="selectedAreaId" class="space-y-1.5 animate-in fade-in duration-200">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Target Subfolder</label>
+                            <select v-model="selectedSubfolder" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary outline-none">
+                                <option value="" disabled>Select target subfolder...</option>
+                                <option v-for="sub in SUBFOLDERS" :key="sub" :value="sub">
+                                    {{ sub }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Parameter selection -->
+                        <div v-if="selectedSubfolder === 'PARAMETER' && currentAreaParameters.length > 0" class="space-y-1.5 animate-in fade-in duration-200">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Target Parameter</label>
+                            <select v-model="selectedParameter" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary outline-none">
+                                <option value="" disabled>Select parameter...</option>
+                                <option v-for="param in currentAreaParameters" :key="param" :value="param">
+                                    {{ param }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-3 pt-2">
+                            <button @click="resetEventShareSelection" type="button" class="flex-1 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-sm font-semibold">
+                                Cancel
+                            </button>
+                            <button @click="confirmShareToEvent" :disabled="isEventShareSubmitDisabled" class="flex-1 py-2.5 rounded-xl bg-primary hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors text-sm font-bold shadow-lg shadow-blue-500/20">
+                                {{ isSharing ? 'Sharing...' : 'Confirm & Share' }}
+                            </button>
                         </div>
                     </div>
 
