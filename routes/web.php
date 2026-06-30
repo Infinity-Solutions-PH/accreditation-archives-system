@@ -75,7 +75,7 @@ Route::middleware(['auth:web,accreditor', CheckRoleStatus::class])->group(functi
         Route::post('/files/{file}/update', [FileController::class, 'updateFile'])->name('files.update');
         Route::delete('/files/{file}', [FileController::class, 'destroy'])->name('files.destroy');
 
-        Route::post('/events/unshare/{event}/{area}', [AccreditationEventController::class, 'unshareFile'])->name('events.unshare');
+        Route::post('/events/unshare/{event}/{area:slug}', [AccreditationEventController::class, 'unshareFile'])->name('events.unshare');
     });
 
     // Comments

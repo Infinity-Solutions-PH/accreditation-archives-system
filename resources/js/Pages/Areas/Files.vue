@@ -1,6 +1,7 @@
 <script setup>
-    import { ref, onMounted, onUnmounted, watch } from 'vue';
+    import { ref, onMounted, onUnmounted, watch, computed } from 'vue';
     import { router, Link, usePage } from '@inertiajs/vue3';
+    import axios from 'axios';
 
     import AppLayout from '@shared/Layouts/App.vue';
     import FileShareModal from '@/Components/FileShareModal.vue';
@@ -10,6 +11,7 @@
     import UploadModal from '@/components/UploadModal.vue';
     import FileViewerModal from '@/components/FileViewerModal.vue';
     import CommentPanel from '@/components/CommentPanel.vue';
+    import { SUBFOLDERS, AREA_PARAMETERS } from '@/constants/foldering.js';
 
     const props = defineProps({
         files: Object,
@@ -19,6 +21,7 @@
         programs: Object,
         areas: Object,
         filters: Object,
+        fileCounts: Array,
     });
 
     const page = usePage();
@@ -26,12 +29,16 @@
     const search = ref(props.filters.search || '');
     const sort_field = ref(props.filters.sort_field || 'created_at');
     const sort_order = ref(props.filters.sort_order || 'desc');
+    const currentSubfolder = ref(props.filters.subfolder || '');
+    const currentParameter = ref(props.filters.parameter || '');
 
     const applyFilters = () => {
         router.get(route('areas.slug', { event: props.event.slug, area: props.area.slug }), {
             search: search.value,
             sort_field: sort_field.value,
-            sort_order: sort_order.value
+            sort_order: sort_order.value,
+            subfolder: currentSubfolder.value || undefined,
+            parameter: currentParameter.value || undefined
         }, {
             preserveState: true,
             replace: true,
@@ -73,14 +80,42 @@
         return file.uploaded_by_id === auth.user.id;
     };
 
-    const handleUnshare = (file) => {
-        if (!confirm(`Are you sure you want to remove '${file.title}' from this area?`)) return;
+    const isUnshareModalOpen = ref(false);
+    const fileToUnshare = ref(null);
+    const isUnsharing = ref(false);
 
-        router.post(route('events.unshare', { event: props.event.slug, area: props.area.slug }), {
-            file_id: file.id
-        }, {
-            preserveScroll: true
-        });
+    const handleUnshare = (file) => {
+        fileToUnshare.value = file;
+        isUnshareModalOpen.value = true;
+    };
+
+    const confirmUnshare = async () => {
+        if (!fileToUnshare.value) return;
+
+        isUnsharing.value = true;
+        try {
+            await axios.post(route('events.unshare', { event: props.event.slug, area: props.area.slug }), {
+                file_id: fileToUnshare.value.id,
+                subfolder: currentSubfolder.value || null,
+                parameter: currentParameter.value || null
+            });
+            
+            if (window.toast) {
+                window.toast('File removed from folder successfully!', 'success');
+            }
+            
+            isUnshareModalOpen.value = false;
+            fileToUnshare.value = null;
+            
+            router.reload({ preserveScroll: true });
+        } catch (e) {
+            console.error(e);
+            if (window.toast) {
+                window.toast(e.response?.data?.message || 'Failed to remove file from folder.', 'error');
+            }
+        } finally {
+            isUnsharing.value = false;
+        }
     };
 
     const isDeleteModalOpen = ref(false);
@@ -191,6 +226,54 @@
         if (unregisterStart) unregisterStart();
         if (unregisterFinish) unregisterFinish();
     });
+
+    const selectSubfolder = (sub) => {
+        currentSubfolder.value = sub;
+        currentParameter.value = '';
+        applyFilters();
+    };
+
+    const selectParameter = (param) => {
+        currentParameter.value = param;
+        applyFilters();
+    };
+
+    const navigateToRoot = () => {
+        currentSubfolder.value = '';
+        currentParameter.value = '';
+        applyFilters();
+    };
+
+    const navigateToSubfolder = () => {
+        currentParameter.value = '';
+        applyFilters();
+    };
+
+    const areaParameters = computed(() => {
+        return AREA_PARAMETERS[props.area.order_no] || [];
+    });
+
+    const canUploadInCurrentFolder = computed(() => {
+        if (!currentSubfolder.value) return false;
+        if (currentSubfolder.value === 'PARAMETER' && !currentParameter.value) return false;
+        return true;
+    });
+
+    const getFolderCount = (sub, param = null) => {
+        if (!props.fileCounts) return 0;
+        return props.fileCounts.reduce((total, item) => {
+            if (param) {
+                if (item.subfolder === sub && item.parameter === param) {
+                    return total + item.count;
+                }
+            } else {
+                if (item.subfolder === sub) {
+                    return total + item.count;
+                }
+            }
+            return total;
+        }, 0);
+    };
 </script>
 
 <template>
@@ -211,16 +294,46 @@
                     <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
                 </li>
                 <li>
-                    <span class="text-slate-900 dark:text-white text-sm font-semibold">{{ area.code }} Files</span>
+                    <button @click="navigateToRoot" class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm font-medium focus:outline-none">
+                        {{ area.code }}
+                    </button>
                 </li>
+                <template v-if="currentSubfolder">
+                    <li>
+                        <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
+                    </li>
+                    <li v-if="currentParameter">
+                        <button @click="navigateToSubfolder" class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm font-medium focus:outline-none">
+                            {{ currentSubfolder }}
+                        </button>
+                    </li>
+                    <li v-else>
+                        <span class="text-slate-900 dark:text-white text-sm font-semibold">{{ currentSubfolder }}</span>
+                    </li>
+                </template>
+                <template v-if="currentParameter">
+                    <li>
+                        <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
+                    </li>
+                    <li>
+                        <span class="text-slate-900 dark:text-white text-sm font-semibold truncate max-w-[200px] inline-block align-bottom" :title="currentParameter">
+                            {{ currentParameter }}
+                        </span>
+                    </li>
+                </template>
             </ol>
         </nav>
         <!-- Page Header & Actions -->
         <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-6 mb-8">
             <div class="flex flex-col gap-2 max-w-2xl">
-                <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{{ area.code }}</h1>
+                <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    {{ area.code }}
+                    <span v-if="currentSubfolder" class="text-primary text-2xl font-bold block sm:inline sm:ml-2">
+                        &rsaquo; {{ currentParameter ? currentParameter.split(' - ')[0] : currentSubfolder }}
+                    </span>
+                </h1>
                 <p class="text-slate-600 dark:text-slate-400 text-base">
-                    {{ area.description }}
+                    {{ currentParameter ? currentParameter : (currentSubfolder ? `Files shared under the ${currentSubfolder} category of ${area.code}.` : area.description) }}
                 </p>
             </div>
             <div class="flex items-center gap-3 shrink-0">
@@ -239,8 +352,9 @@
                     Discussion
                 </button>
                 <button type="button"
+                    v-if="canUploadInCurrentFolder"
                     @click="openUploadModal"
-                    class="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-md shadow-blue-500/20">
+                    class="flex items-center gap-2 px-4 py-2.5 bg-primary hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors shadow-md shadow-blue-500/20 animate-in fade-in zoom-in duration-200">
                     <span class="material-symbols-outlined text-[20px]">upload_file</span>
                     Upload File
                 </button>
@@ -280,6 +394,17 @@
             @confirm="confirmDelete"
         />
 
+        <ConfirmationModal 
+            :show="isUnshareModalOpen"
+            title="Remove from Folder"
+            :message="`Are you sure you want to remove '${fileToUnshare?.title}' from this folder? It will no longer be visible here but will remain in your files archive.`"
+            confirmText="Remove from Folder"
+            confirmButtonClass="bg-red-600 hover:bg-red-700"
+            :isProcessing="isUnsharing"
+            @close="isUnshareModalOpen = false"
+            @confirm="confirmUnshare"
+        />
+
         <!-- Text Search -->
         <div class="bg-surface-light dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm mb-6">
             <div class="flex items-center justify-between">
@@ -303,8 +428,59 @@
                 </div>
             </div>
         </div>
-        <!-- Files Table -->
-        <div class="bg-surface-light dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden relative">
+        <!-- Folders View Grid -->
+        <div v-if="!search && (!currentSubfolder || (currentSubfolder === 'PARAMETER' && !currentParameter))" 
+            class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8 animate-in fade-in duration-200"
+        >
+            <!-- Case 1: Subfolders list at Area root -->
+            <template v-if="!currentSubfolder">
+                <div v-for="sub in SUBFOLDERS" :key="sub" 
+                    @click="selectSubfolder(sub)"
+                    class="group cursor-pointer bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg transition-all"
+                >
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-500 rounded-lg group-hover:bg-primary group-hover:text-white transition-colors">
+                            <span class="material-symbols-outlined text-[32px] fill-[1]">folder</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
+                            {{ sub === 'PARAMETER' ? 'Parent Folder' : 'Deepest Folder' }}
+                        </span>
+                    </div>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-1 group-hover:text-primary transition-colors">{{ sub }}</h3>
+                    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <span class="text-xs font-medium text-slate-500">{{ getFolderCount(sub) }} Files</span>
+                        <span class="material-symbols-outlined text-[18px] text-slate-300 group-hover:text-primary transition-colors">arrow_forward</span>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Case 2: Parameters list inside PARAMETER folder -->
+            <template v-else-if="currentSubfolder === 'PARAMETER' && !currentParameter">
+                <div v-for="param in areaParameters" :key="param" 
+                    @click="selectParameter(param)"
+                    class="group cursor-pointer bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg transition-all"
+                >
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-500 rounded-lg group-hover:bg-primary group-hover:text-white transition-colors">
+                            <span class="material-symbols-outlined text-[32px] fill-[1]">folder</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Deepest Folder</span>
+                    </div>
+                    <h3 class="text-xs font-bold text-slate-900 dark:text-white mb-1 leading-snug line-clamp-3 min-h-[3rem] group-hover:text-primary transition-colors" :title="param">
+                        {{ param }}
+                    </h3>
+                    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <span class="text-xs font-medium text-slate-500">{{ getFolderCount('PARAMETER', param) }} Files</span>
+                        <span class="material-symbols-outlined text-[18px] text-slate-300 group-hover:text-primary transition-colors">arrow_forward</span>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Files Table View -->
+        <div v-else class="space-y-6 animate-in fade-in duration-200">
+            <!-- Files Table -->
+            <div class="bg-surface-light dark:bg-surface-dark rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden relative">
             <!-- Loading Overlay -->
             <div v-if="isLoading" class="absolute inset-x-0 top-0 h-1 bg-primary/20 overflow-hidden z-[10]">
                 <div class="h-full bg-primary animate-[loading_2s_infinite_ease-in-out]"></div>
@@ -661,12 +837,17 @@
         </div>
         </div>
         </div>
+        </div>
+
         <UploadModal 
             v-if="showUploadModal"
             :colleges="colleges"
             :programs="programs"
             :areas="areas"
             :currentArea="area"
+            :currentSubfolder="currentSubfolder"
+            :currentParameter="currentParameter"
+            :accreditationEventId="event.id"
             @close="closeUploadModal"
         />
         <FileViewerModal 

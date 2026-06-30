@@ -6,6 +6,7 @@ use App\Models\File;
 use App\Models\User;
 use Illuminate\Support\Str;
 use Illuminate\Http\UploadedFile;
+use App\Models\AccreditationEvent;
 use Illuminate\Support\Facades\Storage;
 use App\Notifications\FileUploadedNotification;
 
@@ -117,9 +118,34 @@ class ChunkedUploadService
             'college_id' => $collegeId,
             'program_id' => $programId,
             'area_id' => $metadata['area_id'] ?? $file->area_id,
+            'subfolder' => $metadata['subfolder'] ?? $file->subfolder,
+            'parameter' => $metadata['parameter'] ?? $file->parameter,
             'level' => $metadata['level'] ?? $file->level,
             'is_general' => $isGeneral
         ]);
+
+        if (!empty($metadata['accreditation_event_id']) && !empty($metadata['area_id'])) {
+            $event = AccreditationEvent::findOrFail($metadata['accreditation_event_id']);
+            $pivotData = [
+                'area_id' => $metadata['area_id'],
+                'subfolder' => $metadata['subfolder'] ?? null,
+                'parameter' => $metadata['parameter'] ?? null,
+                'shared_by' => $user ? $user->id : $file->uploaded_by,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+
+            $exists = $event->files()
+                ->where('accreditation_event_files.file_id', $file->id)
+                ->wherePivot('area_id', $pivotData['area_id'])
+                ->wherePivot('subfolder', $pivotData['subfolder'])
+                ->wherePivot('parameter', $pivotData['parameter'])
+                ->exists();
+
+            if (!$exists) {
+                $event->files()->attach($file->id, $pivotData);
+            }
+        }
 
         // Notify if uploader is taskforce
         $uploader = $file->uploadedBy;
@@ -128,7 +154,7 @@ class ChunkedUploadService
                 ->where('college_id', $file->college_id)
                 ->where('id', '!=', $uploader->id)
                 ->get();
-            
+
             foreach ($recipients as $recipient) {
                 $recipient->notify(new FileUploadedNotification($file));
             }
