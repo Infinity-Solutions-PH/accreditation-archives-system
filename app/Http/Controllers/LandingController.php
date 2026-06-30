@@ -184,16 +184,16 @@ class LandingController extends Controller
 
         // Partitioning: Narrow down based on drive type
         if ($type === 'personal') {
-            $query->where('uploaded_by', $user->id)
-                  ->where('is_general', false);
+            $query->where('files.uploaded_by', $user->id)
+                  ->where('files.is_general', false);
         } elseif ($type === 'shared') {
-            $query->whereIn('id', $user->sharedFiles()->pluck('files.id'));
+            $query->whereIn('files.id', $user->sharedFiles()->pluck('files.id'));
         } elseif ($type === 'event' && $eventId) {
             $query->whereHas('accreditationEvents', function($q) use ($eventId) {
                 $q->where('accreditation_events.id', $eventId);
             });
         } elseif ($type === 'general') {
-            $query->where('is_general', true);
+            $query->where('files.is_general', true);
         }
 
         // Filtering: Apply user-selected filters
@@ -204,26 +204,26 @@ class LandingController extends Controller
 
         $query->when($search, function($q, $search) {
             $q->where(function($sub) use ($search) {
-                $sub->where('title', 'like', "%{$search}%")
-                    ->orWhere('original_filename', 'like', "%{$search}%")
-                    ->orWhere('description', 'like', "%{$search}%");
+                $sub->where('files.title', 'like', "%{$search}%")
+                    ->orWhere('files.original_filename', 'like', "%{$search}%")
+                    ->orWhere('files.description', 'like', "%{$search}%");
             });
         });
 
         $query->when($status && $status !== 'All', function($q, $status) {
-            $q->where('status', strtolower($status));
+            $q->where('files.status', strtolower($status));
         });
 
         $query->when($programId && $programId !== 'All', function($q, $pid) {
-            $q->where('program_id', $pid);
+            $q->where('files.program_id', $pid);
         });
 
         // Apply college filter dropdown (primarily for Admin/Staff)
         if ($type !== 'personal') {
             $query->when($collegeIdFilter && $collegeIdFilter !== 'All', function($q) use ($collegeIdFilter) {
                 $q->where(function($sub) use ($collegeIdFilter) {
-                    $sub->where('college_id', $collegeIdFilter)
-                        ->orWhereNull('college_id');
+                    $sub->where('files.college_id', $collegeIdFilter)
+                        ->orWhereNull('files.college_id');
                 });
             });
         }
