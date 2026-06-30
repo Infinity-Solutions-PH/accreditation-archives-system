@@ -97,6 +97,7 @@ class AreaController extends Controller
         $sortOrder = $request->query('sort_order', 'desc');
         $subfolder = $request->query('subfolder');
         $parameter = $request->query('parameter');
+        $parameterFolder = $request->query('parameter_folder');
 
         if (!in_array($sortField, ['title', 'created_at', 'college', 'program'])) {
             $sortField = 'created_at';
@@ -120,6 +121,7 @@ class AreaController extends Controller
                 $fileCounts[$key] = [
                     'subfolder' => $f->pivot->subfolder,
                     'parameter' => $f->pivot->parameter,
+                    'parameter_folder' => $f->pivot->parameter_folder,
                     'count' => 0
                 ];
             }
@@ -136,6 +138,9 @@ class AreaController extends Controller
             })
             ->when($parameter, function($query) use ($parameter) {
                 return $query->where('accreditation_event_files.parameter', $parameter);
+            })
+            ->when($parameterFolder, function($query) use ($parameterFolder) {
+                return $query->where('accreditation_event_files.parameter_folder', $parameterFolder);
             })
             ->when($search, function($query) use ($search) {
                 $query->where(function($q) use ($search) {
@@ -175,7 +180,7 @@ class AreaController extends Controller
             'area' => $area,
             'event' => $event->load(['college', 'program']),
             'fileCounts' => $fileCounts,
-            'filters' => $request->only(['search', 'sort_field', 'sort_order', 'subfolder', 'parameter']),
+            'filters' => $request->only(['search', 'sort_field', 'sort_order', 'subfolder', 'parameter', 'parameter_folder']),
             'colleges' => College::orderBy('name')->get(),
             'programs' => Program::orderBy('name')->get(),
             'areas' => Area::orderBy('order_no')->get(),

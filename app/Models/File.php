@@ -22,6 +22,7 @@ class File extends Model
         'area_id',
         'subfolder',
         'parameter',
+        'parameter_folder',
         'expiration',
         'path',
         'original_filename',
@@ -85,7 +86,7 @@ class File extends Model
     public function accreditationEvents()
     {
         return $this->belongsToMany(AccreditationEvent::class, 'accreditation_event_files')
-                    ->withPivot('area_id', 'shared_by', 'subfolder', 'parameter')
+                    ->withPivot('area_id', 'shared_by', 'subfolder', 'parameter', 'parameter_folder')
                     ->withTimestamps();
     }
 

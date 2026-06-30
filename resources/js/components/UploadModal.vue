@@ -10,6 +10,7 @@
         currentArea: Object,
         currentSubfolder: String,
         currentParameter: String,
+        currentParameterFolder: String,
         accreditationEventId: [Number, String],
         colleges: Array,
         programs: Array,
@@ -47,7 +48,8 @@
         area_id: props.currentArea?.id || null,
         accreditation_event_id: props.accreditationEventId || null,
         subfolder: props.currentSubfolder || null,
-        parameter: props.currentParameter || null
+        parameter: props.currentParameter || null,
+        parameter_folder: props.currentParameterFolder || null
     });
 
     watch(() => metadata.is_general, (newVal) => {
@@ -105,7 +107,8 @@
                         area_id: metadata.area_id,
                         accreditation_event_id: metadata.accreditation_event_id,
                         subfolder: metadata.subfolder,
-                        parameter: metadata.parameter
+                        parameter: metadata.parameter,
+                        parameter_folder: metadata.parameter_folder
                     },
                     filename: file.value.name
                 },
@@ -187,7 +190,8 @@
                     area_id: metadata.area_id,
                     accreditation_event_id: metadata.accreditation_event_id,
                     subfolder: metadata.subfolder,
-                    parameter: metadata.parameter
+                    parameter: metadata.parameter,
+                    parameter_folder: metadata.parameter_folder
                 }
             }, {
                 headers: { 

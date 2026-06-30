@@ -16,6 +16,7 @@ use App\Notifications\EventCreatedNotification;
 use App\Notifications\AllAreasCompleteNotification;
 use App\Notifications\FileSharedToEventNotification;
 use App\Notifications\FileRemovedFromEventNotification;
+use App\Notifications\AccreditationEventUpdatedNotification;
 
 class AccreditationEventController extends Controller
 {
@@ -150,7 +151,7 @@ class AccreditationEventController extends Controller
             ->get();
 
         foreach ($recipients as $recipient) {
-            $recipient->notify(new \App\Notifications\AccreditationEventUpdatedNotification($accreditationEvent, $user->name));
+            $recipient->notify(new AccreditationEventUpdatedNotification($accreditationEvent, $user->name));
         }
 
         return back()->with('message', 'Accreditation event updated successfully.');
@@ -167,6 +168,7 @@ class AccreditationEventController extends Controller
             'area_id' => 'required|exists:areas,id',
             'subfolder' => 'nullable|string|max:255',
             'parameter' => 'nullable|string|max:255',
+            'parameter_folder' => 'nullable|string|max:255',
         ]);
 
         $event = AccreditationEvent::findOrFail($request->accreditation_event_id);
@@ -188,6 +190,7 @@ class AccreditationEventController extends Controller
             ->wherePivot('area_id', $request->area_id)
             ->wherePivot('subfolder', $request->subfolder)
             ->wherePivot('parameter', $request->parameter)
+            ->wherePivot('parameter_folder', $request->parameter_folder)
             ->exists();
 
         if ($exists) {
@@ -198,6 +201,7 @@ class AccreditationEventController extends Controller
             'area_id' => $request->area_id,
             'subfolder' => $request->subfolder,
             'parameter' => $request->parameter,
+            'parameter_folder' => $request->parameter_folder,
             'shared_by' => auth()->id(),
             'created_at' => now(),
             'updated_at' => now(),
@@ -285,6 +289,7 @@ class AccreditationEventController extends Controller
             'file_id' => 'required|exists:files,id',
             'subfolder' => 'nullable|string|max:255',
             'parameter' => 'nullable|string|max:255',
+            'parameter_folder' => 'nullable|string|max:255',
         ]);
 
         $user = auth()->user() ?? auth('accreditor')->user();
@@ -321,13 +326,14 @@ class AccreditationEventController extends Controller
             ->wherePivot('area_id', $area->id)
             ->wherePivot('subfolder', $request->subfolder)
             ->wherePivot('parameter', $request->parameter)
+            ->wherePivot('parameter_folder', $request->parameter_folder)
             ->detach($file->id);
 
-        activity()
-            ->useLog('events')
+        activity()->useLog('events')
+            ->event('file_unshared')
             ->performedOn($event)
             ->causedBy($user)
-            ->log("Removed file '{$file->title}' from {$area->code} -> " . ($request->subfolder ?: 'root') . ($request->parameter ? " -> {$request->parameter}" : "") . " in event: {$event->title}");
+            ->log("Removed file '{$file->title}' from {$area->code} -> " . ($request->subfolder ?: 'root') . ($request->parameter ? " -> {$request->parameter}" : "") . ($request->parameter_folder ? " -> {$request->parameter_folder}" : "") . " in event: {$event->title}");
 
         // Notify Stakeholders
         $recipients = User::role(['admin', 'ido_staff', 'college_officer', 'taskforce'])

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue';
 import { useForm } from '@inertiajs/vue3';
-import { SUBFOLDERS, AREA_PARAMETERS } from '@/constants/foldering.js';
+import { SUBFOLDERS, AREA_PARAMETERS, PARAMETER_FOLDERS } from '@/constants/foldering.js';
 
 const props = defineProps({
     file: Object,
@@ -17,6 +17,7 @@ const form = useForm({
     area_id: '',
     subfolder: '',
     parameter: '',
+    parameter_folder: '',
 });
 
 watch(() => props.file, (newFile) => {
@@ -32,6 +33,11 @@ watch(() => form.area_id, () => {
 
 watch(() => form.subfolder, () => {
     form.parameter = '';
+    form.parameter_folder = '';
+});
+
+watch(() => form.parameter, () => {
+    form.parameter_folder = '';
 });
 
 const selectedArea = computed(() => {
@@ -47,6 +53,7 @@ const isSubmitDisabled = computed(() => {
     if (form.processing) return true;
     if (!form.accreditation_event_id || !form.area_id || !form.subfolder) return true;
     if (form.subfolder === 'PARAMETER' && !form.parameter) return true;
+    if (form.parameter && (form.parameter.startsWith('Parameter A') || form.parameter.startsWith('Parameter B')) && !form.parameter_folder) return true;
     return false;
 });
 
@@ -133,6 +140,18 @@ const submit = () => {
                         <option value="" disabled>Select a parameter</option>
                         <option v-for="param in currentAreaParameters" :key="param" :value="param">
                             {{ param }}
+                        </option>
+                    </select>
+                </div>
+
+                <!-- Parameter Folder Selection -->
+                <div v-if="form.parameter && (form.parameter.startsWith('Parameter A') || form.parameter.startsWith('Parameter B'))" class="space-y-2 animate-in fade-in duration-200">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Target Parameter Folder</label>
+                    <select v-model="form.parameter_folder" required
+                        class="w-full px-4 py-2.5 rounded-lg border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white focus:ring-primary focus:border-primary">
+                        <option value="" disabled>Select a folder</option>
+                        <option v-for="folder in PARAMETER_FOLDERS" :key="folder" :value="folder">
+                            {{ folder }}
                         </option>
                     </select>
                 </div>

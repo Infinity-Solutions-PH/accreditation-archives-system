@@ -8,6 +8,12 @@ export const SUBFOLDERS = [
     "AVP - AUDIO-VISUAL PRESENTATION"
 ];
 
+export const PARAMETER_FOLDERS = [
+    "System - Input and Process",
+    "Implementation",
+    "Outcomes"
+];
+
 export const AREA_PARAMETERS = {
     1: [
         "Parameter A - Statement of Vision, Mission, Goals, and Objectives",

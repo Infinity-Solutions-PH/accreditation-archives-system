@@ -120,6 +120,7 @@ class ChunkedUploadService
             'area_id' => $metadata['area_id'] ?? $file->area_id,
             'subfolder' => $metadata['subfolder'] ?? $file->subfolder,
             'parameter' => $metadata['parameter'] ?? $file->parameter,
+            'parameter_folder' => $metadata['parameter_folder'] ?? $file->parameter_folder,
             'level' => $metadata['level'] ?? $file->level,
             'is_general' => $isGeneral
         ]);
@@ -130,6 +131,7 @@ class ChunkedUploadService
                 'area_id' => $metadata['area_id'],
                 'subfolder' => $metadata['subfolder'] ?? null,
                 'parameter' => $metadata['parameter'] ?? null,
+                'parameter_folder' => $metadata['parameter_folder'] ?? null,
                 'shared_by' => $user ? $user->id : $file->uploaded_by,
                 'created_at' => now(),
                 'updated_at' => now(),
@@ -140,6 +142,7 @@ class ChunkedUploadService
                 ->wherePivot('area_id', $pivotData['area_id'])
                 ->wherePivot('subfolder', $pivotData['subfolder'])
                 ->wherePivot('parameter', $pivotData['parameter'])
+                ->wherePivot('parameter_folder', $pivotData['parameter_folder'])
                 ->exists();
 
             if (!$exists) {

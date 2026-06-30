@@ -2,7 +2,7 @@
 import { ref, onMounted, watch, computed } from 'vue';
 import { useForm, usePage } from '@inertiajs/vue3';
 import axios from 'axios';
-import { SUBFOLDERS, AREA_PARAMETERS } from '@/constants/foldering.js';
+import { SUBFOLDERS, AREA_PARAMETERS, PARAMETER_FOLDERS } from '@/constants/foldering.js';
 
 const props = defineProps({
     isOpen: Boolean,
@@ -31,6 +31,7 @@ const areas = ref([]);
 const selectedAreaId = ref('');
 const selectedSubfolder = ref('');
 const selectedParameter = ref('');
+const selectedParameterFolder = ref('');
 const isSharing = ref(false);
 
 const fetchAreas = async () => {
@@ -47,15 +48,22 @@ const resetEventShareSelection = () => {
     selectedAreaId.value = '';
     selectedSubfolder.value = '';
     selectedParameter.value = '';
+    selectedParameterFolder.value = '';
 };
 
 watch(selectedAreaId, () => {
     selectedSubfolder.value = '';
     selectedParameter.value = '';
+    selectedParameterFolder.value = '';
 });
 
 watch(selectedSubfolder, () => {
     selectedParameter.value = '';
+    selectedParameterFolder.value = '';
+});
+
+watch(selectedParameter, () => {
+    selectedParameterFolder.value = '';
 });
 
 const selectedArea = computed(() => {
@@ -71,6 +79,7 @@ const isEventShareSubmitDisabled = computed(() => {
     if (isSharing.value) return true;
     if (!selectedAreaId.value || !selectedSubfolder.value) return true;
     if (selectedSubfolder.value === 'PARAMETER' && !selectedParameter.value) return true;
+    if (selectedParameter.value && (selectedParameter.value.startsWith('Parameter A') || selectedParameter.value.startsWith('Parameter B')) && !selectedParameterFolder.value) return true;
     return false;
 });
 
@@ -165,7 +174,8 @@ const confirmShareToEvent = async () => {
             accreditation_event_id: selectedEventForShare.value.id,
             area_id: selectedAreaId.value,
             subfolder: selectedSubfolder.value,
-            parameter: selectedParameter.value || null
+            parameter: selectedParameter.value || null,
+            parameter_folder: selectedParameterFolder.value || null
         });
         
         if (window.toast) {
@@ -350,6 +360,17 @@ const copyPermanentLink = () => {
                                 <option value="" disabled>Select parameter...</option>
                                 <option v-for="param in currentAreaParameters" :key="param" :value="param">
                                     {{ param }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <!-- Parameter Folder Selection -->
+                        <div v-if="selectedParameter && (selectedParameter.startsWith('Parameter A') || selectedParameter.startsWith('Parameter B'))" class="space-y-1.5 animate-in fade-in duration-200">
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-wider">Target Parameter Folder</label>
+                            <select v-model="selectedParameterFolder" class="w-full px-3 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900 dark:text-white text-sm focus:ring-primary focus:border-primary outline-none">
+                                <option value="" disabled>Select a folder...</option>
+                                <option v-for="folder in PARAMETER_FOLDERS" :key="folder" :value="folder">
+                                    {{ folder }}
                                 </option>
                             </select>
                         </div>

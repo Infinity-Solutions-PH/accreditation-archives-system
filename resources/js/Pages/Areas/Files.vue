@@ -11,7 +11,7 @@
     import UploadModal from '@/components/UploadModal.vue';
     import FileViewerModal from '@/components/FileViewerModal.vue';
     import CommentPanel from '@/components/CommentPanel.vue';
-    import { SUBFOLDERS, AREA_PARAMETERS } from '@/constants/foldering.js';
+    import { SUBFOLDERS, AREA_PARAMETERS, PARAMETER_FOLDERS } from '@/constants/foldering.js';
 
     const props = defineProps({
         files: Object,
@@ -31,6 +31,7 @@
     const sort_order = ref(props.filters.sort_order || 'desc');
     const currentSubfolder = ref(props.filters.subfolder || '');
     const currentParameter = ref(props.filters.parameter || '');
+    const currentParameterFolder = ref(props.filters.parameter_folder || '');
 
     const applyFilters = () => {
         router.get(route('areas.slug', { event: props.event.slug, area: props.area.slug }), {
@@ -38,7 +39,8 @@
             sort_field: sort_field.value,
             sort_order: sort_order.value,
             subfolder: currentSubfolder.value || undefined,
-            parameter: currentParameter.value || undefined
+            parameter: currentParameter.value || undefined,
+            parameter_folder: currentParameterFolder.value || undefined
         }, {
             preserveState: true,
             replace: true,
@@ -97,7 +99,8 @@
             await axios.post(route('events.unshare', { event: props.event.slug, area: props.area.slug }), {
                 file_id: fileToUnshare.value.id,
                 subfolder: currentSubfolder.value || null,
-                parameter: currentParameter.value || null
+                parameter: currentParameter.value || null,
+                parameter_folder: currentParameterFolder.value || null
             });
             
             if (window.toast) {
@@ -230,22 +233,36 @@
     const selectSubfolder = (sub) => {
         currentSubfolder.value = sub;
         currentParameter.value = '';
+        currentParameterFolder.value = '';
         applyFilters();
     };
 
     const selectParameter = (param) => {
         currentParameter.value = param;
+        currentParameterFolder.value = '';
+        applyFilters();
+    };
+
+    const selectParameterFolder = (folder) => {
+        currentParameterFolder.value = folder;
         applyFilters();
     };
 
     const navigateToRoot = () => {
         currentSubfolder.value = '';
         currentParameter.value = '';
+        currentParameterFolder.value = '';
         applyFilters();
     };
 
     const navigateToSubfolder = () => {
         currentParameter.value = '';
+        currentParameterFolder.value = '';
+        applyFilters();
+    };
+
+    const navigateToParameter = () => {
+        currentParameterFolder.value = '';
         applyFilters();
     };
 
@@ -256,13 +273,18 @@
     const canUploadInCurrentFolder = computed(() => {
         if (!currentSubfolder.value) return false;
         if (currentSubfolder.value === 'PARAMETER' && !currentParameter.value) return false;
+        if (currentParameter.value && (currentParameter.value.startsWith('Parameter A') || currentParameter.value.startsWith('Parameter B')) && !currentParameterFolder.value) return false;
         return true;
     });
 
-    const getFolderCount = (sub, param = null) => {
+    const getFolderCount = (sub, param = null, paramFolder = null) => {
         if (!props.fileCounts) return 0;
         return props.fileCounts.reduce((total, item) => {
-            if (param) {
+            if (paramFolder) {
+                if (item.subfolder === sub && item.parameter === param && item.parameter_folder === paramFolder) {
+                    return total + item.count;
+                }
+            } else if (param) {
                 if (item.subfolder === sub && item.parameter === param) {
                     return total + item.count;
                 }
@@ -315,9 +337,24 @@
                     <li>
                         <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
                     </li>
-                    <li>
+                    <li v-if="currentParameterFolder">
+                        <button @click="navigateToParameter" class="text-slate-500 dark:text-slate-400 hover:text-primary text-sm font-medium focus:outline-none truncate max-w-[200px] inline-block align-bottom" :title="currentParameter">
+                            {{ currentParameter }}
+                        </button>
+                    </li>
+                    <li v-else>
                         <span class="text-slate-900 dark:text-white text-sm font-semibold truncate max-w-[200px] inline-block align-bottom" :title="currentParameter">
                             {{ currentParameter }}
+                        </span>
+                    </li>
+                </template>
+                <template v-if="currentParameterFolder">
+                    <li>
+                        <span class="text-slate-400 dark:text-slate-600 text-sm">/</span>
+                    </li>
+                    <li>
+                        <span class="text-slate-900 dark:text-white text-sm font-semibold truncate max-w-[200px] inline-block align-bottom" :title="currentParameterFolder">
+                            {{ currentParameterFolder }}
                         </span>
                     </li>
                 </template>
@@ -329,11 +366,11 @@
                 <h1 class="text-3xl font-black text-slate-900 dark:text-white tracking-tight">
                     {{ area.code }}
                     <span v-if="currentSubfolder" class="text-primary text-2xl font-bold block sm:inline sm:ml-2">
-                        &rsaquo; {{ currentParameter ? currentParameter.split(' - ')[0] : currentSubfolder }}
+                        &rsaquo; {{ currentParameterFolder ? currentParameterFolder : (currentParameter ? currentParameter.split(' - ')[0] : currentSubfolder) }}
                     </span>
                 </h1>
                 <p class="text-slate-600 dark:text-slate-400 text-base">
-                    {{ currentParameter ? currentParameter : (currentSubfolder ? `Files shared under the ${currentSubfolder} category of ${area.code}.` : area.description) }}
+                    {{ currentParameterFolder ? `${currentParameter} - ${currentParameterFolder}` : (currentParameter ? currentParameter : (currentSubfolder ? `Files shared under the ${currentSubfolder} category of ${area.code}.` : area.description)) }}
                 </p>
             </div>
             <div class="flex items-center gap-3 shrink-0">
@@ -429,7 +466,7 @@
             </div>
         </div>
         <!-- Folders View Grid -->
-        <div v-if="!search && (!currentSubfolder || (currentSubfolder === 'PARAMETER' && !currentParameter))" 
+        <div v-if="!search && (!currentSubfolder || (currentSubfolder === 'PARAMETER' && !currentParameter) || (currentParameter && (currentParameter.startsWith('Parameter A') || currentParameter.startsWith('Parameter B')) && !currentParameterFolder))" 
             class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 mb-8 animate-in fade-in duration-200"
         >
             <!-- Case 1: Subfolders list at Area root -->
@@ -464,13 +501,37 @@
                         <div class="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-500 rounded-lg group-hover:bg-primary group-hover:text-white transition-colors">
                             <span class="material-symbols-outlined text-[32px] fill-[1]">folder</span>
                         </div>
-                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Deepest Folder</span>
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
+                            {{ param.startsWith('Parameter A') || param.startsWith('Parameter B') ? 'Parent Folder' : 'Deepest Folder' }}
+                        </span>
                     </div>
                     <h3 class="text-xs font-bold text-slate-900 dark:text-white mb-1 leading-snug line-clamp-3 min-h-[3rem] group-hover:text-primary transition-colors" :title="param">
                         {{ param }}
                     </h3>
                     <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
                         <span class="text-xs font-medium text-slate-500">{{ getFolderCount('PARAMETER', param) }} Files</span>
+                        <span class="material-symbols-outlined text-[18px] text-slate-300 group-hover:text-primary transition-colors">arrow_forward</span>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Case 3: Parameter Folders inside Parameter A or B -->
+            <template v-else-if="currentParameter && (currentParameter.startsWith('Parameter A') || currentParameter.startsWith('Parameter B')) && !currentParameterFolder">
+                <div v-for="folder in PARAMETER_FOLDERS" :key="folder" 
+                    @click="selectParameterFolder(folder)"
+                    class="group cursor-pointer bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg transition-all"
+                >
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-500 rounded-lg group-hover:bg-primary group-hover:text-white transition-colors">
+                            <span class="material-symbols-outlined text-[32px] fill-[1]">folder</span>
+                        </div>
+                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Deepest Folder</span>
+                    </div>
+                    <h3 class="text-xs font-bold text-slate-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
+                        {{ folder }}
+                    </h3>
+                    <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                        <span class="text-xs font-medium text-slate-500">{{ getFolderCount('PARAMETER', currentParameter, folder) }} Files</span>
                         <span class="material-symbols-outlined text-[18px] text-slate-300 group-hover:text-primary transition-colors">arrow_forward</span>
                     </div>
                 </div>
