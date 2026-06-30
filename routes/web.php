@@ -23,6 +23,7 @@ use App\Http\Controllers\AccreditorAccountController;
 use App\Http\Controllers\AccreditationEventController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Accreditor\AuthController as AccreditorAuthController;
+use App\Http\Controllers\EventAreaSettingController;
 
 Route::get('/', function() {
     return redirect()->route('auth');
@@ -64,6 +65,7 @@ Route::middleware(['auth:web,accreditor', CheckRoleStatus::class])->group(functi
         Route::get('/events', [AccreditationEventController::class, 'index'])->name('events.index');
         Route::get('/events/{event}/areas', [AreaController::class, 'index'])->name('areas');
         Route::get('/events/{event}/areas/{area:slug}', [AreaController::class, 'show'])->name('areas.slug');
+        Route::post('/events/{event}/areas/{area:slug}/toggle-avp', [EventAreaSettingController::class, 'toggleAvpVisibility'])->name('events.areas.toggle-avp');
 
         // File Management
         Route::get('/files/p/{uuid}', [FileController::class, 'sharedView'])->name('files.shared'); // Permanent link

@@ -10,6 +10,7 @@ use App\Models\Program;
 use App\Models\Accreditor;
 use Illuminate\Http\Request;
 use App\Models\AccreditationEvent;
+use App\Models\EventAreaSetting;
 
 class AreaController extends Controller
 {
@@ -98,6 +99,16 @@ class AreaController extends Controller
         $subfolder = $request->query('subfolder');
         $parameter = $request->query('parameter');
         $parameterFolder = $request->query('parameter_folder');
+        $parameterFolder = $request->query('parameter_folder');
+
+        $avpSetting = EventAreaSetting::where('accreditation_event_id', $event->id)
+            ->where('area_id', $area->id)
+            ->first();
+        $isAvpHidden = $avpSetting ? $avpSetting->is_avp_hidden : false;
+
+        if ($subfolder === 'AVP - AUDIO-VISUAL PRESENTATION' && $isAvpHidden && $user->hasRole('taskforce')) {
+            abort(403, 'Unauthorized access to hidden AVP folder.');
+        }
 
         if (!in_array($sortField, ['title', 'created_at', 'college', 'program'])) {
             $sortField = 'created_at';
@@ -184,6 +195,7 @@ class AreaController extends Controller
             'colleges' => College::orderBy('name')->get(),
             'programs' => Program::orderBy('name')->get(),
             'areas' => Area::orderBy('order_no')->get(),
+            'isAvpHidden' => $isAvpHidden,
         ]);
     }
 
