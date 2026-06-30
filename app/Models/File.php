@@ -102,7 +102,7 @@ class File extends Model
     public function scopeAccessibleBy($query, $user)
     {
         if (!$user) {
-            return $query->where('is_general', true);
+            return $query->where('files.is_general', true);
         }
 
         if ($user instanceof User) {
@@ -113,25 +113,25 @@ class File extends Model
             return $query->where(function ($q) use ($user) {
                 // General Drive: Visible if 'is_general' AND (belongs to user's college OR is global/NULL)
                 $q->where(function ($general) use ($user) {
-                    $general->where('is_general', true)
+                    $general->where('files.is_general', true)
                         ->where(function($col) use ($user) {
-                            $col->where('college_id', $user->college_id)
-                                ->orWhereNull('college_id');
+                            $col->where('files.college_id', $user->college_id)
+                                ->orWhereNull('files.college_id');
                         });
                 });
 
                 // Personal files (My Drive): Always visible to the uploader
-                $q->orWhere('uploaded_by', $user->id);
+                $q->orWhere('files.uploaded_by', $user->id);
 
                 if ($user->hasRole('college_officer')) {
-                    $q->orWhere('college_id', $user->college_id);
+                    $q->orWhere('files.college_id', $user->college_id);
                 }
 
                 if ($user->hasRole('taskforce')) {
                     $q->orWhere(function ($subQ) use ($user) {
-                        $subQ->where('college_id', $user->college_id);
+                        $subQ->where('files.college_id', $user->college_id);
                         if ($user->program_id) {
-                            $subQ->where('program_id', $user->program_id);
+                            $subQ->where('files.program_id', $user->program_id);
                         }
                     });
                 }
@@ -150,7 +150,7 @@ class File extends Model
             });
         }
 
-        return $query->where('is_general', true);
+        return $query->where('files.is_general', true);
     }
 
     public function getSizeAttribute(): int
