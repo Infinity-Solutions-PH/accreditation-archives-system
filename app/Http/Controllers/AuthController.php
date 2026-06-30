@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use Inertia\Inertia;
 use App\Models\Setting;
+use App\Models\Accreditor;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\AccreditationEvent;
+use App\Http\Controllers\Accreditor\AuthController as AccreditorAuthController;
 
 class AuthController extends Controller
 {
@@ -30,6 +32,11 @@ class AuthController extends Controller
             'email' => ['required', 'email'],
             'password' => ['required'],
         ]);
+
+        // Check if trying to authenticate as an accreditor
+        if (Accreditor::withTrashed()->where('email', $credentials['email'])->exists()) {
+            return (new AccreditorAuthController)->store($request);
+        }
 
         if (User::onlyTrashed()->where('email', $credentials['email'])->exists()) {
             return back()->withErrors([

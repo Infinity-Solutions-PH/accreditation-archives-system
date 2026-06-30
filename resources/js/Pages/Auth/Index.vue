@@ -128,13 +128,13 @@
                         </a>
                     </form>
                     <!-- Divider -->
-                    <div class="relative flex py-2 items-center">
+                    <div v-if="false" class="relative flex py-2 items-center">
                         <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
                         <span class="flex-shrink-0 mx-4 text-slate-400 text-sm font-medium">External Access</span>
                         <div class="flex-grow border-t border-slate-200 dark:border-slate-700"></div>
                     </div>
                     <!-- Accreditor Access Section -->
-                    <div class="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-700 flex flex-col items-start gap-3">
+                    <div v-if="false" class="bg-slate-50 dark:bg-slate-800/50 rounded-xl p-5 border border-slate-100 dark:border-slate-700 flex flex-col items-start gap-3">
                         <div class="flex items-center gap-2 text-[#0d121b] dark:text-white font-medium">
                             <span class="material-symbols-outlined text-amber-500">badge</span>
                             <span>External Accreditor?</span>
