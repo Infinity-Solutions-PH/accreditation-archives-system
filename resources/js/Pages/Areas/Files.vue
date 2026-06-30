@@ -22,6 +22,7 @@
         areas: Object,
         filters: Object,
         fileCounts: Array,
+        isAvpHidden: Boolean,
     });
 
     const page = usePage();
@@ -277,6 +278,39 @@
         return true;
     });
 
+    const filteredSubfolders = computed(() => {
+        return SUBFOLDERS.filter(sub => {
+            if (sub === 'AVP - AUDIO-VISUAL PRESENTATION') {
+                if (props.isAvpHidden && auth.roles?.includes('taskforce')) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    });
+
+    const canToggleAvp = computed(() => {
+        return auth.roles?.some(r => ['admin', 'ido_staff', 'college_officer'].includes(r));
+    });
+
+    const isTogglingAvp = ref(false);
+
+    const toggleAvpVisibility = async () => {
+        isTogglingAvp.value = true;
+        try {
+            const response = await axios.post(route('events.areas.toggle-avp', { event: props.event.slug, area: props.area.slug }));
+            if (window.toast) {
+                window.toast(response.data.is_avp_hidden ? 'AVP folder is now hidden from task force' : 'AVP folder is now visible to task force', 'success');
+            }
+            router.reload({ preserveScroll: true });
+        } catch (e) {
+            console.error(e);
+            if (window.toast) window.toast('Failed to toggle AVP folder visibility', 'error');
+        } finally {
+            isTogglingAvp.value = false;
+        }
+    };
+
     const getFolderCount = (sub, param = null, paramFolder = null) => {
         if (!props.fileCounts) return 0;
         return props.fileCounts.reduce((total, item) => {
@@ -374,6 +408,21 @@
                 </p>
             </div>
             <div class="flex items-center gap-3 shrink-0">
+                <div v-if="currentSubfolder === 'AVP - AUDIO-VISUAL PRESENTATION' && canToggleAvp" class="flex items-center gap-2 px-3 py-2 bg-white dark:bg-surface-dark border border-slate-300 dark:border-slate-600 rounded-lg shadow-sm">
+                    <span class="text-sm font-medium text-slate-700 dark:text-slate-200">Hidden from Task Force</span>
+                    <button 
+                        @click="toggleAvpVisibility"
+                        :disabled="isTogglingAvp"
+                        class="relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50"
+                        :class="isAvpHidden ? 'bg-primary' : 'bg-slate-200 dark:bg-slate-700'"
+                    >
+                        <span class="sr-only">Toggle AVP Visibility</span>
+                        <span 
+                            class="pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out"
+                            :class="isAvpHidden ? 'translate-x-5' : 'translate-x-0'"
+                        ></span>
+                    </button>
+                </div>
                 <button class="flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-surface-dark border border-slate-300 dark:border-slate-600 rounded-lg text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors shadow-sm">
                     <span class="material-symbols-outlined text-[20px]">table_view</span>
                     Export to Excel
@@ -471,17 +520,20 @@
         >
             <!-- Case 1: Subfolders list at Area root -->
             <template v-if="!currentSubfolder">
-                <div v-for="sub in SUBFOLDERS" :key="sub" 
+                <div v-for="sub in filteredSubfolders" :key="sub" 
                     @click="selectSubfolder(sub)"
-                    class="group cursor-pointer bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg transition-all"
+                    class="group cursor-pointer bg-white dark:bg-surface-dark border border-slate-200 dark:border-slate-800 rounded-xl p-5 hover:border-primary/50 hover:shadow-lg transition-all relative"
                 >
+                    <div v-if="sub === 'AVP - AUDIO-VISUAL PRESENTATION' && canToggleAvp && isAvpHidden" class="absolute top-3 right-3 flex items-center justify-center p-1 rounded-full bg-red-100 text-red-600" title="Hidden from Task Force">
+                        <span class="material-symbols-outlined text-[16px]">visibility_off</span>
+                    </div>
                     <div class="flex items-start justify-between mb-4">
                         <div class="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-500 rounded-lg group-hover:bg-primary group-hover:text-white transition-colors">
                             <span class="material-symbols-outlined text-[32px] fill-[1]">folder</span>
                         </div>
-                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
+                        <!-- <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                             {{ sub === 'PARAMETER' ? 'Parent Folder' : 'Deepest Folder' }}
-                        </span>
+                        </span> -->
                     </div>
                     <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-1 group-hover:text-primary transition-colors">{{ sub }}</h3>
                     <div class="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
@@ -501,9 +553,9 @@
                         <div class="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-500 rounded-lg group-hover:bg-primary group-hover:text-white transition-colors">
                             <span class="material-symbols-outlined text-[32px] fill-[1]">folder</span>
                         </div>
-                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
+                        <!-- <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">
                             {{ param.startsWith('Parameter A') || param.startsWith('Parameter B') ? 'Parent Folder' : 'Deepest Folder' }}
-                        </span>
+                        </span> -->
                     </div>
                     <h3 class="text-xs font-bold text-slate-900 dark:text-white mb-1 leading-snug line-clamp-3 min-h-[3rem] group-hover:text-primary transition-colors" :title="param">
                         {{ param }}
@@ -525,7 +577,7 @@
                         <div class="p-3 bg-amber-50 dark:bg-amber-900/20 text-amber-500 rounded-lg group-hover:bg-primary group-hover:text-white transition-colors">
                             <span class="material-symbols-outlined text-[32px] fill-[1]">folder</span>
                         </div>
-                        <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Deepest Folder</span>
+                        <!-- <span class="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase">Deepest Folder</span> -->
                     </div>
                     <h3 class="text-xs font-bold text-slate-900 dark:text-white mb-1 group-hover:text-primary transition-colors">
                         {{ folder }}
