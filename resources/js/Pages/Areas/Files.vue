@@ -960,6 +960,7 @@
             :currentArea="area"
             :currentSubfolder="currentSubfolder"
             :currentParameter="currentParameter"
+            :currentParameterFolder="currentParameterFolder"
             :accreditationEventId="event.id"
             @close="closeUploadModal"
         />

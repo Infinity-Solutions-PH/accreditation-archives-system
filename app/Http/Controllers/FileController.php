@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\Storage;
 use App\Http\Requests\UploadChunkRequest;
 use App\Http\Requests\CreateTempFileRequest;
 use Illuminate\Support\Facades\Notification;
+use App\Notifications\FileDeletedNotification;
 use App\Notifications\FilePermissionApprovedNotification;
 use App\Notifications\FilePermissionRequestedNotification;
-use App\Notifications\FileDeletedNotification;
 
 class FileController extends Controller
 {
