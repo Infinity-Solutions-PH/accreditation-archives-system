@@ -1,6 +1,7 @@
 <script setup>
     import AuthLayout from '@shared/Layouts/Auth.vue';
     import { useForm, Head, Link } from '@inertiajs/vue3';
+    import { ref } from 'vue';
 
     defineOptions({
         layout: AuthLayout
@@ -14,6 +15,8 @@
         email: '',
         password: '',
     });
+
+    const showPassword = ref(false);
 
     const submit = () => {
         form.post(route('auth.store'), {
@@ -102,9 +105,9 @@
                         <div class="space-y-2">
                             <label class="text-[#0d121b] dark:text-gray-200 text-sm font-medium leading-normal" for="password">Password</label>
                             <div class="relative">
-                                <input v-model="form.password" class="form-input flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-primary h-12 placeholder:text-[#4c669a] dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal transition-all" id="password" placeholder="Enter your password" required="" type="password"/>
-                                <button class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-primary transition-colors focus:outline-none" type="button">
-                                    <span class="material-symbols-outlined text-[20px]">visibility</span>
+                                <input v-model="form.password" class="form-input flex w-full rounded-lg text-[#0d121b] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/20 border border-[#cfd7e7] dark:border-slate-700 bg-white dark:bg-slate-800 focus:border-primary h-12 placeholder:text-[#4c669a] dark:placeholder:text-slate-500 px-4 text-base font-normal leading-normal transition-all" id="password" placeholder="Enter your password" required="" :type="showPassword ? 'text' : 'password'"/>
+                                <button class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-primary transition-colors focus:outline-none" type="button" @click="showPassword = !showPassword">
+                                    <span class="material-symbols-outlined text-[20px]">{{ showPassword ? 'visibility_off' : 'visibility' }}</span>
                                 </button>
                             </div>
                         </div>
