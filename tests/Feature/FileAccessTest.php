@@ -1,13 +1,16 @@
 <?php
 
+use App\Models\Area;
 use App\Models\File;
 use App\Models\User;
+use App\Models\College;
+use App\Models\Program;
 use App\Models\Accreditor;
 use App\Models\AccreditationEvent;
 use Spatie\Permission\Models\Role;
+use App\Http\Middleware\CheckRoleStatus;
 use Spatie\Permission\PermissionRegistrar;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use App\Http\Middleware\CheckRoleStatus;
 
 uses(RefreshDatabase::class);
 
@@ -19,11 +22,11 @@ beforeEach(function () {
     Role::create(['name' => 'college_officer', 'guard_name' => 'web']);
 
     // Create default Colleges and Programs to prevent FK constraints
-    \App\Models\College::create(['id' => 1, 'code' => 'CAS', 'name' => 'College of Arts and Sciences']);
-    \App\Models\College::create(['id' => 2, 'code' => 'CEMDS', 'name' => 'College of Economics']);
-    \App\Models\Program::create(['id' => 1, 'code' => 'BSCS', 'name' => 'BS Computer Science', 'college_id' => 1]);
-    \App\Models\Program::create(['id' => 2, 'code' => 'BSBA', 'name' => 'BS Business Administration', 'college_id' => 2]);
-    \App\Models\Area::create(['id' => 1, 'code' => 'A1', 'slug' => 'area-1', 'name' => 'Area I', 'order_no' => 1]);
+    College::create(['id' => 1, 'code' => 'CAS', 'name' => 'College of Arts and Sciences']);
+    College::create(['id' => 2, 'code' => 'CEMDS', 'name' => 'College of Economics']);
+    Program::create(['id' => 1, 'code' => 'BSCS', 'name' => 'BS Computer Science', 'college_id' => 1]);
+    Program::create(['id' => 2, 'code' => 'BSBA', 'name' => 'BS Business Administration', 'college_id' => 2]);
+    Area::create(['id' => 1, 'code' => 'A1', 'slug' => 'area-1', 'name' => 'Area I', 'order_no' => 1]);
     User::factory()->create(['id' => 1, 'college_id' => 1]);
 });
 
@@ -103,8 +106,8 @@ test('upload as taskforce requires college_id and program_id', function () {
 });
 
 test('upload as taskforce succeeds when college_id and program_id are set', function () {
-    $college = \App\Models\College::create(['code' => 'COE', 'name' => 'College of Engineering']);
-    $program = \App\Models\Program::create(['code' => 'BSEE', 'name' => 'BS Electrical Engineering', 'college_id' => $college->id]);
+    $college = College::create(['code' => 'COE', 'name' => 'College of Engineering']);
+    $program = Program::create(['code' => 'BSEE', 'name' => 'BS Electrical Engineering', 'college_id' => $college->id]);
 
     $user = User::factory()->create([
         'college_id' => $college->id,
@@ -146,7 +149,7 @@ test('upload as college officer requires college_id', function () {
 });
 
 test('upload as college officer succeeds when college_id is set', function () {
-    $college = \App\Models\College::create(['code' => 'CON', 'name' => 'College of Nursing']);
+    $college = College::create(['code' => 'CON', 'name' => 'College of Nursing']);
 
     $user = User::factory()->create([
         'college_id' => $college->id,
@@ -198,10 +201,10 @@ test('export csv report has correct columns', function () {
 });
 
 test('taskforce user can only see/access events of their own college and program', function () {
-    $college1 = \App\Models\College::find(1);
-    $college2 = \App\Models\College::find(2);
-    $program1 = \App\Models\Program::find(1);
-    $program2 = \App\Models\Program::find(2);
+    $college1 = College::find(1);
+    $college2 = College::find(2);
+    $program1 = Program::find(1);
+    $program2 = Program::find(2);
 
     $event1 = AccreditationEvent::factory()->create([
         'college_id' => $college1->id,
@@ -243,10 +246,10 @@ test('taskforce user can only see/access events of their own college and program
 });
 
 test('college officer user can only see/access events of their own college', function () {
-    $college1 = \App\Models\College::find(1);
-    $college2 = \App\Models\College::find(2);
-    $program1 = \App\Models\Program::find(1);
-    $program2 = \App\Models\Program::find(2);
+    $college1 = College::find(1);
+    $college2 = College::find(2);
+    $program1 = Program::find(1);
+    $program2 = Program::find(2);
 
     $event1 = AccreditationEvent::factory()->create([
         'college_id' => $college1->id,
@@ -288,7 +291,7 @@ test('college officer user can only see/access events of their own college', fun
 });
 
 test('college officer uploading general file succeeds with is_general = true and program_id = null', function () {
-    $college = \App\Models\College::create(['code' => 'COT', 'name' => 'College of Technology']);
+    $college = College::create(['code' => 'COT', 'name' => 'College of Technology']);
 
     $user = User::factory()->create([
         'college_id' => $college->id,
@@ -315,8 +318,8 @@ test('college officer uploading general file succeeds with is_general = true and
 });
 
 test('college officer uploading specific program file requires program_id and saves it', function () {
-    $college = \App\Models\College::create(['code' => 'COE', 'name' => 'College of Engineering']);
-    $program = \App\Models\Program::create([
+    $college = College::create(['code' => 'COE', 'name' => 'College of Engineering']);
+    $program = Program::create([
         'code' => 'BSCE',
         'name' => 'Civil Engineering',
         'college_id' => $college->id
@@ -348,7 +351,7 @@ test('college officer uploading specific program file requires program_id and sa
 });
 
 test('college officer uploading specific program file without program_id fails validation', function () {
-    $college = \App\Models\College::create(['code' => 'COA', 'name' => 'College of Arts']);
+    $college = College::create(['code' => 'COA', 'name' => 'College of Arts']);
 
     $user = User::factory()->create([
         'college_id' => $college->id,
@@ -371,7 +374,7 @@ test('college officer uploading specific program file without program_id fails v
 });
 
 test('only the owner of a general file can delete it', function () {
-    $college = \App\Models\College::create(['code' => 'COB', 'name' => 'College of Business']);
+    $college = College::create(['code' => 'COB', 'name' => 'College of Business']);
 
     $owner = User::factory()->create([
         'college_id' => $college->id,
@@ -402,7 +405,7 @@ test('only the owner of a general file can delete it', function () {
 });
 
 test('non-owner admin cannot delete a general file', function () {
-    $college = \App\Models\College::create(['code' => 'COM', 'name' => 'College of Music']);
+    $college = College::create(['code' => 'COM', 'name' => 'College of Music']);
 
     $owner = User::factory()->create([
         'college_id' => $college->id,

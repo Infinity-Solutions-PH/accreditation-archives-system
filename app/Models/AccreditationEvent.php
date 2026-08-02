@@ -21,12 +21,27 @@ class AccreditationEvent extends Model
     protected static function booted()
     {
         static::creating(function ($event) {
-            $event->slug = Str::slug($event->title);
+            $event->slug = static::generateUniqueSlug($event->title);
         });
 
         static::updating(function ($event) {
-            $event->slug = Str::slug($event->title);
+            if ($event->isDirty('title')) {
+                $event->slug = static::generateUniqueSlug($event->title, $event->id);
+            }
         });
+    }
+
+    public static function generateUniqueSlug($title, $ignoreId = 0)
+    {
+        $slug = Str::slug($title);
+        $originalSlug = $slug;
+        $count = 1;
+
+        while (static::where('slug', $slug)->where('id', '!=', $ignoreId)->exists()) {
+            $slug = "{$originalSlug}-" . $count++;
+        }
+
+        return $slug;
     }
 
     public function getRouteKeyName()
