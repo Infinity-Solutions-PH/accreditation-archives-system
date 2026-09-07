@@ -720,6 +720,7 @@
 
                     <!-- Download -->
                     <a 
+                        v-if="!auth.is_accreditor"
                         :href="route('files.download', file.id)"
                         @click.stop
                         class="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors tooltip"

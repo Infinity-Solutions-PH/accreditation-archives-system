@@ -1,5 +1,5 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { usePage, useForm } from '@inertiajs/vue3';
 import { MessageSquare, Send, X, Reply, Trash2, User as UserIcon, Clock } from 'lucide-vue-next';
 import axios from 'axios';
@@ -21,7 +21,7 @@ const fetchComments = async () => {
     if (!props.event || !props.area) return;
     loading.value = true;
     try {
-        const response = await axios.get(route('comments.index', { event: props.event.id, area: props.area.id }));
+        const response = await axios.get(route('comments.index', { event: props.event.slug, area: props.area.id }));
         comments.value = response.data;
     } catch (error) {
         console.error("Failed to fetch comments", error);
@@ -37,17 +37,26 @@ const form = useForm({
 
 const replyingTo = ref(null);
 
-const submitComment = () => {
-    if (!form.content.trim()) return;
+const isSubmitting = ref(false);
 
-    form.post(route('comments.store', { event: props.event.id, area: props.area.id }), {
-        preserveScroll: true,
-        onSuccess: () => {
-            form.reset();
-            replyingTo.value = null;
-            fetchComments();
-        }
-    });
+const submitComment = async () => {
+    if (!form.content.trim() || isSubmitting.value) return;
+
+    isSubmitting.value = true;
+    try {
+        await axios.post(route('comments.store', { event: props.event.slug, area: props.area.id }), {
+            content: form.content,
+            parent_id: form.parent_id
+        });
+        
+        form.reset();
+        replyingTo.value = null;
+        fetchComments();
+    } catch (error) {
+        console.error('Failed to post comment', error);
+    } finally {
+        isSubmitting.value = false;
+    }
 };
 
 const deleteComment = async (id) => {
@@ -68,6 +77,12 @@ const setReply = (comment) => {
 
 onMounted(() => {
     if (props.isOpen) fetchComments();
+});
+
+watch(() => props.isOpen, (newVal) => {
+    if (newVal) {
+        fetchComments();
+    }
 });
 
 const isEventExpired = computed(() => {
@@ -213,7 +228,7 @@ const isEventExpired = computed(() => {
                     ></textarea>
                     <button 
                         @click="submitComment"
-                        :disabled="form.processing || !form.content.trim()"
+                        :disabled="isSubmitting || !form.content.trim()"
                         class="absolute bottom-3 right-3 p-2 bg-primary text-white rounded-xl shadow-lg shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:grayscale"
                     >
                         <Send class="size-5" />

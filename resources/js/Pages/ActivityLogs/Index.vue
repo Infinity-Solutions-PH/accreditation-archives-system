@@ -121,7 +121,7 @@
                             <div class="flex items-end">
                                 <button @click="resetFilters" :disabled="isLoading" class="flex h-11 px-4 shrink-0 items-center justify-center rounded-xl bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-[#4c669a] hover:text-primary transition-all font-bold text-sm gap-2 disabled:opacity-50" title="Reset Filters">
                                     <span class="material-symbols-outlined text-[20px]">restart_alt</span>
-                                    <span>Reset</span>
+                                    <span>Reset Filters</span>
                                 </button>
                             </div>
                         </div>

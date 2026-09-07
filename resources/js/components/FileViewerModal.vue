@@ -1,5 +1,6 @@
 <script setup>
     import { ref, computed, onMounted } from 'vue';
+    import { usePage } from '@inertiajs/vue3';
     import VideoPlayer from './VideoPlayer.vue';
 
     const props = defineProps({
@@ -8,6 +9,9 @@
     });
 
     const emit = defineEmits(['close']);
+
+    const page = usePage();
+    const auth = page.props.auth;
 
     const isVideo = computed(() => {
         return ['mp4', 'webm', 'ogg', 'mov'].includes(props.file?.extension?.toLowerCase());
@@ -82,7 +86,8 @@
                         <span class="material-symbols-outlined text-lg">{{ showDetails ? 'info_i' : 'info' }}</span>
                         <span class="text-sm font-bold">{{ showDetails ? 'Hide Details' : 'Show Details' }}</span>
                     </button>
-                    <a :href="route('files.download', { file: file.id })"
+                    <a v-if="!auth.is_accreditor"
+                       :href="route('files.download', { file: file.id })"
                        class="flex min-w-[120px] cursor-pointer items-center justify-center gap-2 overflow-hidden rounded-lg h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] transition-colors hover:bg-primary/90">
                         <span class="material-symbols-outlined text-lg">download</span>
                         <span class="truncate">Download</span>
@@ -111,7 +116,7 @@
 
                     <!-- PDF -->
                     <div v-else-if="isPDF" class="w-full h-full bg-white transition-opacity duration-300">
-                        <iframe :src="route('files.view', { file: file.id })"
+                        <iframe :src="route('files.view', { file: file.id }) + '#toolbar=0'"
                                 class="w-full h-full border-none"></iframe>
                     </div>
 
@@ -132,7 +137,8 @@
                         </div>
                         <h3 class="text-white text-xl font-bold mb-2">Preview not available</h3>
                         <p class="text-slate-400 text-sm max-w-md mb-8">This file type ({{ file?.extension?.toUpperCase() }}) cannot be previewed in the browser. Please download it to view the content.</p>
-                        <a :href="route('files.download', { file: file.id })"
+                        <a v-if="!auth.is_accreditor"
+                           :href="route('files.download', { file: file.id })"
                            class="flex items-center gap-2 px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all border border-white/10">
                             <span class="material-symbols-outlined">download</span>
                             Download Extension: .{{ file?.extension }}
