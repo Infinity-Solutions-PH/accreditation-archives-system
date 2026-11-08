@@ -21,6 +21,7 @@ class FileController extends Controller
     public function __construct(
         protected ChunkedUploadService $service
     ) {
+        Inertia::setRootView('layouts/app');
     }
 
     private function checkActive() {
@@ -149,8 +150,10 @@ class FileController extends Controller
      */
     public function view(File $file)
     {
+        $user = auth('web')->user() ?? auth('accreditor')->user();
+
         // Enforce the same accessibility scope
-        $isAccessible = File::accessibleBy(auth()->user())->where('id', $file->id)->exists();
+        $isAccessible = File::accessibleBy($user)->where('id', $file->id)->exists();
         abort_unless($isAccessible, 403, 'You do not have permission to view this file.');
 
         $cleanPath = str_replace('private/', '', $file->path);
@@ -170,7 +173,9 @@ class FileController extends Controller
      */
     public function download(File $file)
     {
-        $isAccessible = File::accessibleBy(auth()->user())->where('id', $file->id)->exists();
+        $user = auth('web')->user() ?? auth('accreditor')->user();
+
+        $isAccessible = File::accessibleBy($user)->where('id', $file->id)->exists();
         abort_unless($isAccessible, 403, 'You do not have permission to download this file.');
 
         $cleanPath = str_replace('private/', '', $file->path);
@@ -187,24 +192,24 @@ class FileController extends Controller
      */
     public function sharedView($uuid)
     {
-        $file = File::where('uuid', $uuid)->with(['uploadedBy', 'college', 'program'])->firstOrFail();
-        $user = auth()->user();
+        $file = File::where('uuid', $uuid)->with(['uploadedBy.googleInfo', 'college', 'program'])->firstOrFail();
+        $user = auth('web')->user() ?? auth('accreditor')->user();
 
         // Check if user has access via existing scope logic
         $isAccessible = File::accessibleBy($user)->where('id', $file->id)->exists();
         
-        // Also check if they have a pending request
+        // Also check if they have a pending request (User accounts only)
         $pendingRequest = null;
-        if ($user) {
+        if ($user instanceof User) {
             $pendingRequest = $file->accessRequests()
                 ->where('user_id', $user->id)
                 ->where('status', 'pending')
                 ->first();
         }
 
-        // Organization Boundary Enforcement
+        // Organization Boundary Enforcement (User accounts only)
         $orgRestricted = false;
-        if ($user && !$user->hasRole(['admin', 'ido_staff'])) {
+        if ($user instanceof User && !$user->hasRole(['admin', 'ido_staff'])) {
             // If file has a college/program context, user must match it
             if ($file->college_id && $user->college_id != $file->college_id) {
                 $orgRestricted = true;

@@ -43,7 +43,7 @@ class SearchController extends Controller
                     ->orWhere('original_filename', 'like', "%$q%");
             })
             ->limit(5)
-            ->get(['id', 'title', 'is_general', 'extension', 'area_id']);
+            ->get(['id', 'uuid', 'title', 'is_general', 'extension', 'area_id']);
 
         // 2. Events: Filtered by college/program scope
         $eventsQuery = AccreditationEvent::query();

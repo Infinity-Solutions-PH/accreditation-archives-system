@@ -71,11 +71,30 @@
         isEditModalOpen.value = true;
     };
 
-    const copyPermanentLink = (file) => {
+    const copyPermanentLink = async (file) => {
         const url = route('files.shared', file.uuid);
-        navigator.clipboard.writeText(url);
-        if (window.toast) {
-            window.toast('Permanent link copied to clipboard!', 'success');
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(url);
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            }
+            if (window.toast) {
+                window.toast('Permanent link copied to clipboard!', 'success');
+            }
+        } catch (err) {
+            console.error('Failed to copy link:', err);
+            if (window.toast) {
+                window.toast('Failed to copy link.', 'error');
+            }
         }
     };
 

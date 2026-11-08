@@ -106,7 +106,7 @@ class AreaController extends Controller
             ->first();
         $isAvpHidden = $avpSetting ? $avpSetting->is_avp_hidden : false;
 
-        if ($subfolder === 'AVP - AUDIO-VISUAL PRESENTATION' && $isAvpHidden && $user->hasRole('taskforce')) {
+        if ($subfolder === 'AVP - AUDIO-VISUAL PRESENTATION' && $isAvpHidden && $user instanceof User && $user->hasRole('taskforce')) {
             abort(403, 'Unauthorized access to hidden AVP folder.');
         }
 

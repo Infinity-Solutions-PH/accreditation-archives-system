@@ -2,16 +2,21 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Area;
+use App\Models\Comment;
 use Illuminate\Http\Request;
+use App\Models\AccreditationEvent;
+use Illuminate\Support\Facades\Log;
+use App\Notifications\CommentReplyNotification;
 
 class CommentController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index(Request $request, \App\Models\AccreditationEvent $event, \App\Models\Area $area)
+    public function index(Request $request, AccreditationEvent $event, Area $area)
     {
-        $comments = \App\Models\Comment::where('accreditation_event_id', $event->id)
+        $comments = Comment::where('accreditation_event_id', $event->id)
             ->where('area_id', $area->id)
             ->whereNull('parent_id')
             ->with(['commentable', 'replies.commentable'])
@@ -21,7 +26,7 @@ class CommentController extends Controller
         return response()->json($comments);
     }
 
-    public function store(Request $request, \App\Models\AccreditationEvent $event, \App\Models\Area $area)
+    public function store(Request $request, AccreditationEvent $event, Area $area)
     {
         // Check if event is archived/expired - comments disabled
         if ($event->expires_at && $event->expires_at < now()) {
@@ -35,7 +40,7 @@ class CommentController extends Controller
 
         $user = auth('web')->user() ?? auth('accreditor')->user();
 
-        $comment = \App\Models\Comment::create([
+        $comment = Comment::create([
             'commentable_id' => $user->id,
             'commentable_type' => get_class($user),
             'accreditation_event_id' => $event->id,
@@ -43,6 +48,38 @@ class CommentController extends Controller
             'parent_id' => $request->parent_id,
             'content' => $request->content,
         ]);
+
+        if ($request->parent_id) {
+            $parentComment = Comment::with(['commentable', 'replies.commentable'])->find($request->parent_id);
+
+            if ($parentComment) {
+                $participants = collect();
+
+                if ($parentComment->commentable) {
+                    $participants->push($parentComment->commentable);
+                }
+
+                foreach ($parentComment->replies as $reply) {
+                    if ($reply->commentable) {
+                        $participants->push($reply->commentable);
+                    }
+                }
+
+                $recipients = $participants
+                    ->filter(fn ($participant) => !(
+                        $participant->id === $user->id && get_class($participant) === get_class($user)
+                    ))
+                    ->unique(fn ($participant) => get_class($participant) . ':' . $participant->id);
+
+                foreach ($recipients as $recipient) {
+                    try {
+                        $recipient->notify(new CommentReplyNotification($comment, $event, $area, $user->name));
+                    } catch (\Throwable $e) {
+                        Log::warning('Failed to send comment reply notification: ' . $e->getMessage());
+                    }
+                }
+            }
+        }
 
         return response()->json($comment->load('commentable'));
     }

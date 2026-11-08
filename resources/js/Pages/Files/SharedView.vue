@@ -1,14 +1,23 @@
 <script setup>
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import AppLayout from '@shared/Layouts/App.vue';
+import VideoPlayer from '@/components/VideoPlayer.vue';
 import { ref, computed } from 'vue';
+
+defineOptions({
+    layout: AppLayout
+});
 
 const props = defineProps({
     file: Object,
     isAccessible: Boolean,
+    isOrgRestricted: Boolean,
     hasPendingRequest: Boolean,
     viewUrl: String
 });
+
+const page = usePage();
+const isAccreditor = computed(() => !!page.props.auth?.is_accreditor);
 
 const form = useForm({
     reason: ''
@@ -49,8 +58,7 @@ const getIcon = (ext) => {
 
 <template>
     <Head title="View Shared File" />
-    <AppLayout>
-        <div class="flex-1 flex flex-col h-full bg-black/95">
+    <div class="flex-1 flex flex-col h-full bg-black/95">
             <div class="flex-1 flex flex-col overflow-hidden m-4 md:m-8 bg-[#111722] rounded-2xl border border-white/10 shadow-2xl transition-all duration-300">
                 
                 <!-- Header (Modal Style) -->
@@ -89,8 +97,19 @@ const getIcon = (ext) => {
                         
                         <!-- Restricted State -->
                         <div v-if="!isAccessible" class="max-w-md w-full p-8 text-center animate-in zoom-in-95 duration-300">
+                            <!-- Accreditor Restriction -->
+                            <div v-if="isAccreditor" class="space-y-6">
+                                <div class="size-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-red-500/20">
+                                    <span class="material-symbols-outlined text-red-500 text-[40px]">lock_person</span>
+                                </div>
+                                <h3 class="text-white text-xl font-bold mb-2">Access Restricted</h3>
+                                <p class="text-slate-400 text-sm mb-8 leading-relaxed">
+                                    This file is not shared with any of your assigned accreditation events.
+                                </p>
+                            </div>
+
                             <!-- Organization Restriction -->
-                            <div v-if="props.isOrgRestricted" class="space-y-6">
+                            <div v-else-if="props.isOrgRestricted" class="space-y-6">
                                 <div class="size-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6 border border-amber-500/20">
                                     <span class="material-symbols-outlined text-amber-500 text-[40px]">domain_disabled</span>
                                 </div>
@@ -149,15 +168,12 @@ const getIcon = (ext) => {
                         </div>
 
                         <!-- Viewer State -->
-                        <div v-else class="w-full h-full">
-                            <iframe v-if="isPDF" :src="viewUrl" class="w-full h-full border-none"></iframe>
+                        <div v-else class="w-full h-full flex items-center justify-center">
+                            <iframe v-if="isPDF" :src="viewUrl" class="w-full h-full border-none bg-white"></iframe>
                             <div v-else-if="isImage" class="w-full h-full flex items-center justify-center p-8">
                                 <img :src="viewUrl" class="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />
                             </div>
-                            <div v-else-if="isVideo" class="w-full h-full flex items-center justify-center">
-                                <!-- Video Player Placeholder -->
-                                <p class="text-white">Video Player goes here</p>
-                            </div>
+                            <VideoPlayer v-else-if="isVideo" :id="file?.id" />
                             <div v-else class="flex flex-col items-center justify-center text-center p-12">
                                 <span class="material-symbols-outlined text-white/20 text-[64px] mb-4">draft</span>
                                 <p class="text-slate-400 mb-6">Preview for this file type is better viewed via download.</p>
@@ -179,7 +195,7 @@ const getIcon = (ext) => {
                                     <div class="flex items-center gap-3 mt-1">
                                         <img v-if="file.uploaded_by?.google_info?.avatar" :src="file.uploaded_by.google_info.avatar" class="size-8 rounded-full border border-primary/30" />
                                         <div v-else class="size-8 rounded-full bg-primary flex items-center justify-center text-white text-[10px] font-bold">U</div>
-                                        <p class="text-white text-sm font-medium">{{ file?.uploaded_by?.name }}</p>
+                                        <p class="text-white text-sm font-medium">{{ file?.uploaded_by?.name || 'Unknown' }}</p>
                                     </div>
                                 </div>
                                 <div class="border-b border-[#232f48] pb-4">
@@ -225,6 +241,5 @@ const getIcon = (ext) => {
                     </div>
                 </footer>
             </div>
-        </div>
-    </AppLayout>
+    </div>
 </template>

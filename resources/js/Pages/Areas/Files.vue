@@ -162,11 +162,30 @@
         isEditModalOpen.value = true;
     };
 
-    const copyPermanentLink = (file) => {
+    const copyPermanentLink = async (file) => {
         const url = route('files.shared', file.uuid);
-        navigator.clipboard.writeText(url);
-        if (window.toast) {
-            window.toast('Permanent link copied to clipboard!', 'success');
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                await navigator.clipboard.writeText(url);
+            } else {
+                const textArea = document.createElement('textarea');
+                textArea.value = url;
+                textArea.style.position = 'fixed';
+                textArea.style.left = '-9999px';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            }
+            if (window.toast) {
+                window.toast('Permanent link copied to clipboard!', 'success');
+            }
+        } catch (err) {
+            console.error('Failed to copy link:', err);
+            if (window.toast) {
+                window.toast('Failed to copy link.', 'error');
+            }
         }
     };
 
@@ -740,7 +759,7 @@
 
                     <!-- Edit Meta/File -->
                     <button 
-                        v-if="auth.roles.includes('admin') || file.uploaded_by_id === auth.user.id"
+                        v-if="!auth.is_accreditor && (auth.roles.includes('admin') || file.uploaded_by_id === auth.user.id)"
                         @click.stop="openEditModal(file)"
                         class="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors tooltip"
                         title="Edit / Replace"
@@ -760,7 +779,7 @@
 
                     <!-- Delete Permanently -->
                     <button 
-                        v-if="auth.roles.includes('admin') || auth.roles.includes('ido_staff') || auth.roles.includes('college_officer') || file.uploaded_by_id === auth.user.id"
+                        v-if="!auth.is_accreditor && (auth.roles.includes('admin') || auth.roles.includes('ido_staff') || auth.roles.includes('college_officer') || file.uploaded_by_id === auth.user.id)"
                         @click.stop="handleDeleteFile(file)"
                         class="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors tooltip"
                         title="Delete File Permanently"

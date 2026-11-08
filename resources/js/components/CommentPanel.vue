@@ -1,6 +1,6 @@
 <script setup>
-import { ref, onMounted, computed } from 'vue';
-import { usePage, useForm } from '@inertiajs/vue3';
+import { ref, reactive, onMounted, computed, watch } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { MessageSquare, Send, X, Reply, Trash2, User as UserIcon, Clock } from 'lucide-vue-next';
 import axios from 'axios';
 
@@ -16,6 +16,14 @@ const comments = ref([]);
 const loading = ref(true);
 const page = usePage();
 const authUser = computed(() => page.props.auth.user);
+const isAccreditor = computed(() => !!page.props.auth.is_accreditor);
+
+const canDelete = (item) => {
+    const isAuthor = item.commentable_id === authUser.value?.id &&
+        (isAccreditor.value ? item.commentable_type?.includes('Accreditor') : item.commentable_type?.includes('User'));
+    const isAdminOrStaff = page.props.auth.roles?.some(r => ['admin', 'ido_staff'].includes(r));
+    return isAuthor || isAdminOrStaff;
+};
 
 const fetchComments = async () => {
     if (!props.event || !props.area) return;
@@ -30,24 +38,35 @@ const fetchComments = async () => {
     }
 };
 
-const form = useForm({
+const form = reactive({
     content: '',
-    parent_id: null
+    parent_id: null,
+    processing: false
 });
 
 const replyingTo = ref(null);
 
-const submitComment = () => {
-    if (!form.content.trim()) return;
+const submitComment = async () => {
+    if (!form.content.trim() || form.processing) return;
 
-    form.post(route('comments.store', { event: props.event.id, area: props.area.id }), {
-        preserveScroll: true,
-        onSuccess: () => {
-            form.reset();
-            replyingTo.value = null;
-            fetchComments();
+    form.processing = true;
+    try {
+        await axios.post(route('comments.store', { event: props.event.id, area: props.area.id }), {
+            content: form.content,
+            parent_id: form.parent_id
+        });
+        form.content = '';
+        form.parent_id = null;
+        replyingTo.value = null;
+        await fetchComments();
+    } catch (error) {
+        console.error("Failed to submit comment", error);
+        if (window.toast) {
+            window.toast(error.response?.data?.message || 'Failed to post comment.', 'error');
         }
-    });
+    } finally {
+        form.processing = false;
+    }
 };
 
 const deleteComment = async (id) => {
@@ -63,8 +82,13 @@ const deleteComment = async (id) => {
 const setReply = (comment) => {
     replyingTo.value = comment;
     form.parent_id = comment.id;
-    // Focus input? 
 };
+
+watch(() => props.isOpen, (isOpen) => {
+    if (isOpen) {
+        fetchComments();
+    }
+});
 
 onMounted(() => {
     if (props.isOpen) fetchComments();
@@ -141,7 +165,7 @@ const isEventExpired = computed(() => {
                                         Reply
                                     </button>
                                     <button 
-                                        v-if="(comment.commentable_id === authUser.id) || $page.props.auth.roles.some(r => ['admin', 'ido_staff'].includes(r))"
+                                        v-if="canDelete(comment)"
                                         @click="deleteComment(comment.id)"
                                         class="text-[11px] font-bold text-red-500 hover:underline flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
@@ -164,6 +188,7 @@ const isEventExpired = computed(() => {
                                     <div class="flex items-center justify-between gap-2 mb-0.5">
                                         <span class="text-xs font-bold text-slate-900 dark:text-white truncate">
                                             {{ reply.commentable?.name }}
+                                            <span v-if="reply.commentable_type?.includes('Accreditor')" class="ml-1 text-[9px] px-1.5 py-0.5 bg-blue-100 text-blue-700 rounded-md font-black uppercase">Accreditor</span>
                                         </span>
                                         <span class="text-[9px] text-slate-400">
                                             {{ new Date(reply.created_at).toLocaleDateString() }}
@@ -173,7 +198,7 @@ const isEventExpired = computed(() => {
                                         {{ reply.content }}
                                     </p>
                                     <button 
-                                        v-if="(reply.commentable_id === authUser.id) || $page.props.auth.roles.some(r => ['admin', 'ido_staff'].includes(r))"
+                                        v-if="canDelete(reply)"
                                         @click="deleteComment(reply.id)"
                                         class="mt-2 text-[10px] font-bold text-red-500 hover:underline opacity-0 group-hover:opacity-100 transition-opacity"
                                     >

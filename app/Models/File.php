@@ -39,17 +39,21 @@ class File extends Model
         'is_general' => 'boolean',
     ];
 
-    protected $hidden = [
-        'uploaded_by'
-    ];
+    protected $hidden = [];
 
     protected $appends = [
+        'uploaded_by_id',
         'size',
         'size_human',
         'created_at_clean',
         'created_at_timeago',
         'updated_at_timeago'
     ];
+
+    public function getUploadedByIdAttribute(): ?int
+    {
+        return isset($this->attributes['uploaded_by']) ? (int) $this->attributes['uploaded_by'] : null;
+    }
 
     // Delete temp file when record deleted
     protected static function booted()

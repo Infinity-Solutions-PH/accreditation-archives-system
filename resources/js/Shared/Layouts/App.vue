@@ -123,7 +123,7 @@
                                 </div>
                                 <div class="px-2">
                                     <Link v-for="file in searchResults.files" :key="file.id"
-                                          :href="route('file-archives', { search: file.title, type: file.is_general ? 'general' : 'personal' })"
+                                          :href="$page.props.auth.is_accreditor ? route('files.shared', file.uuid) : route('file-archives', { search: file.title, type: file.is_general ? 'general' : 'personal' })"
                                           @click="showResults = false"
                                           class="flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-50 dark:hover:bg-gray-800/60 group transition-all">
                                         <div class="size-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 text-blue-500 flex items-center justify-center shrink-0">

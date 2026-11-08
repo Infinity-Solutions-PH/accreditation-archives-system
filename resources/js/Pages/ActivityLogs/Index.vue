@@ -8,7 +8,8 @@
             'admin': 'Admin',
             'ido_staff': 'Quality Assurance Officer Support Staff',
             'college_officer': 'Quality Assurance Coordinator',
-            'taskforce': 'Accreditation Task Force Member'
+            'taskforce': 'Accreditation Task Force Member',
+            'accreditor': 'Accreditor'
         };
         return labels[roleName.toLowerCase()] || roleName;
     };
@@ -114,6 +115,7 @@
                                 <select v-model="role" :disabled="isLoading" class="w-full h-11 rounded-xl border border-[#e7ebf3] dark:border-gray-700 bg-[#f8f9fc] dark:bg-gray-800/50 px-4 text-sm font-medium text-[#0d121b] dark:text-white focus:ring-2 focus:ring-primary/20 transition-all outline-none appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                     <option value="">All Roles</option>
                                     <option v-for="r in roles" :key="r.id" :value="r.name">{{ getRoleLabel(r.name) }}</option>
+                                    <option value="accreditor">Accreditor</option>
                                 </select>
                             </div>
 

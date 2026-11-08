@@ -17,10 +17,6 @@ class HandleInertiaRequests extends Middleware
      */
     public function rootView(Request $request): string
     {
-        if (auth('accreditor')->check()) {
-            return 'layouts.accreditor';
-        }
-
         return 'layouts.app';
     }
 

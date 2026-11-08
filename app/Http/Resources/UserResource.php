@@ -26,10 +26,14 @@ class UserResource extends JsonResource
             'updated_at' => $this->updated_at ? $this->updated_at->toIso8601String() : null,
             
             // Relationships (Transformed)
-            'roles' => $this->roles->map(fn($role) => [
-                'id' => $role->id,
-                'name' => $role->name,
-            ]),
+            'roles' => $this->resource instanceof \App\Models\Accreditor
+                ? [['id' => 'accreditor', 'name' => 'accreditor']]
+                : ($this->relationLoaded('roles') && $this->roles
+                    ? $this->roles->map(fn($role) => [
+                        'id' => $role->id,
+                        'name' => $role->name,
+                    ])
+                    : []),
             'college' => $this->whenLoaded('college', fn() => [
                 'id' => $this->college->id,
                 'name' => $this->college->name,

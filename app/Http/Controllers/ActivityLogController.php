@@ -2,11 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Inertia\Inertia;
+use App\Models\Accreditor;
 use Illuminate\Http\Request;
 use Spatie\Permission\Models\Role;
 use Spatie\Activitylog\Models\Activity;
 use App\Http\Resources\ActivityLogResource;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 class ActivityLogController extends Controller
 {
@@ -17,13 +20,18 @@ class ActivityLogController extends Controller
 
     public function index(Request $request)
     {
-        $query = Activity::with('causer.roles')->latest();
+        $query = Activity::with(['causer' => function (MorphTo $morphTo) {
+            $morphTo->morphWith([
+                User::class => ['roles', 'googleInfo'],
+                Accreditor::class => ['googleInfo'],
+            ]);
+        }])->latest();
         
         // Search filter (User name/email or Description)
         if ($search = $request->input('search')) {
             $query->where(function($q) use ($search) {
                 $q->where('description', 'like', "%{$search}%")
-                  ->orWhereHas('causer', function($userQuery) use ($search) {
+                  ->orWhereHasMorph('causer', [User::class, Accreditor::class], function($userQuery) use ($search) {
                       $userQuery->where('name', 'like', "%{$search}%")
                                ->orWhere('email', 'like', "%{$search}%");
                   });
@@ -37,9 +45,15 @@ class ActivityLogController extends Controller
 
         // Role Filter
         if ($role = $request->input('role')) {
-            $query->whereHas('causer.roles', function($roleQuery) use ($role) {
-                $roleQuery->where('name', $role);
-            });
+            if ($role === 'accreditor') {
+                $query->where('causer_type', Accreditor::class);
+            } else {
+                $query->whereHasMorph('causer', [User::class], function($userQuery) use ($role) {
+                    $userQuery->whereHas('roles', function($roleQuery) use ($role) {
+                        $roleQuery->where('name', $role);
+                    });
+                });
+            }
         }
 
         $logs = $query->paginate(15)->withQueryString();

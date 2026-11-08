@@ -7,12 +7,23 @@ use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
+    public function __construct()
+    {
+        Inertia::setRootView('layouts/app');
+    }
+
+    private function currentUser()
+    {
+        return auth('web')->user() ?? auth('accreditor')->user();
+    }
+
     /**
      * Display a listing of notifications.
      */
     public function index()
     {
-        $notifications = auth()->user()->notifications()->paginate(15);
+        $user = $this->currentUser();
+        $notifications = $user->notifications()->paginate(15);
 
         return Inertia::render('Notifications/Index', [
             'notifications' => $notifications
@@ -24,7 +35,7 @@ class NotificationController extends Controller
      */
     public function recent()
     {
-        $user = auth()->user();
+        $user = $this->currentUser();
         
         return response()->json([
             'recent' => $user->notifications()->take(5)->get(),
@@ -37,7 +48,8 @@ class NotificationController extends Controller
      */
     public function markAsRead($id)
     {
-        $notification = auth()->user()->notifications()->findOrFail($id);
+        $user = $this->currentUser();
+        $notification = $user->notifications()->findOrFail($id);
         $notification->markAsRead();
 
         return back();
@@ -48,7 +60,8 @@ class NotificationController extends Controller
      */
     public function markAllAsRead()
     {
-        auth()->user()->unreadNotifications->markAsRead();
+        $user = $this->currentUser();
+        $user->unreadNotifications->markAsRead();
 
         return back()->with('message', 'All notifications marked as read.');
     }
