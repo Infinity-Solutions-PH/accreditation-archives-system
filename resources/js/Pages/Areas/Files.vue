@@ -195,7 +195,13 @@
         router.reload({ preserveScroll: true });
     };
 
-    const showComments = ref(false);
+    const showComments = ref(new URLSearchParams(window.location.search).get('comments') === '1');
+
+    watch(() => page.url, () => {
+        if (new URLSearchParams(window.location.search).get('comments') === '1') {
+            showComments.value = true;
+        }
+    });
 
     function getFileIcon(extension) {
         const ext = extension?.toLowerCase();

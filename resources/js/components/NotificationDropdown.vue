@@ -138,7 +138,7 @@ const formatTime = (time) => {
                     >
                         <div class="size-10 rounded-xl flex items-center justify-center shrink-0 shadow-sm"
                              :class="{
-                                 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400': notif.data.type === 'upload',
+                                 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400': notif.data.type === 'upload' || notif.data.type === 'info',
                                  'bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400': notif.data.type === 'event',
                                  'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400': notif.data.type === 'success',
                                  'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400': notif.data.type === 'reminder',

@@ -120,7 +120,7 @@ test('replying to a comment in discussion sends CommentReplyNotification to thre
 
     // Taskforce member replies to the accreditor's comment
     $this->actingAs($taskforce, 'web');
-    $response = $this->postJson(route('comments.store', ['event' => $event->id, 'area' => $area->id]), [
+    $response = $this->postJson(route('comments.store', ['event' => $event->slug, 'area' => $area->id]), [
         'content' => 'We have uploaded the updated faculty profile.',
         'parent_id' => $parentComment->id,
     ]);
@@ -132,8 +132,10 @@ test('replying to a comment in discussion sends CommentReplyNotification to thre
         CommentReplyNotification::class,
         function (CommentReplyNotification $notification) use ($accreditor) {
             $mail = $notification->toMail($accreditor);
+            $data = $notification->toArray($accreditor);
             return str_contains($mail->subject, 'New Reply in Discussion') &&
-                   in_array('mail', $notification->via($accreditor));
+                   $data['title'] === 'New Reply in Discussion' &&
+                   $notification->via($accreditor) === ['database', 'mail'];
         }
     );
     Notification::assertNotSentTo($taskforce, CommentReplyNotification::class);

@@ -38,6 +38,7 @@ class CommentReplyNotification extends Notification
         $url = route('areas.slug', [
             'event' => $this->event->slug,
             'area' => $this->area->slug,
+            'comments' => 1,
         ]);
 
         return (new MailMessage)
@@ -67,6 +68,7 @@ class CommentReplyNotification extends Notification
             'url' => route('areas.slug', [
                 'event' => $this->event->slug,
                 'area' => $this->area->slug,
+                'comments' => 1,
             ]),
         ];
     }

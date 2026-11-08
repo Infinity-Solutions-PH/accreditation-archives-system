@@ -47,7 +47,8 @@ const getIcon = (type) => {
 
 const getTypeColor = (type) => {
     switch (type) {
-        case 'upload': return 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400';
+        case 'upload':
+        case 'info': return 'text-blue-600 bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400';
         case 'event': return 'text-amber-600 bg-amber-100 dark:bg-amber-900/30 dark:text-amber-400';
         case 'success': return 'text-emerald-600 bg-emerald-100 dark:bg-emerald-900/30 dark:text-emerald-400';
         case 'reminder': return 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400';
@@ -107,7 +108,7 @@ const getTypeColor = (type) => {
                     <div class="size-12 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
                          :class="getTypeColor(notif.data.type)"
                     >
-                        <span class="material-symbols-outlined text-[28px]">{{ getIcon(notif.data.type) }}</span>
+                        <span class="material-symbols-outlined text-[28px]">{{ notif.data.icon || getIcon(notif.data.type) }}</span>
                     </div>
 
                     <div class="flex-1 min-w-0">
