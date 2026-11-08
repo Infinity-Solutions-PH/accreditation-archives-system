@@ -15,8 +15,8 @@ Route::middleware(['auth:web,accreditor', CheckRoleStatus::class])->group(functi
     Route::post('/files/update-metadata', [FileController::class, 'updateMetadata'])->name('api.files.update_metadata');
     Route::post('/files/abort', [FileController::class, 'abort'])->name('api.files.abort');
 
-    Route::get('/events/{event}/accreditors', [EventAccreditorController::class, 'index'])->name('events.accreditors.index');
-    Route::post('/events/{event}/accreditors', [EventAccreditorController::class, 'store'])->name('events.accreditors.store');
+    Route::get('/events/{event:slug}/accreditors', [EventAccreditorController::class, 'index'])->name('events.accreditors.index');
+    Route::post('/events/{event:slug}/accreditors', [EventAccreditorController::class, 'store'])->name('events.accreditors.store');
     Route::delete('/accreditors/{accreditor}', [EventAccreditorController::class, 'destroy'])->name('events.accreditors.destroy');
 
     Route::post('/events/share', [AccreditationEventController::class, 'shareToFile'])->name('events.share');

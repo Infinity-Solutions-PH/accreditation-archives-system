@@ -29,7 +29,7 @@ const fetchComments = async () => {
     if (!props.event || !props.area) return;
     loading.value = true;
     try {
-        const response = await axios.get(route('comments.index', { event: props.event.id, area: props.area.id }));
+        const response = await axios.get(route('comments.index', { event: props.event.slug, area: props.area.id }));
         comments.value = response.data;
     } catch (error) {
         console.error("Failed to fetch comments", error);
@@ -51,7 +51,7 @@ const submitComment = async () => {
 
     form.processing = true;
     try {
-        await axios.post(route('comments.store', { event: props.event.id, area: props.area.id }), {
+        await axios.post(route('comments.store', { event: props.event.slug, area: props.area.id }), {
             content: form.content,
             parent_id: form.parent_id
         });

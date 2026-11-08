@@ -43,7 +43,7 @@ const fetchAccreditors = async () => {
     if (!props.event) return;
     isFetchingAccreditors.value = true;
     try {
-        const response = await axios.get(route('events.accreditors.index', props.event.id));
+        const response = await axios.get(route('events.accreditors.index', props.event.slug));
         accreditors.value = response.data;
     } catch (error) {
         console.error('Failed to fetch accreditors:', error);
@@ -97,7 +97,7 @@ const addAccreditor = async () => {
     accreditorForm.clearErrors();
 
     try {
-        const response = await axios.post(route('events.accreditors.store', props.event.id), {
+        const response = await axios.post(route('events.accreditors.store', props.event.slug), {
             accreditor_id: accreditorForm.accreditor_id,
             name: accreditorForm.name,
             email: accreditorForm.email
