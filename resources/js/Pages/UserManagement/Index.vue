@@ -478,12 +478,7 @@
                                 >
                                     <span v-html="link.label"></span>
                                 </Link>
-                                <span
-                                    v-else
-                                    class="px-3 py-1 text-sm font-medium text-slate-400 cursor-not-allowed min-w-[32px]"
-                                >
-                                    {{ link.label }}
-                                </span>
+                                <span v-else v-html="link.label" class="px-3 py-1 text-sm font-medium text-slate-400 cursor-not-allowed min-w-[32px]"></span>
                             </template>
                         </div>
                     </div>
