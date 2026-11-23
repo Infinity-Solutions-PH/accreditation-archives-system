@@ -65,11 +65,17 @@
         form.put(url, {
             preserveScroll: true,
             onSuccess: () => {
+                if (window.toast) {
+                    window.toast('User updated successfully.', 'success');
+                }
                 emit('updated');
                 emit('close');
             },
             onError: (errors) => {
-                console.error('Update failed:', errors);
+                const msg = errors.message || errors.role || Object.values(errors)[0];
+                if (msg && window.toast) {
+                    window.toast(msg, 'error');
+                }
             }
         });
     }
@@ -109,6 +115,10 @@
 
             <div class="p-6 overflow-y-auto custom-scrollbar max-h-[70vh]">
                 <form class="space-y-5" @submit.prevent="saveChanges">
+                    <div v-if="form.errors.message" class="p-3 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 flex items-center gap-2 text-xs font-semibold text-red-600 dark:text-red-400">
+                        <span class="material-symbols-outlined text-[18px] shrink-0">error</span>
+                        <span>{{ form.errors.message }}</span>
+                    </div>
                     
                     <!-- Common Fields (If Accreditor) -->
                     <template v-if="isAccreditor">
@@ -194,6 +204,7 @@
                                 <option value="">No Role</option>
                                 <option v-for="r in roles" :key="r.id" :value="r.name">{{ getRoleLabel(r.name) }}</option>
                             </select>
+                            <p v-if="form.errors.role" class="mt-1 text-xs text-red-500">{{ form.errors.role }}</p>
                         </div>
                         
                         <div v-if="form.role !== 'ido_staff' && form.role !== 'admin'">
@@ -202,6 +213,7 @@
                                 <option value="">No College Assigned</option>
                                 <option v-for="college in colleges" :key="college.id" :value="college.id">{{ college.name }}</option>
                             </select>
+                            <p v-if="form.errors.college_id" class="mt-1 text-xs text-red-500">{{ form.errors.college_id }}</p>
                         </div>
                         
                         <div v-if="form.college_id && form.role !== 'ido_staff' && form.role !== 'admin'" class="pt-1">
@@ -210,6 +222,7 @@
                                 <option value="">No Program Assigned</option>
                                 <option v-for="program in filteredPrograms" :key="program.id" :value="program.id">{{ program.name }}</option>
                             </select>
+                            <p v-if="form.errors.program_id" class="mt-1 text-xs text-red-500">{{ form.errors.program_id }}</p>
                         </div>
                     </template>
 
@@ -221,6 +234,7 @@
                             <option value="approved">Approved</option>
                             <option value="rejected">Rejected</option>
                         </select>
+                        <p v-if="form.errors.role_status" class="mt-1 text-xs text-red-500">{{ form.errors.role_status }}</p>
                     </div>
 
                     <div class="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700">

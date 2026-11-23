@@ -149,18 +149,21 @@ class UserManagementController extends Controller
 
         // Ensure user has at least one of the required roles
         if (!$currentUser->hasRole(['admin', 'ido_staff', 'college_officer'])) {
-            return response()->json(['message' => 'Unauthorized'], 403);
+            return back()->withErrors(['message' => 'Unauthorized']);
         }
 
         // If user is ONLY a college officer (not admin or ido_staff)
         if ($currentUser->hasRole('college_officer') && !$currentUser->hasRole(['admin', 'ido_staff'])) {
             if ($user->college_id !== $currentUser->college_id) {
-                return response()->json(['message' => 'Unauthorized college user'], 403);
+                return back()->withErrors(['message' => 'Unauthorized college user']);
             }
             
             // Prevent college officer from assigning admin or ido_staff roles
             if ($request->has('role') && in_array($request->role, ['admin', 'ido_staff'])) {
-                return response()->json(['message' => 'Unauthorized to assign this role'], 403);
+                return back()->withErrors([
+                    'role' => 'Unauthorized to assign this role',
+                    'message' => 'Unauthorized to assign this role',
+                ]);
             }
         }
 
@@ -171,7 +174,10 @@ class UserManagementController extends Controller
                     ->whereHas('roles', fn($q) => $q->where('name', 'college_officer'))
                     ->first();
             if ($existingOfficer) {
-                return response()->json(['message' => 'This college already has a College Accreditation Officer.'], 422);
+                return back()->withErrors([
+                    'role' => 'This college already has a College Accreditation Officer.',
+                    'message' => 'This college already has a College Accreditation Officer.',
+                ]);
             }
         }
 

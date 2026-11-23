@@ -130,6 +130,13 @@
             }, {
                 preserveScroll: true,
                 onSuccess: () => onUserUpdated(),
+                onError: (errors) => {
+                    const msg = errors.message || errors.role || Object.values(errors)[0] || 'Failed to update user.';
+                    if (window.toast) {
+                        window.toast(msg, 'error');
+                    }
+                    closeConfirmationModal();
+                },
                 onFinish: () => isProcessingAction.value = false
             });
         } else if (type === 'delete') {
